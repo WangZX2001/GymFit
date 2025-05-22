@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "206563041543",
+    "project_id": "gymfit-917cc",
+    "storage_bucket": "gymfit-917cc.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:206563041543:android:ca0330c0407ba6ac19a5a2",
+        "android_client_info": {
+          "package_name": "com.example.gymfit"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA0qvePiMVeLjja1iaN7dZDk7NhQNE2K8Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
