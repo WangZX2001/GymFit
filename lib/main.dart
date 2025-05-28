@@ -15,6 +15,30 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(debugShowCheckedModeBanner: false, home: AuthPage());
+    return MaterialApp(
+      title: 'GymFit',
+      theme: ThemeData(
+        fontFamily: 'DMSans',
+        textTheme: const TextTheme(
+          headlineMedium: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.w700,
+            color: Colors.black,
+          ),
+          bodyMedium: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w300,
+            color: Colors.black87,
+          ),
+          labelLarge: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
+        ),
+      ),
+      debugShowCheckedModeBanner: false,
+      home: AuthPage(),
+    );
   }
 }
