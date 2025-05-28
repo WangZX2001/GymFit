@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-class FORMBUTTON extends StatelessWidget {
+class Formbutton extends StatelessWidget {
   final String text;
   final Widget destination;
 
-  const FORMBUTTON({super.key, required this.destination, required this.text});
+  const Formbutton({super.key, required this.destination, required this.text});
 
   @override
   Widget build(BuildContext context) {

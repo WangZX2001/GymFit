@@ -50,7 +50,7 @@ class FormPage1 extends StatelessWidget {
                   style: textTheme.bodyMedium,
                 ),
                 const SizedBox(height: 30),
-                FORMBUTTON(destination: FormPage2(), text: "I'M READY"),
+                Formbutton(destination: FormPage2(), text: "I'M READY"),
               ],
             ),
           ),
