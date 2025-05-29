@@ -18,20 +18,20 @@ class FormPage1 extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const SizedBox(height: 100),
+                const SizedBox(height: 50),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: [Text('Hello !', style: textTheme.headlineMedium)],
                 ),
 
-                const SizedBox(height: 10),
+                const SizedBox(height: 20),
 
                 Text(
                   '"I\'m Alex, your dedicated trainer on a journey to transform your body and mind."',
                   style: textTheme.bodyMedium,
                 ),
 
-                const SizedBox(height: 30),
+                const SizedBox(height: 20),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
@@ -45,13 +45,14 @@ class FormPage1 extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 100),
+                const Spacer(),
                 Text(
                   'Before we start on your fitness journey, here are a few questions for us to tailor a better fitness plan for you. ',
                   style: textTheme.bodyMedium,
                 ),
-                const SizedBox(height: 30),
+                const SizedBox(height: 20),
                 Formbutton(destination: FormPage2(), text: "I'M READY"),
+                const SizedBox(height: 50),
               ],
             ),
           ),

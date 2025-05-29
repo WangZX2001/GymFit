@@ -11,7 +11,7 @@ class Chatbot extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(10),
-        color: Color(0xFF80BBFF),
+        color: Color(0x6080BBFF),
       ),
       padding: EdgeInsets.all(10),
       child: Row(

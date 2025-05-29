@@ -52,7 +52,7 @@ class _FormPage2State extends State<FormPage2> {
         width: 140,
         padding: const EdgeInsets.symmetric(vertical: 30),
         decoration: BoxDecoration(
-          color: isSelected ? Color(0xFF80BBFF) : Colors.grey[300],
+          color: isSelected ? Color(0x6080BBFF) : Colors.grey[300],
           borderRadius: BorderRadius.circular(15),
           border: Border.all(
             color: isSelected ? Colors.blue : Colors.transparent,
@@ -79,25 +79,23 @@ class _FormPage2State extends State<FormPage2> {
           saveGenderToFirestore();
         }
       },
+
       child: Container(
-        decoration: BoxDecoration(borderRadius: BorderRadius.circular(20)),
-        child: Container(
-          padding: EdgeInsets.symmetric(horizontal: 100, vertical: 10),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(50),
-            gradient: LinearGradient(
-              colors: [Color(0xFF396599), Color((0xFF5EA9FF))],
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-            ),
+        padding: EdgeInsets.symmetric(horizontal: 100, vertical: 10),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(50),
+          gradient: LinearGradient(
+            colors: [Color(0xFF396599), Color((0xFF5EA9FF))],
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
           ),
-          child: Text(
-            'Next',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.w600,
-              color: Colors.white,
-            ),
+        ),
+        child: Text(
+          'Next',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
           ),
         ),
       ),
@@ -121,7 +119,7 @@ class _FormPage2State extends State<FormPage2> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const SizedBox(height: 30),
+                const SizedBox(height: 20),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: [
@@ -131,12 +129,12 @@ class _FormPage2State extends State<FormPage2> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 30),
+                const SizedBox(height: 20),
                 Chatbot(
                   text:
                       "“Gender influences key health metrics like BMR, calorie needs, body fat percentage, enabling more accurate fitness planning.”",
                 ),
-                const SizedBox(height: 30),
+                const SizedBox(height: 20),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
@@ -144,8 +142,9 @@ class _FormPage2State extends State<FormPage2> {
                     genderCard('Female', 'lib/images/woman.png'),
                   ],
                 ),
-                const SizedBox(height: 70),
+                const Spacer(),
                 nextButton(),
+                const SizedBox(height: 50),
               ],
             ),
           ),
