@@ -17,7 +17,7 @@ class Formbutton extends StatelessWidget {
         );
       },
       child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 100, vertical: 10),
+        padding: EdgeInsets.symmetric(horizontal: 60, vertical: 10),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(50),
           gradient: LinearGradient(
