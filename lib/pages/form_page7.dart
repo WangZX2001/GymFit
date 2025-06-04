@@ -45,7 +45,7 @@ class _FormPage7State extends State<FormPage7> {
       },
       child: Container(
         width: 140,
-        padding: const EdgeInsets.symmetric(vertical: 30),
+        padding: const EdgeInsets.symmetric(vertical: 20),
         decoration: BoxDecoration(
           color: isSelected ? Color(0x6080BBFF) : Colors.grey[300],
           borderRadius: BorderRadius.circular(15),
@@ -56,7 +56,7 @@ class _FormPage7State extends State<FormPage7> {
         ),
         child: Column(
           children: [
-            Image.asset(imagePath, height: 80),
+            Image.asset(imagePath, height: 60),
             const SizedBox(height: 10),
             Text(
               goal,
@@ -137,7 +137,7 @@ class _FormPage7State extends State<FormPage7> {
                 const SizedBox(height: 20),
                 Chatbot(
                   text:
-                      "“We ask about your fitness goal so I can better guide you. —whether you want to slim down, bulk up, or just feel stronger every day”",
+                      "“We ask about your fitness goal so I can better guide you.”",
                 ),
                 const Spacer(),
                 nextButton(),
