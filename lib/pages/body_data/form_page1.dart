@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:gymfit/components/form_button.dart';
-import 'package:gymfit/pages/form_page2.dart';
+import 'package:gymfit/pages/body_data/form_page2.dart';
 
 class FormPage1 extends StatelessWidget {
   const FormPage1({super.key});

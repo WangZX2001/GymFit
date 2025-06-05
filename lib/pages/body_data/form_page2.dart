@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:gymfit/components/chatbot.dart';
-import 'package:gymfit/pages/form_page3.dart';
+import 'package:gymfit/pages/body_data/form_page3.dart';
 
 class FormPage2 extends StatefulWidget {
   const FormPage2({super.key});
@@ -13,11 +13,6 @@ class FormPage2 extends StatefulWidget {
 
 class _FormPage2State extends State<FormPage2> {
   final user = FirebaseAuth.instance.currentUser!;
-
-  //sign user out function
-  void signUserOut() {
-    FirebaseAuth.instance.signOut();
-  }
 
   String selectedGender = '';
 
@@ -107,10 +102,7 @@ class _FormPage2State extends State<FormPage2> {
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        actions: [IconButton(onPressed: signUserOut, icon: Icon(Icons.logout))],
-      ),
+      appBar: AppBar(backgroundColor: Colors.white),
       backgroundColor: Colors.white,
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 30),
