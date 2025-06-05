@@ -85,8 +85,8 @@ class WorkoutPage extends StatelessWidget {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  Colors.black.withOpacity(0.3),
-                  Colors.black.withOpacity(0.5),
+                  Colors.black.withAlpha(77),
+                  Colors.black.withAlpha(128),
                 ],
               ),
             ),

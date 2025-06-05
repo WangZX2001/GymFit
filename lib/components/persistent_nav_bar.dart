@@ -61,12 +61,10 @@ class PersistentNavBar extends StatelessWidget {
             BoxShadow(color: Colors.black26, blurRadius: 10),
           ],
         ),
-        //Some animation styles allow you to change the animation of the icon when you click on it.
         itemAnimationProperties: const ItemAnimation(
           duration: Duration(milliseconds: 400),
           curve: Curves.easeInOut,
         ),
-        //Comment out the above itemAnimationProperties if some styles are not working.
       ),
       screenTransitionAnimation: const ScreenTransitionAnimation(
         duration: Duration(milliseconds: 400),

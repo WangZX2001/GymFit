@@ -3,7 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:gymfit/pages/auth_page.dart';
 
 class MePage extends StatelessWidget {
-  const MePage({Key? key}) : super(key: key);
+  const MePage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -15,14 +15,14 @@ class MePage extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.logout, color: Colors.black),
-            onPressed: () async {
-              // Sign out from Firebase
-              await FirebaseAuth.instance.signOut();
-              // Use rootNavigator to clear the persistent nav bar route as well
-              Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
-                MaterialPageRoute(builder: (context) => const AuthPage()),
-                (route) => false,
-              );
+            onPressed: () {
+              final nav = Navigator.of(context, rootNavigator: true);
+              FirebaseAuth.instance.signOut().then((_) {
+                nav.pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (c) => const AuthPage()),
+                  (route) => false,
+                );
+              });
             },
           ),
         ],

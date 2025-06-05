@@ -97,7 +97,7 @@ class _HomePageState extends State<HomePage> {
                     borderRadius: BorderRadius.circular(25),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.grey.withOpacity(0.1),
+                        color: Colors.grey.withAlpha(26),
                         spreadRadius: 2,
                         blurRadius: 10,
                         offset: Offset(0, 5),
@@ -107,7 +107,7 @@ class _HomePageState extends State<HomePage> {
                   child: Column(
                     children: [
                       // Weight slider
-                      Container(
+                      SizedBox(
                         height: 60,
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -174,7 +174,7 @@ class _HomePageState extends State<HomePage> {
                       Stack(
                         alignment: Alignment.center,
                         children: [
-                          Container(
+                          SizedBox(
                             width: 200,
                             height: 100,
                             child: CustomPaint(

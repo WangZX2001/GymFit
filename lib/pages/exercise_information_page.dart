@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:gymfit/packages/exercise_information_repository/exercise_information_repository.dart';
 
 class ExerciseInformationPage extends StatelessWidget {
   const ExerciseInformationPage({super.key});
 
-  Widget _buildExerciseCard(String title, dynamic icon, {bool isImage = false, double? customPadding}) {
+  Widget _buildExerciseCard(
+    String title,
+    dynamic icon, {
+    bool isImage = false,
+    String? mainMuscle,
+  }) {
     return Container(
       margin: const EdgeInsets.all(4),
       decoration: BoxDecoration(
@@ -27,7 +33,7 @@ class ExerciseInformationPage extends StatelessWidget {
               size: 100,
               color: Colors.black,
             ),
-          SizedBox(height: customPadding ?? 8),
+          const SizedBox(height: 8),
           Text(
             title,
             textAlign: TextAlign.center,
@@ -36,6 +42,19 @@ class ExerciseInformationPage extends StatelessWidget {
               fontWeight: FontWeight.w500,
             ),
           ),
+          if (mainMuscle != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 4.0),
+              child: Text(
+                mainMuscle,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w400,
+                  color: Colors.grey,
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -66,40 +85,48 @@ class ExerciseInformationPage extends StatelessWidget {
           ),
         ),
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: GridView.count(
-              crossAxisCount: 2,
-              padding: const EdgeInsets.all(16),
-              mainAxisSpacing: 6,
-              crossAxisSpacing: 6,
-              childAspectRatio: 1, // Make cards slightly taller than wide
-              children: [
-                _buildExerciseCard('Overhead Press\n(Barbell)', 'lib/images/exercises/overheadPress (barbell).jpeg', isImage: true, customPadding: 4),
-                _buildExerciseCard('Side Lateral\nRaise', Icons.fitness_center),
-                _buildExerciseCard('Incline\nDumbbell Raise', Icons.fitness_center),
-                _buildExerciseCard('Dumbbell\nOverhead', Icons.fitness_center),
-                _buildExerciseCard('Standing\nDumbbell Press', Icons.fitness_center),
-                _buildExerciseCard('Seated Barbell\nPress', Icons.fitness_center),
-                _buildExerciseCard('Linear Jammer', Icons.fitness_center),
-                _buildExerciseCard('Car Driver', Icons.fitness_center),
-                _buildExerciseCard('External\nRotation', Icons.fitness_center),
-                _buildExerciseCard('Shoulder Press', Icons.fitness_center),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text(
-              'Click on any exercise icon to view specific instructions.',
-              style: TextStyle(
-                color: Colors.grey[600],
-                fontSize: 12,
+      body: FutureBuilder<List<ExerciseInformation>>(
+        future: ExerciseInformationRepository().getAllExerciseInformation(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState != ConnectionState.done) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(child: Text('Error: \\${snapshot.error}'));
+          }
+          final items = snapshot.data ?? [];
+          final sortedItems = List<ExerciseInformation>.from(items)
+            ..sort((a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()));
+          return Column(
+            children: [
+              Expanded(
+                child: GridView.count(
+                  crossAxisCount: 2,
+                  padding: const EdgeInsets.all(16),
+                  mainAxisSpacing: 6,
+                  crossAxisSpacing: 6,
+                  childAspectRatio: 1,
+                  children: sortedItems.map((e) => _buildExerciseCard(
+                        e.title,
+                        e.icon,
+                        isImage: e.isImage,
+                        mainMuscle: e.mainMuscle,
+                      )).toList(),
+                ),
               ),
-            ),
-          ),
-        ],
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                  'Click on any exercise icon to view specific instructions.',
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
