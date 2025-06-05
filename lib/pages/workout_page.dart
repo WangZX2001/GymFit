@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:gymfit/pages/exercise_information_page.dart';
 
-class WorkoutScreen extends StatelessWidget {
-  const WorkoutScreen({super.key});
+class WorkoutPage extends StatelessWidget {
+  const WorkoutPage({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
@@ -58,49 +59,6 @@ class WorkoutScreen extends StatelessWidget {
             ],
           ),
         ),
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 2, // Workout tab
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: Colors.black,
-        unselectedItemColor: Colors.black,
-        backgroundColor: Colors.white,
-        showSelectedLabels: true,
-        showUnselectedLabels: true,
-        selectedLabelStyle: const TextStyle(color: Colors.black, fontSize: 10),
-        unselectedLabelStyle: const TextStyle(color: Colors.black, fontSize: 10),
-        items: [
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.history),
-            label: 'History',
-          ),
-          BottomNavigationBarItem(
-            icon: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              margin: const EdgeInsets.only(bottom: 3),
-              decoration: BoxDecoration(
-                color: Colors.black,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: const Center(
-                child: Icon(
-                  Icons.fitness_center,
-                  color: Colors.white,
-                  size: 28,
-                ),
-              ),
-            ),
-            label: 'Workout',
-          ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Me',
-          ),
-        ],
       ),
     );
   }

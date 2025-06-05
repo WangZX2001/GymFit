@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:gymfit/pages/workout_screen.dart';
+import 'package:gymfit/components/persistent_nav.dart';
 import 'package:gymfit/components/chatbot.dart';
 
 class FormPage4 extends StatelessWidget {
@@ -28,13 +28,15 @@ class FormPage4 extends StatelessWidget {
                 text: "Great job completing your profile! Now let's start your fitness journey with a personalized workout plan.",
               ),
               const Spacer(),
+              
+              // Let's Go button
               Center(
                 child: GestureDetector(
                   onTap: () {
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const WorkoutScreen(),
+                        builder: (context) => PersistentNavBar(initialIndex: 0),
                       ),
                     );
                   },
