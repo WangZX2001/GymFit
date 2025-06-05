@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:gymfit/packages/exercise_information_repository/exercise_information_repository.dart';
+import 'package:gymfit/pages/exercise_description_page.dart';
 
 class ExerciseInformationPage extends StatelessWidget {
   const ExerciseInformationPage({super.key});
@@ -63,6 +64,7 @@ class ExerciseInformationPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey.shade200,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -106,11 +108,32 @@ class ExerciseInformationPage extends StatelessWidget {
                   mainAxisSpacing: 6,
                   crossAxisSpacing: 6,
                   childAspectRatio: 1,
-                  children: sortedItems.map((e) => _buildExerciseCard(
-                        e.title,
-                        e.icon,
-                        isImage: e.isImage,
-                        mainMuscle: e.mainMuscle,
+                  children: sortedItems.map((e) => GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (ctx) => ExerciseDescriptionPage(
+                                title: e.title,
+                                description: e.description,
+                                videoUrl: e.videoUrl,
+                                mainMuscle: e.mainMuscle,
+                                precautions: e.precautions,
+                                onAdd: () {
+                                  ScaffoldMessenger.of(ctx).showSnackBar(
+                                    SnackBar(content: Text('${e.title} added to your plan')),
+                                  );
+                                },
+                              ),
+                            ),
+                          );
+                        },
+                        child: _buildExerciseCard(
+                          e.title,
+                          e.icon,
+                          isImage: e.isImage,
+                          mainMuscle: e.mainMuscle,
+                        ),
                       )).toList(),
                 ),
               ),

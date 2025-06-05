@@ -6,6 +6,9 @@ class ExerciseInformation {
   final bool isImage;
   final double? customPadding;
   final String mainMuscle;
+  final String description;
+  final String? videoUrl;
+  final List<String> precautions;
 
   const ExerciseInformation({
     required this.title,
@@ -13,6 +16,9 @@ class ExerciseInformation {
     this.isImage = false,
     this.customPadding,
     required this.mainMuscle,
+    required this.description,
+    this.videoUrl,
+    required this.precautions,
   });
 }
 
@@ -34,6 +40,9 @@ class ExerciseInformationRepository {
         isImage: (data['isImage'] as bool?) ?? (data['is image'] as bool? ?? false),
         customPadding: (data['customPadding'] as num?)?.toDouble(),
         mainMuscle: data['main muscle'] as String,
+        description: data['description'] as String? ?? 'Description for ${data['title']} will be available soon.',
+        videoUrl: data['videoUrl'] as String?,
+        precautions: (data['precautions'] as List<dynamic>?)?.cast<String>() ?? ['Follow proper form.', 'Start with light weights.'],
       );
     }).toList();
   }
