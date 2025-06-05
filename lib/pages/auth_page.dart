@@ -2,7 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:gymfit/pages/body_data/form_page1.dart';
-import 'package:gymfit/pages/home_page.dart';
+import 'package:gymfit/components/persistent_nav.dart';
 //import 'package:gymfit/pages/login_page.dart';
 import 'package:gymfit/pages/login_or_register_page.dart';
 
@@ -40,7 +40,7 @@ class AuthPage extends StatelessWidget {
                     userData.containsKey('target weight') &&
                     userData.containsKey('goal');
 
-                return hasAllFields ? const HomePage() : const FormPage1();
+                return hasAllFields ? const PersistentNavBar(initialIndex: 0) : const FormPage1();
               },
             );
           } else {

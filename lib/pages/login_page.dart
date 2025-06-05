@@ -5,6 +5,7 @@ import 'package:gymfit/auth_service.dart';
 import 'package:gymfit/components/my_button.dart';
 import 'package:gymfit/components/my_textfield.dart';
 import 'package:gymfit/components/square_tile.dart';
+import 'package:gymfit/components/persistent_nav.dart';
 
 class LoginPage extends StatefulWidget {
   final Function()? onTap;
@@ -38,6 +39,12 @@ class _LoginPageState extends State<LoginPage> {
       );
       if (!mounted) return;
       Navigator.pop(context);
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (context) => const PersistentNavBar(initialIndex: 0),
+        ),
+        (route) => false,
+      );
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;
       Navigator.pop(context);

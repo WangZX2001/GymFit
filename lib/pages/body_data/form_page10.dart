@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:gymfit/components/form_button.dart';
-import 'package:gymfit/pages/home_page.dart';
+import 'package:gymfit/components/persistent_nav.dart';
 
 class FormPage10 extends StatelessWidget {
   const FormPage10({super.key});
@@ -38,7 +38,10 @@ class FormPage10 extends StatelessWidget {
                       ),
                     ),
                     const Spacer(),
-                    Formbutton(destination: HomePage(), text: "Go To Home"),
+                    Formbutton(
+                      destination: PersistentNavBar(initialIndex: 0),
+                      text: "Go To Home",
+                    ),
                     const SizedBox(height: 50),
                   ],
                 ),
