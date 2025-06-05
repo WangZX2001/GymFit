@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:gymfit/components/chatbot.dart';
-import 'package:gymfit/pages/form_page8.dart';
+import 'package:gymfit/pages/body_data/form_page8.dart';
 
 class FormPage7 extends StatefulWidget {
   const FormPage7({super.key});

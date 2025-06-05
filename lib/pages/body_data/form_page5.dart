@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:gymfit/pages/form_page6.dart';
+import 'package:gymfit/pages/body_data/form_page6.dart';
 
 class FormPage5 extends StatefulWidget {
   const FormPage5({super.key});

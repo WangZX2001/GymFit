@@ -1,45 +1,44 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:gymfit/components/chatbot.dart';
-import 'package:gymfit/pages/form_page10.dart';
+import 'package:gymfit/pages/body_data/form_page9.dart';
 
-class FormPage9 extends StatefulWidget {
-  const FormPage9({super.key});
+class FormPage8 extends StatefulWidget {
+  const FormPage8({super.key});
 
   @override
-  State<FormPage9> createState() => _FormPage9State();
+  State<FormPage8> createState() => _FormPage8State();
 }
 
-class _FormPage9State extends State<FormPage9> {
+class _FormPage8State extends State<FormPage8> {
   final user = FirebaseAuth.instance.currentUser!;
 
-  String fitnesslevel = '';
+  String medicalcondition = '';
 
-  // Save fitness level to Firebase Firestore
-  void saveFitnessLevelToFirestore() async {
+  // Save medical condition to Firebase Firestore
+  void saveConditionToFirestore() async {
     final user = FirebaseAuth.instance.currentUser;
 
-    if (user != null && fitnesslevel.isNotEmpty) {
+    if (user != null && medicalcondition.isNotEmpty) {
       await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
-        'fitness level': fitnesslevel,
+        'medical condition': medicalcondition,
       }, SetOptions(merge: true));
     }
 
     Navigator.pushReplacement(
       // ignore: use_build_context_synchronously
       context,
-      MaterialPageRoute(builder: (context) => const FormPage10()),
+      MaterialPageRoute(builder: (context) => const FormPage9()),
     );
   }
 
-  Widget fitnessCard(String level) {
-    bool isSelected = fitnesslevel == level;
+  Widget conditionCard(String condition, String imagePath1, String imagePath2) {
+    bool isSelected = medicalcondition == condition;
 
     return GestureDetector(
       onTap: () {
         setState(() {
-          fitnesslevel = level;
+          medicalcondition = condition;
         });
       },
       child: Container(
@@ -53,25 +52,31 @@ class _FormPage9State extends State<FormPage9> {
             width: 2,
           ),
         ),
-        child: Text(
-          level,
-          style: TextStyle(
-            fontSize: 16,
-            color: isSelected ? Colors.blue : Colors.black,
-            fontWeight: FontWeight.w500,
-          ),
+        child: Row(
+          children: [
+            Image.asset(isSelected ? imagePath1 : imagePath2, height: 40),
+            const SizedBox(width: 20),
+            Text(
+              condition,
+              style: TextStyle(
+                fontSize: 16,
+                color: isSelected ? Colors.blue : Colors.black,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
   Widget nextButton() {
-    bool canProceed = fitnesslevel.isNotEmpty;
+    bool canProceed = medicalcondition.isNotEmpty;
 
     return GestureDetector(
       onTap: () {
         if (canProceed) {
-          saveFitnessLevelToFirestore();
+          saveConditionToFirestore();
         }
       },
 
@@ -113,24 +118,36 @@ class _FormPage9State extends State<FormPage9> {
               children: [
                 const SizedBox(height: 20),
                 Text(
-                  "What is your current fitness level?",
+                  "Have you had any pre existing medical condition?",
                   style: textTheme.headlineMedium,
                 ),
                 const SizedBox(height: 20),
                 Column(
-                  spacing: 30,
+                  spacing: 20,
                   children: [
-                    fitnessCard('Beginner'),
-                    fitnessCard('Intermediate'),
-                    fitnessCard('Advance'),
+                    conditionCard(
+                      'None',
+                      'lib/images/none_after.png',
+                      'lib/images/none_before.png',
+                    ),
+                    conditionCard(
+                      'High Blood Pressure',
+                      'lib/images/hypertension_after.png',
+                      'lib/images/hypertension_before.png',
+                    ),
+                    conditionCard(
+                      'Flu',
+                      'lib/images/sneeze_after.png',
+                      'lib/images/sneeze_before.png',
+                    ),
+                    conditionCard(
+                      'Bone Injuries',
+                      'lib/images/bone_after.png',
+                      'lib/images/bone_before.png',
+                    ),
                   ],
                 ),
                 const Spacer(),
-                Chatbot(
-                  text:
-                      '“To avoid showing exercises that are too advanced or too easy”',
-                ),
-                const SizedBox(height: 40),
                 nextButton(),
                 const SizedBox(height: 50),
               ],

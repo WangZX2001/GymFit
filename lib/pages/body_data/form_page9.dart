@@ -2,55 +2,49 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:gymfit/components/chatbot.dart';
-import 'package:gymfit/pages/form_page3.dart';
+import 'package:gymfit/pages/body_data/form_page10.dart';
 
-class FormPage2 extends StatefulWidget {
-  const FormPage2({super.key});
+class FormPage9 extends StatefulWidget {
+  const FormPage9({super.key});
 
   @override
-  State<FormPage2> createState() => _FormPage2State();
+  State<FormPage9> createState() => _FormPage9State();
 }
 
-class _FormPage2State extends State<FormPage2> {
+class _FormPage9State extends State<FormPage9> {
   final user = FirebaseAuth.instance.currentUser!;
 
-  //sign user out function
-  void signUserOut() {
-    FirebaseAuth.instance.signOut();
-  }
+  String fitnesslevel = '';
 
-  String selectedGender = '';
-
-  // Save selected gender to Firebase Firestore
-  void saveGenderToFirestore() async {
+  // Save fitness level to Firebase Firestore
+  void saveFitnessLevelToFirestore() async {
     final user = FirebaseAuth.instance.currentUser;
 
-    if (user != null && selectedGender.isNotEmpty) {
+    if (user != null && fitnesslevel.isNotEmpty) {
       await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
-        'gender': selectedGender,
+        'fitness level': fitnesslevel,
       }, SetOptions(merge: true));
     }
 
     Navigator.pushReplacement(
       // ignore: use_build_context_synchronously
       context,
-      MaterialPageRoute(builder: (context) => const FormPage3()),
+      MaterialPageRoute(builder: (context) => const FormPage10()),
     );
   }
 
-  Widget genderCard(String gender, String imagePath) {
-    bool isSelected = selectedGender == gender;
+  Widget fitnessCard(String level) {
+    bool isSelected = fitnesslevel == level;
 
     return GestureDetector(
       onTap: () {
-        //when user tap on the gender, the selectedgender will be set to the respective gender
         setState(() {
-          selectedGender = gender;
+          fitnesslevel = level;
         });
       },
       child: Container(
-        width: 140,
-        padding: const EdgeInsets.symmetric(vertical: 30),
+        width: 292,
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
         decoration: BoxDecoration(
           color: isSelected ? Color(0x6080BBFF) : Colors.grey[300],
           borderRadius: BorderRadius.circular(15),
@@ -59,24 +53,25 @@ class _FormPage2State extends State<FormPage2> {
             width: 2,
           ),
         ),
-        child: Column(
-          children: [
-            Image.asset(imagePath, height: 80),
-            const SizedBox(height: 10),
-            Text(gender, style: TextStyle(fontSize: 16)),
-          ],
+        child: Text(
+          level,
+          style: TextStyle(
+            fontSize: 16,
+            color: isSelected ? Colors.blue : Colors.black,
+            fontWeight: FontWeight.w500,
+          ),
         ),
       ),
     );
   }
 
   Widget nextButton() {
-    bool canProceed = selectedGender.isNotEmpty;
+    bool canProceed = fitnesslevel.isNotEmpty;
 
     return GestureDetector(
       onTap: () {
         if (canProceed) {
-          saveGenderToFirestore();
+          saveFitnessLevelToFirestore();
         }
       },
 
@@ -107,10 +102,7 @@ class _FormPage2State extends State<FormPage2> {
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        actions: [IconButton(onPressed: signUserOut, icon: Icon(Icons.logout))],
-      ),
+      appBar: AppBar(backgroundColor: Colors.white),
       backgroundColor: Colors.white,
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 30),
@@ -120,29 +112,25 @@ class _FormPage2State extends State<FormPage2> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    Text(
-                      "What is your Gender?",
-                      style: textTheme.headlineMedium,
-                    ),
-                  ],
+                Text(
+                  "What is your current fitness level?",
+                  style: textTheme.headlineMedium,
                 ),
                 const SizedBox(height: 20),
-                Chatbot(
-                  text:
-                      "“Gender influences key health metrics like BMR, calorie needs, body fat percentage, enabling more accurate fitness planning.”",
-                ),
-                const SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                Column(
+                  spacing: 30,
                   children: [
-                    genderCard('Male', 'lib/images/man.png'),
-                    genderCard('Female', 'lib/images/woman.png'),
+                    fitnessCard('Beginner'),
+                    fitnessCard('Intermediate'),
+                    fitnessCard('Advance'),
                   ],
                 ),
                 const Spacer(),
+                Chatbot(
+                  text:
+                      '“To avoid showing exercises that are too advanced or too easy”',
+                ),
+                const SizedBox(height: 40),
                 nextButton(),
                 const SizedBox(height: 50),
               ],

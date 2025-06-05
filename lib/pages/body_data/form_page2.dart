@@ -1,49 +1,51 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:gymfit/pages/form_page9.dart';
+import 'package:gymfit/components/chatbot.dart';
+import 'package:gymfit/pages/body_data/form_page3.dart';
 
-class FormPage8 extends StatefulWidget {
-  const FormPage8({super.key});
+class FormPage2 extends StatefulWidget {
+  const FormPage2({super.key});
 
   @override
-  State<FormPage8> createState() => _FormPage8State();
+  State<FormPage2> createState() => _FormPage2State();
 }
 
-class _FormPage8State extends State<FormPage8> {
+class _FormPage2State extends State<FormPage2> {
   final user = FirebaseAuth.instance.currentUser!;
 
-  String medicalcondition = '';
+  String selectedGender = '';
 
-  // Save medical condition to Firebase Firestore
-  void saveConditionToFirestore() async {
+  // Save selected gender to Firebase Firestore
+  void saveGenderToFirestore() async {
     final user = FirebaseAuth.instance.currentUser;
 
-    if (user != null && medicalcondition.isNotEmpty) {
+    if (user != null && selectedGender.isNotEmpty) {
       await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
-        'medical condition': medicalcondition,
+        'gender': selectedGender,
       }, SetOptions(merge: true));
     }
 
     Navigator.pushReplacement(
       // ignore: use_build_context_synchronously
       context,
-      MaterialPageRoute(builder: (context) => const FormPage9()),
+      MaterialPageRoute(builder: (context) => const FormPage3()),
     );
   }
 
-  Widget conditionCard(String condition, String imagePath1, String imagePath2) {
-    bool isSelected = medicalcondition == condition;
+  Widget genderCard(String gender, String imagePath) {
+    bool isSelected = selectedGender == gender;
 
     return GestureDetector(
       onTap: () {
+        //when user tap on the gender, the selectedgender will be set to the respective gender
         setState(() {
-          medicalcondition = condition;
+          selectedGender = gender;
         });
       },
       child: Container(
-        width: 292,
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+        width: 140,
+        padding: const EdgeInsets.symmetric(vertical: 30),
         decoration: BoxDecoration(
           color: isSelected ? Color(0x6080BBFF) : Colors.grey[300],
           borderRadius: BorderRadius.circular(15),
@@ -52,18 +54,11 @@ class _FormPage8State extends State<FormPage8> {
             width: 2,
           ),
         ),
-        child: Row(
+        child: Column(
           children: [
-            Image.asset(isSelected ? imagePath1 : imagePath2, height: 40),
-            const SizedBox(width: 20),
-            Text(
-              condition,
-              style: TextStyle(
-                fontSize: 16,
-                color: isSelected ? Colors.blue : Colors.black,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
+            Image.asset(imagePath, height: 80),
+            const SizedBox(height: 10),
+            Text(gender, style: TextStyle(fontSize: 16)),
           ],
         ),
       ),
@@ -71,12 +66,12 @@ class _FormPage8State extends State<FormPage8> {
   }
 
   Widget nextButton() {
-    bool canProceed = medicalcondition.isNotEmpty;
+    bool canProceed = selectedGender.isNotEmpty;
 
     return GestureDetector(
       onTap: () {
         if (canProceed) {
-          saveConditionToFirestore();
+          saveGenderToFirestore();
         }
       },
 
@@ -117,34 +112,26 @@ class _FormPage8State extends State<FormPage8> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const SizedBox(height: 20),
-                Text(
-                  "Have you had any pre existing medical condition?",
-                  style: textTheme.headlineMedium,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    Text(
+                      "What is your Gender?",
+                      style: textTheme.headlineMedium,
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 20),
-                Column(
-                  spacing: 20,
+                Chatbot(
+                  text:
+                      "“Gender influences key health metrics like BMR, calorie needs, body fat percentage, enabling more accurate fitness planning.”",
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    conditionCard(
-                      'None',
-                      'lib/images/none_after.png',
-                      'lib/images/none_before.png',
-                    ),
-                    conditionCard(
-                      'High Blood Pressure',
-                      'lib/images/hypertension_after.png',
-                      'lib/images/hypertension_before.png',
-                    ),
-                    conditionCard(
-                      'Flu',
-                      'lib/images/sneeze_after.png',
-                      'lib/images/sneeze_before.png',
-                    ),
-                    conditionCard(
-                      'Bone Injuries',
-                      'lib/images/bone_after.png',
-                      'lib/images/bone_before.png',
-                    ),
+                    genderCard('Male', 'lib/images/man.png'),
+                    genderCard('Female', 'lib/images/woman.png'),
                   ],
                 ),
                 const Spacer(),
