@@ -118,7 +118,10 @@ class ExerciseInformationPage extends StatelessWidget {
                                 description: e.description,
                                 videoUrl: e.videoUrl,
                                 mainMuscle: e.mainMuscle,
-                                precautions: e.precautions,
+                                secondaryMuscle: e.secondaryMuscle,
+                                experienceLevel: e.experienceLevel,
+                                howTo: e.howTo,
+                                proTips: e.proTips,
                                 onAdd: () {
                                   ScaffoldMessenger.of(ctx).showSnackBar(
                                     SnackBar(content: Text('${e.title} added to your plan')),
