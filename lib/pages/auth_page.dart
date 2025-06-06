@@ -24,9 +24,7 @@ class AuthPage extends StatelessWidget {
                       .get(),
               builder: (context, userSnapshot) {
                 if (!userSnapshot.hasData) {
-                  return const Scaffold(
-                    body: Center(child: CircularProgressIndicator()),
-                  );
+                  return const SizedBox();
                 }
 
                 final userData =
@@ -40,7 +38,9 @@ class AuthPage extends StatelessWidget {
                     userData.containsKey('target weight') &&
                     userData.containsKey('goal');
 
-                return hasAllFields ? const PersistentNavBar(initialIndex: 0) : const FormPage1();
+                return hasAllFields
+                    ? const PersistentNavBar(initialIndex: 0)
+                    : const FormPage1();
               },
             );
           } else {
