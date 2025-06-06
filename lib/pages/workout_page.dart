@@ -1,82 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:gymfit/pages/exercise_information_page.dart';
-import 'package:gymfit/pages/quick_start_page.dart';
-import 'package:persistent_bottom_nav_bar_v2/persistent_bottom_nav_bar_v2.dart';
+import 'package:gymfit/components/quick_start_overlay.dart';
 
-class WorkoutPage extends StatefulWidget {
+class WorkoutPage extends StatelessWidget {
   const WorkoutPage({super.key});
-
-  @override
-  State<WorkoutPage> createState() => _WorkoutPageState();
-}
-
-class _WorkoutPageState extends State<WorkoutPage> {
-  OverlayEntry? _minibarEntry;
-  void _openQuickStart() {
-    // Remove any existing minimized bar
-    _minibarEntry?.remove();
-    _minibarEntry = null;
-    // Open full Quick Start page
-    pushScreenWithNavBar(
-      context,
-      QuickStartPage(onMinimize: () {
-        Navigator.of(context).pop();
-        _showMinibar();
-      }),
-    );
-  }
-
-  /// Show a non-blocking minimized Quick Start bar via an overlay
-  void _showMinibar() {
-    // Remove any existing overlay
-    _minibarEntry?.remove();
-    final overlay = Overlay.of(context);
-    final bottomOffset = MediaQuery.of(context).padding.bottom + kBottomNavigationBarHeight - 50.0;
-    _minibarEntry = OverlayEntry(
-      builder: (context) => Positioned(
-        left: 16.0,
-        right: 16.0,
-        bottom: bottomOffset,
-        child: Material(
-          elevation: 4,
-          borderRadius: BorderRadius.circular(16),
-          child: GestureDetector(
-            onTap: () {
-              // Remove minimized bar and reopen full Quick Start
-              _minibarEntry?.remove();
-              _minibarEntry = null;
-              _openQuickStart();
-            },
-            child: Container(
-              height: 60,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: const [
-                  Icon(Icons.keyboard_arrow_up, color: Colors.black),
-                  SizedBox(width: 8),
-                  Text(
-                    'Quick Start',
-                    style: TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-    overlay.insert(_minibarEntry!);
-  }
-
-  @override
-  void dispose() {
-    _minibarEntry?.remove();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -89,7 +16,7 @@ class _WorkoutPageState extends State<WorkoutPage> {
               _buildWorkoutCard(
                 'Quick Start',
                 'lib/images/quickStart.jpg',
-                _openQuickStart,
+                () => QuickStartOverlay.openQuickStart(context),
                 alignment: Alignment.bottomCenter,
               ),
               _buildWorkoutCard(

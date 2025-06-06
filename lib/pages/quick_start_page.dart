@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:gymfit/components/quick_start_overlay.dart';
 
 class QuickStartPage extends StatelessWidget {
-  final VoidCallback onMinimize;
-  const QuickStartPage({super.key, required this.onMinimize});
+  const QuickStartPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -13,7 +13,7 @@ class QuickStartPage extends StatelessWidget {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.keyboard_arrow_down, color: Colors.black),
-          onPressed: onMinimize,
+          onPressed: () => QuickStartOverlay.minimize(context),
         ),
         title: const Text(
           'Quick Start',
