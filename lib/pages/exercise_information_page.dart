@@ -2,20 +2,42 @@ import 'package:flutter/material.dart';
 import 'package:gymfit/packages/exercise_information_repository/exercise_information_repository.dart';
 import 'package:gymfit/pages/exercise_description_page.dart';
 
-class ExerciseInformationPage extends StatelessWidget {
-  const ExerciseInformationPage({super.key});
+class ExerciseInformationPage extends StatefulWidget {
+  final bool isSelectionMode;
+  final List<String> initialSelectedExercises;
+  const ExerciseInformationPage({Key? key, this.isSelectionMode = false, this.initialSelectedExercises = const []}) : super(key: key);
+
+  @override
+  State<ExerciseInformationPage> createState() => _ExerciseInformationPageState();
+}
+
+class _ExerciseInformationPageState extends State<ExerciseInformationPage> {
+  final Set<String> _selectedTitles = {};
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.isSelectionMode) {
+      _selectedTitles.addAll(widget.initialSelectedExercises);
+    }
+  }
 
   Widget _buildExerciseCard(
     String title,
     dynamic icon, {
     bool isImage = false,
     String? mainMuscle,
+    bool isSelected = false,
   }) {
     return Container(
       margin: const EdgeInsets.all(4),
+      constraints: const BoxConstraints.expand(),
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border.all(color: Colors.grey[300]!, width: 2),
+        border: Border.all(
+          color: isSelected ? Colors.blue : Colors.grey[300]!,
+          width: isSelected ? 4 : 2,
+        ),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Column(
@@ -73,12 +95,20 @@ class ExerciseInformationPage extends StatelessWidget {
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
-          'Exercise Information',
+          'Exercises',
           style: TextStyle(
             color: Colors.black,
             fontWeight: FontWeight.bold,
           ),
         ),
+        actions: widget.isSelectionMode
+            ? [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, _selectedTitles.toList()),
+                  child: const Text('Done', style: TextStyle(color: Colors.black)),
+                ),
+              ]
+            : null,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1.0),
           child: Container(
@@ -94,7 +124,7 @@ class ExerciseInformationPage extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
-            return Center(child: Text('Error: \\${snapshot.error}'));
+            return Center(child: Text('Error: \${snapshot.error}'));
           }
           final items = snapshot.data ?? [];
           final sortedItems = List<ExerciseInformation>.from(items)
@@ -108,8 +138,19 @@ class ExerciseInformationPage extends StatelessWidget {
                   mainAxisSpacing: 6,
                   crossAxisSpacing: 6,
                   childAspectRatio: 1,
-                  children: sortedItems.map((e) => GestureDetector(
-                        onTap: () {
+                  children: sortedItems.map((e) {
+                    final isSelected = widget.isSelectionMode && _selectedTitles.contains(e.title);
+                    return GestureDetector(
+                      onTap: () {
+                        if (widget.isSelectionMode) {
+                          setState(() {
+                            if (isSelected) {
+                              _selectedTitles.remove(e.title);
+                            } else {
+                              _selectedTitles.add(e.title);
+                            }
+                          });
+                        } else {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
@@ -124,26 +165,41 @@ class ExerciseInformationPage extends StatelessWidget {
                                 proTips: e.proTips,
                                 onAdd: () {
                                   ScaffoldMessenger.of(ctx).showSnackBar(
-                                    SnackBar(content: Text('${e.title} added to your plan')),
+                                    SnackBar(content: Text('\${e.title} added to your plan')),
                                   );
                                 },
                               ),
                             ),
                           );
-                        },
-                        child: _buildExerciseCard(
-                          e.title,
-                          e.icon,
-                          isImage: e.isImage,
-                          mainMuscle: e.mainMuscle,
-                        ),
-                      )).toList(),
+                        }
+                      },
+                      child: Stack(
+                        children: [
+                          _buildExerciseCard(
+                            e.title,
+                            e.icon,
+                            isImage: e.isImage,
+                            mainMuscle: e.mainMuscle,
+                            isSelected: isSelected,
+                          ),
+                          if (isSelected)
+                            const Positioned(
+                              top: 8,
+                              right: 8,
+                              child: Icon(Icons.check_circle, color: Colors.blue),
+                            ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
                 ),
               ),
               Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Text(
-                  'Click on any exercise icon to view specific instructions.',
+                  widget.isSelectionMode
+                      ? 'Tap exercises to select them, then press Done.'
+                      : 'Click on any exercise icon to view specific instructions.',
                   style: TextStyle(
                     color: Colors.grey[600],
                     fontSize: 12,

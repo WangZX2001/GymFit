@@ -3,6 +3,7 @@ import 'package:gymfit/pages/quick_start_page.dart';
 
 class QuickStartOverlay {
   static OverlayEntry? _minibarEntry;
+  static List<QuickStartExercise> selectedExercises = [];
 
   /// Opens the full Quick Start page without the persistent nav bar, sliding up from bottom.
   static void openQuickStart(BuildContext context) {
@@ -10,7 +11,7 @@ class QuickStartOverlay {
     // Open Quick Start page without nav bar, sliding up over 200ms
     Navigator.of(context, rootNavigator: true).push(
       PageRouteBuilder(
-        pageBuilder: (ctx, animation, secondaryAnimation) => const QuickStartPage(),
+        pageBuilder: (ctx, animation, secondaryAnimation) => QuickStartPage(initialSelectedExercises: selectedExercises),
         transitionDuration: const Duration(milliseconds: 200),
         reverseTransitionDuration: const Duration(milliseconds: 200),
         transitionsBuilder: (ctx, animation, secAnim, child) {
