@@ -5,7 +5,7 @@ import 'package:gymfit/pages/exercise_description_page.dart';
 class ExerciseInformationPage extends StatefulWidget {
   final bool isSelectionMode;
   final List<String> initialSelectedExercises;
-  const ExerciseInformationPage({Key? key, this.isSelectionMode = false, this.initialSelectedExercises = const []}) : super(key: key);
+  const ExerciseInformationPage({super.key, this.isSelectionMode = false, this.initialSelectedExercises = const []});
 
   @override
   State<ExerciseInformationPage> createState() => _ExerciseInformationPageState();

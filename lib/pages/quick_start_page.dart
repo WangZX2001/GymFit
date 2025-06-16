@@ -12,7 +12,7 @@ class QuickStartExercise {
 
 class QuickStartPage extends StatefulWidget {
   final List<QuickStartExercise> initialSelectedExercises;
-  const QuickStartPage({Key? key, this.initialSelectedExercises = const <QuickStartExercise>[]}) : super(key: key);
+  const QuickStartPage({super.key, this.initialSelectedExercises = const <QuickStartExercise>[]});
 
   @override
   State<QuickStartPage> createState() => _QuickStartPageState();
