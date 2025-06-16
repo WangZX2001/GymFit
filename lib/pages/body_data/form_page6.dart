@@ -59,9 +59,9 @@ class _FormPage6State extends State<FormPage6> {
               .collection('users')
               .doc(user.uid)
               .get();
-      if (doc.exists && doc.data()!.containsKey('weight')) {
+      if (doc.exists && doc.data()!.containsKey('starting weight')) {
         setState(() {
-          userWeight = (doc['weight'] as num).toDouble();
+          userWeight = (doc['starting weight'] as num).toDouble();
         });
       }
     }

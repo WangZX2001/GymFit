@@ -67,13 +67,12 @@ class _HomePageState extends State<HomePage> {
                     ClipRRect(
                       borderRadius: BorderRadius.circular(50),
                       child: Container(
-                        color: Colors.blue[300],
                         width: 80,
                         height: 80,
-                        child: const Icon(
-                          Icons.fitness_center,
-                          size: 40,
-                          color: Colors.white,
+                        color: Colors.blue[300],
+                        child: Image.asset(
+                          'lib/images/fitness.png',
+                          fit: BoxFit.cover,
                         ),
                       ),
                     ),
