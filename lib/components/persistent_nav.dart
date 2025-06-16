@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:persistent_bottom_nav_bar_v2/persistent_bottom_nav_bar_v2.dart';
-import 'package:gymfit/pages/home_page_2.dart';
+import 'package:gymfit/pages/home_page.dart';
 import 'package:gymfit/pages/history_page.dart';
 import 'package:gymfit/pages/workout_page.dart';
 import 'package:gymfit/pages/me_page.dart';

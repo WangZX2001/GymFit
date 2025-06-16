@@ -78,7 +78,7 @@ class _FormPage5State extends State<FormPage5> {
 
     if (user != null) {
       Map<String, dynamic> data = {
-        'weight': double.parse(selectedWeight.toStringAsFixed(1)),
+        'starting weight': double.parse(selectedWeight.toStringAsFixed(1)),
       };
 
       if (userHeight != null) {

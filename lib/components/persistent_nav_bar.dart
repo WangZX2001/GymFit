@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:persistent_bottom_nav_bar_v2/persistent_bottom_nav_bar_v2.dart';
-import 'package:gymfit/pages/home_page_2.dart';
+import 'package:gymfit/pages/home_page.dart';
 import 'package:gymfit/pages/history_page.dart';
 import 'package:gymfit/pages/workout_page.dart';
 import 'package:gymfit/pages/me_page.dart';
@@ -12,39 +12,33 @@ class PersistentNavBar extends StatelessWidget {
   const PersistentNavBar({super.key, this.initialIndex = 0});
 
   List<PersistentTabConfig> _tabs() => [
-        PersistentTabConfig(
-          screen: const HomePage(),
-          item: ItemConfig(
-            icon: AnimatedIconWrapper(
-              icon: AnimatedIcons.home_menu,
-              duration: const Duration(milliseconds: 400),
-              curve: Curves.easeInOut,
-            ),
-            title: 'Home',
-          ),
+    PersistentTabConfig(
+      screen: const HomePage(),
+      item: ItemConfig(
+        icon: AnimatedIconWrapper(
+          icon: AnimatedIcons.home_menu,
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeInOut,
         ),
-        PersistentTabConfig(
-          screen: const HistoryPage(),
-          item: ItemConfig(
-            icon: const Icon(Icons.history),
-            title: 'History',
-          ),
-        ),
-        PersistentTabConfig(
-          screen: const WorkoutPage(),
-          item: ItemConfig(
-            icon: const Icon(Icons.fitness_center),
-            title: 'Workout',
-          ),
-        ),
-        PersistentTabConfig(
-          screen: const MePage(),
-          item: ItemConfig(
-            icon: const Icon(Icons.person),
-            title: 'Me',
-          ),
-        ),
-      ];
+        title: 'Home',
+      ),
+    ),
+    PersistentTabConfig(
+      screen: const HistoryPage(),
+      item: ItemConfig(icon: const Icon(Icons.history), title: 'History'),
+    ),
+    PersistentTabConfig(
+      screen: const WorkoutPage(),
+      item: ItemConfig(
+        icon: const Icon(Icons.fitness_center),
+        title: 'Workout',
+      ),
+    ),
+    PersistentTabConfig(
+      screen: const MePage(),
+      item: ItemConfig(icon: const Icon(Icons.person), title: 'Me'),
+    ),
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -52,24 +46,23 @@ class PersistentNavBar extends StatelessWidget {
     return PersistentTabView(
       controller: controller,
       tabs: _tabs(),
-      navBarBuilder: (navBarConfig) => Style2BottomNavBar(
-        navBarConfig: navBarConfig,
-        navBarDecoration: NavBarDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(8),
-          boxShadow: [
-            BoxShadow(color: Colors.black26, blurRadius: 10),
-          ],
-        ),
-        itemAnimationProperties: const ItemAnimation(
-          duration: Duration(milliseconds: 400),
-          curve: Curves.easeInOut,
-        ),
-      ),
+      navBarBuilder:
+          (navBarConfig) => Style2BottomNavBar(
+            navBarConfig: navBarConfig,
+            navBarDecoration: NavBarDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 10)],
+            ),
+            itemAnimationProperties: const ItemAnimation(
+              duration: Duration(milliseconds: 400),
+              curve: Curves.easeInOut,
+            ),
+          ),
       screenTransitionAnimation: const ScreenTransitionAnimation(
         duration: Duration(milliseconds: 400),
         curve: Curves.easeInOut,
       ),
     );
   }
-} 
+}
