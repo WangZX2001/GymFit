@@ -49,13 +49,13 @@ class _HomePageState extends State<HomePage> {
                         const Text(
                           'Welcome Back',
                           style: TextStyle(
-                            fontSize: 32,
+                            fontSize: 26,
                             fontWeight: FontWeight.bold,
                             color: Colors.black,
                           ),
                         ),
                         Text(
-                          '${_getGreeting()} Remember to Stay\nHydrated',
+                          '${_getGreeting()} Remember \nto Stay Hydrated',
                           style: const TextStyle(
                             fontSize: 16,
                             color: Colors.black,

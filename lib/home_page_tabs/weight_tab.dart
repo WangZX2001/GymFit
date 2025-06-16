@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:gymfit/pages/add_weight_page.dart';
 
 class WeightTab extends StatefulWidget {
   const WeightTab({super.key});
@@ -30,10 +31,24 @@ class _WeightTabState extends State<WeightTab> {
               .doc(user.uid)
               .get();
       final data = doc.data();
+
+      final weightLogSnap =
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .collection('weightLogs')
+              .orderBy('date', descending: true)
+              .limit(1)
+              .get();
+
       if (data != null) {
         setState(() {
           startingWeight = (data['starting weight'] as num?)?.toDouble();
           targetWeight = (data['target weight'] as num?)?.toDouble();
+          if (weightLogSnap.docs.isNotEmpty) {
+            currentWeight =
+                (weightLogSnap.docs.first['weight'] as num?)?.toDouble();
+          }
           isLoading = false;
         });
       }
@@ -72,10 +87,14 @@ class _WeightTabState extends State<WeightTab> {
                   borderRadius: BorderRadius.circular(50),
                   border: Border.all(color: Colors.grey.shade800, width: 2),
                 ),
-                child: const Text(
-                  //need to work on this
-                  'Need Work',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                child: Text(
+                  currentWeight != null
+                      ? '${currentWeight!.toStringAsFixed(1)} kg'
+                      : '--',
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
               const SizedBox(height: 5),
@@ -105,8 +124,8 @@ class _WeightTabState extends State<WeightTab> {
                     // Start & Target Weight below arc
                     Positioned(
                       top: 110,
-                      left: 20,
-                      right: 20,
+                      left: 0,
+                      right: 0,
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -197,13 +216,13 @@ class _WeightTabState extends State<WeightTab> {
 
         const SizedBox(height: 20),
 
-        // Weight Trend Section
+        // Weight Trend
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: const [
+          children: [
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+              children: const [
                 Text(
                   'Weight Trend',
                   style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
@@ -214,10 +233,36 @@ class _WeightTabState extends State<WeightTab> {
                 ),
               ],
             ),
-            CircleAvatar(
-              radius: 20,
-              backgroundColor: Colors.black,
-              child: Icon(Icons.add, color: Colors.white),
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const AddWeightPage(),
+                  ),
+                ).then((_) {
+                  fetchWeights(); // Refresh current weight after returning
+                });
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.black,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Text(
+                  'Add New Weight',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                    fontFamily: 'DM Sans',
+                  ),
+                ),
+              ),
             ),
           ],
         ),
@@ -259,7 +304,7 @@ class TopArcPainter extends CustomPainter {
           ..style = PaintingStyle.stroke;
 
     final Rect rect = Rect.fromLTRB(0, 0, size.width, size.height * 2);
-    canvas.drawArc(rect, 3.14, 3.14, false, paint); // draws a top arc
+    canvas.drawArc(rect, 3.14, 3.14, false, paint);
   }
 
   @override
