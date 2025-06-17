@@ -3,6 +3,7 @@ import 'package:gymfit/home_page_tabs/calories_tab.dart';
 import 'package:gymfit/home_page_tabs/water_tab.dart';
 import 'package:gymfit/home_page_tabs/weight_tab.dart';
 
+//Check whether the graph is working properly
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
