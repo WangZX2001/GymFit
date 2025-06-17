@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:gymfit/pages/add_weight_page.dart';
+import 'package:gymfit/components/weight_trend_graph.dart'; // ensure this contains WeightTrendGraphState
 
 class WeightTab extends StatefulWidget {
   const WeightTab({super.key});
@@ -15,6 +16,8 @@ class _WeightTabState extends State<WeightTab> {
   double? targetWeight;
   double? currentWeight;
   bool isLoading = true;
+
+  final GlobalKey<WeightTrendGraphState> _graphKey = GlobalKey();
 
   @override
   void initState() {
@@ -75,7 +78,7 @@ class _WeightTabState extends State<WeightTab> {
           ),
           child: Column(
             children: [
-              Image.asset(width: 120, height: 50, 'lib/images/compass.png'),
+              Image.asset('lib/images/compass.png', width: 120, height: 50),
               const SizedBox(height: 10),
 
               Container(
@@ -102,8 +105,8 @@ class _WeightTabState extends State<WeightTab> {
                 'Current Weight',
                 style: TextStyle(color: Colors.black, fontSize: 14),
               ),
-
               const SizedBox(height: 10),
+
               SizedBox(
                 width: double.infinity,
                 height: 180,
@@ -111,7 +114,6 @@ class _WeightTabState extends State<WeightTab> {
                   alignment: Alignment.center,
                   clipBehavior: Clip.none,
                   children: [
-                    // Arc
                     Positioned(
                       top: 0,
                       child: SizedBox(
@@ -121,7 +123,6 @@ class _WeightTabState extends State<WeightTab> {
                       ),
                     ),
 
-                    // Start & Target Weight below arc
                     Positioned(
                       top: 110,
                       left: 0,
@@ -169,7 +170,6 @@ class _WeightTabState extends State<WeightTab> {
                       ),
                     ),
 
-                    // Person image
                     Positioned(
                       top: 80,
                       child: Container(
@@ -183,7 +183,6 @@ class _WeightTabState extends State<WeightTab> {
                       ),
                     ),
 
-                    // Good Job Button
                     Positioned(
                       top: 155,
                       child: Container(
@@ -216,7 +215,7 @@ class _WeightTabState extends State<WeightTab> {
 
         const SizedBox(height: 20),
 
-        // Weight Trend
+        // Weight Trend Header
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -241,7 +240,8 @@ class _WeightTabState extends State<WeightTab> {
                     builder: (context) => const AddWeightPage(),
                   ),
                 ).then((_) {
-                  fetchWeights(); // Refresh current weight after returning
+                  fetchWeights(); // refresh current weight
+                  _graphKey.currentState?.refresh(); // refresh graph
                 });
               },
               child: Container(
@@ -269,26 +269,8 @@ class _WeightTabState extends State<WeightTab> {
 
         const SizedBox(height: 10),
 
-        Container(
-          height: 100,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Colors.grey.shade300, Colors.grey.shade400],
-            ),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: const Center(
-            child: Text(
-              'Weight Trend Graph',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ),
+        // Graph with key
+        WeightTrendGraph(key: _graphKey),
       ],
     );
   }
