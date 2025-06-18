@@ -1,5 +1,4 @@
 import 'package:firebase_auth/firebase_auth.dart';
-//import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:gymfit/auth_service.dart';
 import 'package:gymfit/components/my_button.dart';
@@ -15,20 +14,18 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
-  //Text Editing Controller
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   final confirmedpasswordController = TextEditingController();
 
-  //Sign User Up
   void signUserUp() async {
-    // First check if passwords match
+    // Check if passwords match
     if (passwordController.text != confirmedpasswordController.text) {
       showErrorDialog('Passwords don\'t match');
       return;
     }
 
-    // Now show loading spinner
+    // Show loading spinner
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -39,18 +36,19 @@ class _RegisterPageState extends State<RegisterPage> {
       },
     );
 
-    // Try creating the user
     try {
       await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: emailController.text.trim(),
         password: passwordController.text.trim(),
       );
 
-      // ignore: use_build_context_synchronously
-      Navigator.pop(context); // close the spinner
+      if (!mounted) return;
+      Navigator.pop(context); // Close spinner
+
+      // Navigate or show success message here if needed
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;
-      Navigator.pop(context); // close the spinner
+      Navigator.pop(context); // Close spinner
 
       if (e.code == 'email-already-in-use') {
         showErrorDialog('This email is already registered.');
@@ -64,13 +62,12 @@ class _RegisterPageState extends State<RegisterPage> {
     }
   }
 
-  //dialog box for
   void showErrorDialog(String message) {
     showDialog(
       context: context,
       builder:
           (context) => AlertDialog(
-            title: const Text('Login Failed'),
+            title: const Text('Registration Failed'),
             content: Text(message),
             actions: [
               TextButton(
@@ -102,9 +99,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-
                 const SizedBox(height: 5),
-
                 Text(
                   'GymFit \u00a9',
                   style: TextStyle(
@@ -114,9 +109,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     fontWeight: FontWeight.w300,
                   ),
                 ),
-
                 const SizedBox(height: 5),
-
                 Text(
                   'Let\'s create an account now!',
                   style: TextStyle(
@@ -126,10 +119,8 @@ class _RegisterPageState extends State<RegisterPage> {
                     fontWeight: FontWeight.w300,
                   ),
                 ),
-
                 const SizedBox(height: 10),
 
-                //Username Textfield
                 MyTextfield(
                   controller: emailController,
                   hintText: 'Email Address',
@@ -138,7 +129,6 @@ class _RegisterPageState extends State<RegisterPage> {
 
                 const SizedBox(height: 10),
 
-                //Password Textfield
                 MyTextfield(
                   controller: passwordController,
                   hintText: 'Password',
@@ -147,23 +137,21 @@ class _RegisterPageState extends State<RegisterPage> {
 
                 const SizedBox(height: 10),
 
-                //Confirm Password Textfield
                 MyTextfield(
                   controller: confirmedpasswordController,
-                  hintText: 'Comfirm Password',
+                  hintText: 'Confirm Password',
                   obscureText: true,
                 ),
 
                 const SizedBox(height: 10),
 
-                //Forget Password
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 30),
                       child: Text(
-                        'Forget the Password?',
+                        'Forgot your password?',
                         style: TextStyle(
                           color: Colors.black,
                           fontFamily: 'DMSans',
@@ -177,7 +165,6 @@ class _RegisterPageState extends State<RegisterPage> {
 
                 const SizedBox(height: 30),
 
-                //Sign In Button
                 MyButton(onTap: signUserUp, text: "Sign Up Now"),
 
                 const SizedBox(height: 10),
@@ -212,9 +199,14 @@ class _RegisterPageState extends State<RegisterPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    //google button
-                    SquareTile(ImagePath: 'lib/images/google icon.png', onTap: () => AuthService().signInWithGoogle(),),
-                    SquareTile(ImagePath: 'lib/images/apple icon.png', onTap: () {},),
+                    SquareTile(
+                      ImagePath: 'lib/images/google icon.png',
+                      onTap: () => AuthService().signInWithGoogle(),
+                    ),
+                    SquareTile(
+                      ImagePath: 'lib/images/apple icon.png',
+                      onTap: () {}, // Apple login logic placeholder
+                    ),
                   ],
                 ),
 
