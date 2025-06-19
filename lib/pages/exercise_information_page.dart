@@ -13,10 +13,12 @@ class ExerciseInformationPage extends StatefulWidget {
 
 class _ExerciseInformationPageState extends State<ExerciseInformationPage> {
   final Set<String> _selectedTitles = {};
+  late Future<List<ExerciseInformation>> _exerciseFuture;
 
   @override
   void initState() {
     super.initState();
+    _exerciseFuture = ExerciseInformationRepository().getAllExerciseInformation();
     if (widget.isSelectionMode) {
       _selectedTitles.addAll(widget.initialSelectedExercises);
     }
@@ -118,7 +120,7 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage> {
         ),
       ),
       body: FutureBuilder<List<ExerciseInformation>>(
-        future: ExerciseInformationRepository().getAllExerciseInformation(),
+        future: _exerciseFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState != ConnectionState.done) {
             return const Center(child: CircularProgressIndicator());
