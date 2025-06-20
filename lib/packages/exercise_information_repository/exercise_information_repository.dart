@@ -3,11 +3,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class ExerciseInformation {
   final String title;
   final dynamic icon;
-  final bool isImage;
-  final double? customPadding;
   final String mainMuscle;
   final String secondaryMuscle;
   final String experienceLevel;
+  final String equipment;
   final String howTo;
   final String description;
   final String? videoUrl;
@@ -16,11 +15,10 @@ class ExerciseInformation {
   const ExerciseInformation({
     required this.title,
     required this.icon,
-    this.isImage = false,
-    this.customPadding,
     required this.mainMuscle,
     required this.secondaryMuscle,
     required this.experienceLevel,
+    required this.equipment,
     required this.howTo,
     required this.description,
     this.videoUrl,
@@ -41,15 +39,14 @@ class ExerciseInformationRepository {
     return snapshot.docs.map((doc) {
       final data = doc.data();
       return ExerciseInformation(
-        title: data['title'] as String,
-        icon: data['icon'] as String,
-        isImage: (data['isImage'] as bool?) ?? (data['is image'] as bool? ?? false),
-        customPadding: (data['customPadding'] as num?)?.toDouble(),
-        mainMuscle: data['main muscle'] as String,
+        title: data['title'] as String? ?? 'Unknown Exercise',
+        icon: data['icon'] ?? 'fitness_center',
+        mainMuscle: data['main muscle'] as String? ?? 'Unknown',
         secondaryMuscle: data['secondary muscle'] as String? ?? '',
-        experienceLevel: data['experience level'] as String? ?? '',
+        experienceLevel: data['experience level'] as String? ?? 'Beginner',
+        equipment: data['equipment'] as String? ?? 'Bodyweight',
         howTo: data['howTo'] as String? ?? 'Instructions will be available soon.',
-        description: data['description'] as String? ?? 'Description for ${data['title']} will be available soon.',
+        description: data['description'] as String? ?? 'Description will be available soon.',
         videoUrl: data['videoUrl'] as String?,
         proTips: () {
           final dynamic tips = data['proTips'];
