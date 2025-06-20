@@ -281,8 +281,8 @@ class QuickStartOverlay {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('End Workout'),
-          content: const Text('Are you sure you want to end workout?'),
+          title: const Text('Delete Workout'),
+          content: const Text('Are you sure you want to delete workout?'),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),

@@ -369,7 +369,7 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage> {
                 if (widget.isSelectionMode)
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.all(16.0),
+                    padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 32.0),
                     child: ElevatedButton(
                       onPressed:
                           () =>
