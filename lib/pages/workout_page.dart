@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:gymfit/pages/exercise_information_page.dart';
+import 'package:gymfit/components/quick_start_overlay.dart';
 
 class WorkoutPage extends StatelessWidget {
   const WorkoutPage({super.key});
@@ -15,7 +16,7 @@ class WorkoutPage extends StatelessWidget {
               _buildWorkoutCard(
                 'Quick Start',
                 'lib/images/quickStart.jpg',
-                () {},
+                () => QuickStartOverlay.openQuickStart(context),
                 alignment: Alignment.bottomCenter,
               ),
               _buildWorkoutCard(

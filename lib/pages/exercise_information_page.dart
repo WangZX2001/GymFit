@@ -1,22 +1,167 @@
 import 'package:flutter/material.dart';
 import 'package:gymfit/packages/exercise_information_repository/exercise_information_repository.dart';
 import 'package:gymfit/pages/exercise_description_page.dart';
+import 'package:gymfit/pages/exercise_filter_page.dart';
+import 'package:gymfit/components/quick_start_overlay.dart';
 
-class ExerciseInformationPage extends StatelessWidget {
-  const ExerciseInformationPage({super.key});
+class ExerciseInformationPage extends StatefulWidget {
+  final bool isSelectionMode;
+  final List<String> initialSelectedExercises;
+  const ExerciseInformationPage({
+    super.key,
+    this.isSelectionMode = false,
+    this.initialSelectedExercises = const [],
+  });
+
+  @override
+  State<ExerciseInformationPage> createState() =>
+      _ExerciseInformationPageState();
+}
+
+class _ExerciseInformationPageState extends State<ExerciseInformationPage> {
+  final Set<String> _selectedTitles = {};
+  late Future<List<ExerciseInformation>> _exerciseFuture;
+  Map<String, dynamic> _currentFilters = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _exerciseFuture =
+        ExerciseInformationRepository().getAllExerciseInformation();
+    if (widget.isSelectionMode) {
+      _selectedTitles.addAll(widget.initialSelectedExercises);
+    }
+
+    // Hide the quick start minibar when entering this page (with memory)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      QuickStartOverlay.hideMinibarWithMemory();
+    });
+  }
+
+  void _handlePop() {
+    // Restore the minibar when navigating back
+    // Use a post-frame callback to ensure we're in the right context after navigation
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Get the root navigator context
+      final rootContext = Navigator.of(context, rootNavigator: true).context;
+      QuickStartOverlay.restoreMinibarIfNeeded(rootContext);
+    });
+  }
+
+  void _openFilterPage() async {
+    final result = await Navigator.push<Map<String, dynamic>>(
+      context,
+      MaterialPageRoute(
+        builder:
+            (context) => ExerciseFilterPage(initialFilters: _currentFilters),
+      ),
+    );
+
+    if (result != null) {
+      setState(() {
+        _currentFilters = result;
+      });
+    }
+  }
+
+  List<ExerciseInformation> _applyFilters(List<ExerciseInformation> exercises) {
+    if (_currentFilters.isEmpty) return exercises;
+
+    return exercises.where((exercise) {
+      final mainMuscles = _currentFilters['mainMuscles'] as List<String>? ?? [];
+      final secondaryMuscles =
+          _currentFilters['secondaryMuscles'] as List<String>? ?? [];
+      final experienceLevels =
+          _currentFilters['experienceLevels'] as List<String>? ?? [];
+      final equipment = _currentFilters['equipment'] as List<String>? ?? [];
+
+      bool matchesMainMuscle =
+          mainMuscles.isEmpty ||
+          mainMuscles.any(
+            (muscle) => exercise.mainMuscle.toLowerCase().contains(
+              muscle.toLowerCase(),
+            ),
+          );
+
+      bool matchesSecondaryMuscle =
+          secondaryMuscles.isEmpty ||
+          secondaryMuscles.any(
+            (muscle) => exercise.secondaryMuscle.toLowerCase().contains(
+              muscle.toLowerCase(),
+            ),
+          );
+
+      bool matchesExperience =
+          experienceLevels.isEmpty ||
+          experienceLevels.any(
+            (level) => exercise.experienceLevel.toLowerCase().contains(
+              level.toLowerCase(),
+            ),
+          );
+
+      bool matchesEquipment =
+          equipment.isEmpty ||
+          equipment.any(
+            (eq) => exercise.equipment.toLowerCase().contains(eq.toLowerCase()),
+          );
+
+      return matchesMainMuscle &&
+          matchesSecondaryMuscle &&
+          matchesExperience &&
+          matchesEquipment;
+    }).toList();
+  }
+
+  bool get _hasActiveFilters {
+    return _currentFilters.isNotEmpty &&
+        (_currentFilters['mainMuscles']?.isNotEmpty == true ||
+            _currentFilters['secondaryMuscles']?.isNotEmpty == true ||
+            _currentFilters['experienceLevels']?.isNotEmpty == true ||
+            _currentFilters['equipment']?.isNotEmpty == true);
+  }
+
+  Widget _buildIconOrImage(dynamic icon) {
+    // Check if icon is a string path to an image
+    if (icon is String &&
+        (icon.contains('.jpg') ||
+            icon.contains('.jpeg') ||
+            icon.contains('.png') ||
+            icon.contains('.gif'))) {
+      return Image.asset(
+        icon,
+        height: 100,
+        width: 100,
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) {
+          // Fallback to default icon if image fails to load
+          return Icon(Icons.fitness_center, size: 100, color: Colors.black);
+        },
+      );
+    }
+    // If it's an IconData, use it directly
+    else if (icon is IconData) {
+      return Icon(icon, size: 100, color: Colors.black);
+    }
+    // Default fallback icon
+    else {
+      return Icon(Icons.fitness_center, size: 100, color: Colors.black);
+    }
+  }
 
   Widget _buildExerciseCard(
     String title,
     dynamic icon, {
-    bool isImage = false,
     String? mainMuscle,
+    bool isSelected = false,
   }) {
     return Container(
       margin: const EdgeInsets.all(4),
-      padding: const EdgeInsets.symmetric(horizontal: 8),
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border.all(color: Colors.grey[300]!, width: 2),
+        border: Border.all(
+          color: isSelected ? Colors.blue : Colors.grey[300]!,
+          width: isSelected ? 4 : 2,
+        ),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Column(
@@ -25,12 +170,12 @@ class ExerciseInformationPage extends StatelessWidget {
           if (isImage)
             Image.asset(
               icon as String,
-              height: 80,
-              width: 80,
+              height: 100,
+              width: 100,
               fit: BoxFit.contain,
             )
           else
-            Icon(icon as IconData, size: 80, color: Colors.black),
+            Icon(icon as IconData, size: 100, color: Colors.black),
           const SizedBox(height: 8),
           Flexible(
             child: Text(
