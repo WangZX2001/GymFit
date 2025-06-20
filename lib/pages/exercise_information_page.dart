@@ -156,6 +156,7 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage> {
   }) {
     return Container(
       margin: const EdgeInsets.all(4),
+      constraints: const BoxConstraints.expand(),
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border.all(
@@ -167,24 +168,12 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          if (isImage)
-            Image.asset(
-              icon as String,
-              height: 100,
-              width: 100,
-              fit: BoxFit.contain,
-            )
-          else
-            Icon(icon as IconData, size: 100, color: Colors.black),
+          Flexible(child: _buildIconOrImage(icon)),
           const SizedBox(height: 8),
-          Flexible(
-            child: Text(
-              title,
-              textAlign: TextAlign.center,
-              overflow: TextOverflow.ellipsis,
-              maxLines: 2,
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-            ),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
           ),
           if (mainMuscle != null)
             Padding(
@@ -192,10 +181,8 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage> {
               child: Text(
                 mainMuscle,
                 textAlign: TextAlign.center,
-                overflow: TextOverflow.ellipsis,
-                maxLines: 1,
                 style: const TextStyle(
-                  fontSize: 12,
+                  fontSize: 14,
                   fontWeight: FontWeight.w400,
                   color: Colors.grey,
                 ),
@@ -208,51 +195,117 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey.shade200,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
+    return PopScope(
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) {
+          _handlePop();
+        }
+      },
+      child: Scaffold(
+        backgroundColor: Colors.grey.shade200,
+        appBar: AppBar(
+          backgroundColor: Colors.grey.shade200,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.black),
+            onPressed: () {
+              _handlePop();
+              Navigator.pop(context);
+            },
+          ),
+          title: const Text(
+            'Exercises',
+            style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+          ),
+          actions: [
+            Stack(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.filter_list, color: Colors.black),
+                  onPressed: _openFilterPage,
+                ),
+                if (_hasActiveFilters)
+                  Positioned(
+                    right: 8,
+                    top: 8,
+                    child: Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      constraints: const BoxConstraints(
+                        minWidth: 12,
+                        minHeight: 12,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ],
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(1.0),
+            child: Container(color: Colors.grey[300], height: 1.0),
+          ),
         ),
-        title: const Text(
-          'Exercise Information',
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
-        ),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1.0),
-          child: Container(color: Colors.grey[300], height: 1.0),
-        ),
-      ),
-      body: FutureBuilder<List<ExerciseInformation>>(
-        future: ExerciseInformationRepository().getAllExerciseInformation(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState != ConnectionState.done) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(child: Text('Error: \\${snapshot.error}'));
-          }
-          final items = snapshot.data ?? [];
-          final sortedItems = List<ExerciseInformation>.from(items)..sort(
-            (a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()),
-          );
-          return Column(
-            children: [
-              Expanded(
-                child: GridView.count(
-                  crossAxisCount: 2,
-                  padding: const EdgeInsets.all(16),
-                  mainAxisSpacing: 6,
-                  crossAxisSpacing: 6,
-                  childAspectRatio: 1,
-                  children:
-                      sortedItems
-                          .map(
-                            (e) => GestureDetector(
-                              onTap: () {
+        body: FutureBuilder<List<ExerciseInformation>>(
+          future: _exerciseFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState != ConnectionState.done) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (snapshot.hasError) {
+              return Center(child: Text('Error: \${snapshot.error}'));
+            }
+            final items = snapshot.data ?? [];
+            final filteredItems = _applyFilters(items);
+            final sortedItems = List<ExerciseInformation>.from(
+              filteredItems,
+            )..sort(
+              (a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()),
+            );
+            return Column(
+              children: [
+                if (_hasActiveFilters)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    child: Text(
+                      'Showing ${sortedItems.length} of ${items.length} exercises',
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                Expanded(
+                  child: GridView.count(
+                    crossAxisCount: 2,
+                    padding: EdgeInsets.all(
+                      16,
+                    ).copyWith(bottom: widget.isSelectionMode ? 0 : 16),
+                    mainAxisSpacing: 6,
+                    crossAxisSpacing: 6,
+                    childAspectRatio: 1,
+                    children:
+                        sortedItems.map((e) {
+                          final isSelected =
+                              widget.isSelectionMode &&
+                              _selectedTitles.contains(e.title);
+                          return GestureDetector(
+                            onTap: () {
+                              if (widget.isSelectionMode) {
+                                setState(() {
+                                  if (isSelected) {
+                                    _selectedTitles.remove(e.title);
+                                  } else {
+                                    _selectedTitles.add(e.title);
+                                  }
+                                });
+                              } else {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
@@ -262,14 +315,17 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage> {
                                           description: e.description,
                                           videoUrl: e.videoUrl,
                                           mainMuscle: e.mainMuscle,
-                                          precautions: e.precautions,
+                                          secondaryMuscle: e.secondaryMuscle,
+                                          experienceLevel: e.experienceLevel,
+                                          howTo: e.howTo,
+                                          proTips: e.proTips,
                                           onAdd: () {
                                             ScaffoldMessenger.of(
                                               ctx,
                                             ).showSnackBar(
                                               SnackBar(
                                                 content: Text(
-                                                  '${e.title} added to your plan',
+                                                  '\${e.title} added to your plan',
                                                 ),
                                               ),
                                             );
@@ -277,28 +333,75 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage> {
                                         ),
                                   ),
                                 );
-                              },
-                              child: _buildExerciseCard(
-                                e.title,
-                                e.icon,
-                                isImage: e.isImage,
-                                mainMuscle: e.mainMuscle,
-                              ),
+                              }
+                            },
+                            child: Stack(
+                              children: [
+                                _buildExerciseCard(
+                                  e.title,
+                                  e.icon,
+                                  mainMuscle: e.mainMuscle,
+                                  isSelected: isSelected,
+                                ),
+                                if (isSelected)
+                                  const Positioned(
+                                    top: 8,
+                                    right: 8,
+                                    child: Icon(
+                                      Icons.check_circle,
+                                      color: Colors.blue,
+                                    ),
+                                  ),
+                              ],
                             ),
-                          )
-                          .toList(),
+                          );
+                        }).toList(),
+                  ),
                 ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Text(
-                  'Click on any exercise icon to view specific instructions.',
-                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                ),
-              ),
-            ],
-          );
-        },
+                if (!widget.isSelectionMode)
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Text(
+                      'Click on any exercise icon to view specific instructions.',
+                      style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                    ),
+                  ),
+                if (widget.isSelectionMode)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16.0),
+                    child: ElevatedButton(
+                      onPressed:
+                          () =>
+                              Navigator.pop(context, _selectedTitles.toList()),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.black,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.check),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Done (${_selectedTitles.length})',
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }

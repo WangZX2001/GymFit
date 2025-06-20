@@ -27,7 +27,7 @@ class ExerciseDescriptionPage extends StatefulWidget {
   });
 
   @override
-  _ExerciseDescriptionPageState createState() => _ExerciseDescriptionPageState();
+  State<ExerciseDescriptionPage> createState() => _ExerciseDescriptionPageState();
 }
 
 class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> {
