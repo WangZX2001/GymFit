@@ -5,7 +5,6 @@ class QuickStartOverlay {
   static OverlayEntry? _minibarEntry;
   static List<QuickStartExercise> selectedExercises = [];
   static bool _wasMinibarVisible = false;
-  static double? _originalBottomOffset;
 
   /// Checks if the minibar is currently visible
   static bool get isMinibarVisible => _minibarEntry != null;
@@ -22,13 +21,15 @@ class QuickStartOverlay {
   /// Shows the minibar only if it was previously visible
   static void restoreMinibarIfNeeded(BuildContext context) {
     if (_wasMinibarVisible) {
+      // Capture the context before the async operation
+      final rootContext = Navigator.of(context, rootNavigator: true).context;
+      
       // Add a small delay to ensure we're in the right context
       Future.delayed(const Duration(milliseconds: 100), () {
-        // Use root navigator context to ensure consistent positioning
-        final rootContext = Navigator.of(context, rootNavigator: true).context;
-        _showMinibarWithStoredPosition(rootContext);
-        _wasMinibarVisible = false; // Reset the flag
-        _originalBottomOffset = null; // Reset stored position
+        if (rootContext.mounted) {
+          _showMinibarWithStoredPosition(rootContext);
+          _wasMinibarVisible = false; // Reset the flag
+        }
       });
     }
   }
@@ -133,10 +134,14 @@ class QuickStartOverlay {
     // Capture overlay and padding before async gap
     final overlayState = Navigator.of(context, rootNavigator: true).overlay!;
     final paddingBottom = MediaQuery.of(context).padding.bottom;
+    final navigator = Navigator.of(context, rootNavigator: true);
+    
     // Pop the Quick Start page
-    Navigator.of(context, rootNavigator: true).pop();
+    navigator.pop();
+    
     // Delay to allow slide-down animation to complete
     await Future.delayed(const Duration(milliseconds: 200));
+    
     // Build and insert the minibar entry using stored values
     final bottomOffset = paddingBottom + kBottomNavigationBarHeight;
     _minibarEntry = OverlayEntry(

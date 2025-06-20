@@ -176,10 +176,11 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        _handlePop();
-        return true;
+    return PopScope(
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) {
+          _handlePop();
+        }
       },
       child: Scaffold(
         backgroundColor: Colors.grey.shade200,

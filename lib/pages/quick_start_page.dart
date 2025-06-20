@@ -10,7 +10,7 @@ class ExerciseSet {
   int reps;
   bool isChecked;
   ExerciseSet({this.weight = 0, this.reps = 0, this.isChecked = false}) 
-    : id = DateTime.now().millisecondsSinceEpoch.toString() + '_' + (weight * 1000 + reps).toString();
+    : id = '${DateTime.now().millisecondsSinceEpoch}_${weight * 1000 + reps}';
 }
 
 // Model to track exercise with multiple sets
@@ -146,7 +146,7 @@ class _QuickStartPageState extends State<QuickStartPage> {
                                                 children: [
                                                   SizedBox(width: 60, child: Center(child: const Text('Set', style: TextStyle(fontWeight: FontWeight.bold)))),
                                                   const SizedBox(width: 16),
-                                                                                                      SizedBox(width: 110, child: Center(child: const Text('Weight (kg)', style: TextStyle(fontWeight: FontWeight.bold)))),
+                                                  SizedBox(width: 110, child: Center(child: const Text('Weight (kg)', style: TextStyle(fontWeight: FontWeight.bold)))),
                                                     const SizedBox(width: 16),
                                                     SizedBox(width: 80, child: Center(child: const Text('Reps', style: TextStyle(fontWeight: FontWeight.bold)))),
                                                     const SizedBox(width: 16),
@@ -156,8 +156,8 @@ class _QuickStartPageState extends State<QuickStartPage> {
                                                         child: Checkbox(
                                                           value: e.sets.every((set) => set.isChecked),
                                                           tristate: true,
-                                                          fillColor: MaterialStateProperty.resolveWith<Color>((Set<MaterialState> states) {
-                                                            if (states.contains(MaterialState.selected)) {
+                                                          fillColor: WidgetStateProperty.resolveWith<Color>((Set<WidgetState> states) {
+                                                            if (states.contains(WidgetState.selected)) {
                                                               return Colors.green;
                                                             }
                                                             return Colors.grey.shade300;
@@ -274,8 +274,8 @@ class _QuickStartPageState extends State<QuickStartPage> {
                                                           child: Center(
                                                             child: Checkbox(
                                                               value: exerciseSet.isChecked,
-                                                              fillColor: MaterialStateProperty.resolveWith<Color>((Set<MaterialState> states) {
-                                                                if (states.contains(MaterialState.selected)) {
+                                                              fillColor: WidgetStateProperty.resolveWith<Color>((Set<WidgetState> states) {
+                                                                if (states.contains(WidgetState.selected)) {
                                                                   return Colors.green;
                                                                 }
                                                                 return Colors.grey.shade300;
@@ -293,74 +293,74 @@ class _QuickStartPageState extends State<QuickStartPage> {
                                                   ),
                                                 ),
                                               );
-                                            }).toList(),
-                                          ],
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        width: double.infinity,
-                                        child: ElevatedButton(
-                                          onPressed: () {
-                                            setState(() {
-                                              e.sets.add(ExerciseSet());
-                                              QuickStartOverlay.selectedExercises = _selectedExercises;
-                                            });
-                                          },
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: Colors.grey.shade200,
-                                            foregroundColor: Colors.grey.shade600,
-                                            elevation: 0,
-                                            padding: const EdgeInsets.symmetric(vertical: 8),
-                                            side: BorderSide.none,
-                                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                            shape: const RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.only(
-                                                bottomLeft: Radius.circular(12),
-                                                bottomRight: Radius.circular(12),
-                                              ),
-                                              side: BorderSide.none,
-                                            ),
-                                          ),
-                                          child: const FaIcon(FontAwesomeIcons.plus, color: Colors.grey),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                  )
-                                  .toList(),
+                                                                        }),
+                          ],
+                        ),
+                      ),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            setState(() {
+                              e.sets.add(ExerciseSet());
+                              QuickStartOverlay.selectedExercises = _selectedExercises;
+                            });
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.grey.shade200,
+                            foregroundColor: Colors.grey.shade600,
+                            elevation: 0,
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            side: BorderSide.none,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            shape: const RoundedRectangleBorder(
+                              borderRadius: BorderRadius.only(
+                                bottomLeft: Radius.circular(12),
+                                bottomRight: Radius.circular(12),
+                              ),
+                              side: BorderSide.none,
+                            ),
+                          ),
+                          child: const FaIcon(FontAwesomeIcons.plus, color: Colors.grey),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                  ).toList(),
                             ),
                             const SizedBox(height: 16),
                             Row(
                               children: [
                                 Expanded(
                                   child: ElevatedButton(
-                                    onPressed: () async {
-                                      final bool? confirmed = await showDialog<bool>(
-                                        context: context,
-                                        builder: (BuildContext context) {
-                                          return AlertDialog(
-                                            title: const Text('End Workout'),
-                                            content: const Text('Are you sure you want to end workout?'),
-                                            actions: [
-                                              TextButton(
-                                                onPressed: () => Navigator.of(context).pop(false),
-                                                child: const Text('No'),
-                                              ),
-                                              TextButton(
-                                                onPressed: () => Navigator.of(context).pop(true),
-                                                child: const Text('Yes'),
-                                              ),
-                                            ],
-                                          );
-                                        },
-                                      );
+                                                      onPressed: () async {
+                    final navigator = Navigator.of(context);
+                    final bool? confirmed = await showDialog<bool>(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return AlertDialog(
+                          title: const Text('End Workout'),
+                          content: const Text('Are you sure you want to end workout?'),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(false),
+                              child: const Text('No'),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(true),
+                              child: const Text('Yes'),
+                            ),
+                          ],
+                        );
+                      },
+                    );
 
-                                      if (confirmed == true) {
-                                        QuickStartOverlay.selectedExercises = [];
-                                        Navigator.of(context).pop();
-                                      }
-                                    },
+                    if (confirmed == true) {
+                      QuickStartOverlay.selectedExercises = [];
+                      navigator.pop();
+                    }
+                  },
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: Colors.red.shade700,
                                       shape: const StadiumBorder(),
@@ -398,15 +398,15 @@ class _QuickStartPageState extends State<QuickStartPage> {
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   onPressed: () async {
-                    final result = await Navigator.push<List<String>>(
-                      context,
+                    final navigator = Navigator.of(context);
+                    final result = await navigator.push<List<String>>(
                       MaterialPageRoute(
                         builder: (ctx) => const ExerciseInformationPage(
                           isSelectionMode: true,
                         ),
                       ),
                     );
-                    if (result != null) {
+                    if (result != null && mounted) {
                       setState(() {
                         // Append new picks as QuickStartExercise entries
                         final newExercises = result.map((title) => QuickStartExercise(title: title)).toList();
