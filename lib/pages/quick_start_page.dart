@@ -335,9 +335,31 @@ class _QuickStartPageState extends State<QuickStartPage> {
                               children: [
                                 Expanded(
                                   child: ElevatedButton(
-                                    onPressed: () {
-                                      QuickStartOverlay.selectedExercises = [];
-                                      Navigator.of(context).pop();
+                                    onPressed: () async {
+                                      final bool? confirmed = await showDialog<bool>(
+                                        context: context,
+                                        builder: (BuildContext context) {
+                                          return AlertDialog(
+                                            title: const Text('End Workout'),
+                                            content: const Text('Are you sure you want to end workout?'),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () => Navigator.of(context).pop(false),
+                                                child: const Text('No'),
+                                              ),
+                                              TextButton(
+                                                onPressed: () => Navigator.of(context).pop(true),
+                                                child: const Text('Yes'),
+                                              ),
+                                            ],
+                                          );
+                                        },
+                                      );
+
+                                      if (confirmed == true) {
+                                        QuickStartOverlay.selectedExercises = [];
+                                        Navigator.of(context).pop();
+                                      }
                                     },
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: Colors.red.shade700,
