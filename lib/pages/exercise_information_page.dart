@@ -22,6 +22,9 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage> {
   final Set<String> _selectedTitles = {};
   late Future<List<ExerciseInformation>> _exerciseFuture;
   Map<String, dynamic> _currentFilters = {};
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  bool _isSearching = false;
 
   @override
   void initState() {
@@ -36,6 +39,12 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       QuickStartOverlay.hideMinibarWithMemory();
     });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   void _handlePop() {
@@ -65,9 +74,22 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage> {
   }
 
   List<ExerciseInformation> _applyFilters(List<ExerciseInformation> exercises) {
-    if (_currentFilters.isEmpty) return exercises;
+    List<ExerciseInformation> filteredExercises = exercises;
 
-    return exercises.where((exercise) {
+    // Apply search filter
+    if (_searchQuery.isNotEmpty) {
+      filteredExercises = filteredExercises.where((exercise) {
+        return exercise.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+               exercise.mainMuscle.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+               exercise.secondaryMuscle.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+               exercise.equipment.toLowerCase().contains(_searchQuery.toLowerCase());
+      }).toList();
+    }
+
+    // Apply other filters
+    if (_currentFilters.isEmpty) return filteredExercises;
+
+    return filteredExercises.where((exercise) {
       final mainMuscles = _currentFilters['mainMuscles'] as List<String>? ?? [];
       final secondaryMuscles =
           _currentFilters['secondaryMuscles'] as List<String>? ?? [];
@@ -113,11 +135,12 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage> {
   }
 
   bool get _hasActiveFilters {
-    return _currentFilters.isNotEmpty &&
+    return _searchQuery.isNotEmpty ||
+        (_currentFilters.isNotEmpty &&
         (_currentFilters['mainMuscles']?.isNotEmpty == true ||
             _currentFilters['secondaryMuscles']?.isNotEmpty == true ||
             _currentFilters['experienceLevels']?.isNotEmpty == true ||
-            _currentFilters['equipment']?.isNotEmpty == true);
+            _currentFilters['equipment']?.isNotEmpty == true));
   }
 
   Widget _buildIconOrImage(dynamic icon) {
@@ -146,6 +169,62 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage> {
     else {
       return Icon(Icons.fitness_center, size: 100, color: Colors.black);
     }
+  }
+
+  Widget _buildFloatingSearchBar() {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(25),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: TextField(
+        controller: _searchController,
+        onChanged: (value) {
+          setState(() {
+            _searchQuery = value;
+          });
+        },
+        decoration: InputDecoration(
+          hintText: 'Search exercises...',
+          hintStyle: TextStyle(
+            color: Colors.grey[500],
+            fontSize: 16,
+          ),
+          prefixIcon: Icon(
+            Icons.search,
+            color: Colors.grey[500],
+          ),
+          suffixIcon: _searchQuery.isNotEmpty
+              ? IconButton(
+                  icon: Icon(
+                    Icons.clear,
+                    color: Colors.grey[500],
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _searchController.clear();
+                      _searchQuery = '';
+                    });
+                  },
+                )
+              : null,
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 15,
+          ),
+        ),
+        style: const TextStyle(fontSize: 16),
+      ),
+    );
   }
 
   Widget _buildExerciseCard(
@@ -266,6 +345,18 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage> {
             );
             return Column(
               children: [
+                // Floating Search Bar
+                _buildFloatingSearchBar(),
+                // Instruction text
+                if (!widget.isSelectionMode)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 8.0),
+                    child: Text(
+                      'Click on any exercise icon to view specific instructions.',
+                      style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
                 if (_hasActiveFilters)
                   Container(
                     padding: const EdgeInsets.symmetric(
@@ -358,14 +449,6 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage> {
                         }).toList(),
                   ),
                 ),
-                if (!widget.isSelectionMode)
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Text(
-                      'Click on any exercise icon to view specific instructions.',
-                      style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                    ),
-                  ),
                 if (widget.isSelectionMode)
                   Container(
                     width: double.infinity,

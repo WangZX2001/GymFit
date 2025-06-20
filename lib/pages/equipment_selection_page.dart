@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class EquipmentSelectionPage extends StatefulWidget {
   final Set<String> initialSelected;
@@ -46,18 +47,18 @@ class _EquipmentSelectionPageState extends State<EquipmentSelectionPage> {
   };
 
   final Map<String, IconData> equipmentIcons = {
-    'Barbell': Icons.fitness_center,
-    'Dumbbell': Icons.sports_gymnastics,
-    'Machine': Icons.precision_manufacturing,
-    'Cable': Icons.cable,
-    'Bodyweight': Icons.accessibility_new,
-    'Resistance Band': Icons.sports,
-    'Kettlebell': Icons.sports_handball,
-    'Medicine Ball': Icons.sports_basketball,
-    'TRX': Icons.sports_martial_arts,
-    'Pull-up Bar': Icons.horizontal_rule,
-    'Bench': Icons.weekend,
-    'Smith Machine': Icons.construction,
+    'Barbell': FontAwesomeIcons.dumbbell,
+    'Dumbbell': FontAwesomeIcons.dumbbell,
+    'Machine': FontAwesomeIcons.cogs,
+    'Cable': FontAwesomeIcons.link,
+    'Bodyweight': FontAwesomeIcons.person,
+    'Resistance Band': FontAwesomeIcons.spa,
+    'Kettlebell': FontAwesomeIcons.weight,
+    'Medicine Ball': FontAwesomeIcons.baseball,
+    'TRX': FontAwesomeIcons.chain,
+    'Pull-up Bar': FontAwesomeIcons.grip,
+    'Bench': FontAwesomeIcons.couch,
+    'Smith Machine': FontAwesomeIcons.industry,
   };
 
   @override
@@ -162,7 +163,7 @@ class _EquipmentSelectionPageState extends State<EquipmentSelectionPage> {
                 return Container(
                   color: Colors.white,
                   child: ListTile(
-                    leading: Icon(
+                    leading: FaIcon(
                       equipmentIcons[equipment],
                       color: isSelected ? Colors.blue : Colors.grey,
                     ),

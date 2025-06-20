@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class ExperienceLevelSelectionPage extends StatefulWidget {
   final Set<String> initialSelected;
@@ -28,9 +29,9 @@ class _ExperienceLevelSelectionPageState extends State<ExperienceLevelSelectionP
   };
 
   final Map<String, IconData> levelIcons = {
-    'Beginner': Icons.fitness_center,
-    'Intermediate': Icons.trending_up,
-    'Advanced': Icons.emoji_events,
+    'Beginner': FontAwesomeIcons.seedling,
+    'Intermediate': FontAwesomeIcons.chartLine,
+    'Advanced': FontAwesomeIcons.trophy,
   };
 
   @override
@@ -135,7 +136,7 @@ class _ExperienceLevelSelectionPageState extends State<ExperienceLevelSelectionP
                 return Container(
                   color: Colors.white,
                   child: ListTile(
-                    leading: Icon(
+                    leading: FaIcon(
                       levelIcons[level],
                       color: isSelected ? Colors.blue : Colors.grey,
                     ),
