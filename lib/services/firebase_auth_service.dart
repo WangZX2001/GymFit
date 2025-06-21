@@ -14,4 +14,7 @@ class FirebaseAuthService implements AuthInterface {
       password: password,
     );
   }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
