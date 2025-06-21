@@ -24,7 +24,6 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage> {
   Map<String, dynamic> _currentFilters = {};
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
-  bool _isSearching = false;
 
   @override
   void initState() {
@@ -179,7 +178,7 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage> {
         borderRadius: BorderRadius.circular(25),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),

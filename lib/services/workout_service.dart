@@ -33,9 +33,9 @@ class WorkoutService {
       );
     }).toList();
 
-    final totalSets = exercises.fold(0, (sum, exercise) => sum + exercise.sets.length);
-    final completedSets = exercises.fold(0, (sum, exercise) => 
-        sum + exercise.sets.where((set) => set.isChecked).length);
+    final totalSets = exercises.fold(0, (total, exercise) => total + exercise.sets.length);
+    final completedSets = exercises.fold(0, (total, exercise) => 
+        total + exercise.sets.where((set) => set.isChecked).length);
 
     final workout = Workout(
       id: '', // Will be set by Firestore

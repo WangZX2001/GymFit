@@ -50,7 +50,7 @@ class HistoryPage extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const FaIcon(
-                      FontAwesomeIcons.exclamationTriangle,
+                      FontAwesomeIcons.triangleExclamation,
                       size: 48,
                       color: Colors.red,
                     ),
@@ -472,10 +472,10 @@ class HistoryPage extends StatelessWidget {
                             ],
                           ),
                         );
-                      }).toList(),
+                      }),
                     ],
                   ),
-                )).toList(),
+                )),
                 
                 const SizedBox(height: 24),
                 
