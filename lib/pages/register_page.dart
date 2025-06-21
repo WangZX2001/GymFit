@@ -1,6 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:gymfit/auth_service.dart';
+import 'package:gymfit/services/auth_service.dart';
 import 'package:gymfit/components/my_button.dart';
 import 'package:gymfit/components/my_textfield.dart';
 import 'package:gymfit/components/square_tile.dart';

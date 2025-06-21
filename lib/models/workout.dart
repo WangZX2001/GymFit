@@ -1,0 +1,114 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+class WorkoutExercise {
+  final String title;
+  final int totalSets;
+  final int completedSets;
+  final List<WorkoutSet> sets;
+
+  WorkoutExercise({
+    required this.title,
+    required this.totalSets,
+    required this.completedSets,
+    required this.sets,
+  });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'title': title,
+      'totalSets': totalSets,
+      'completedSets': completedSets,
+      'sets': sets.map((set) => set.toMap()).toList(),
+    };
+  }
+
+  factory WorkoutExercise.fromMap(Map<String, dynamic> map) {
+    return WorkoutExercise(
+      title: map['title'] ?? '',
+      totalSets: map['totalSets'] ?? 0,
+      completedSets: map['completedSets'] ?? 0,
+      sets: (map['sets'] as List<dynamic>?)
+          ?.map((set) => WorkoutSet.fromMap(set as Map<String, dynamic>))
+          .toList() ?? [],
+    );
+  }
+}
+
+class WorkoutSet {
+  final int weight;
+  final int reps;
+  final bool isCompleted;
+
+  WorkoutSet({
+    required this.weight,
+    required this.reps,
+    required this.isCompleted,
+  });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'weight': weight,
+      'reps': reps,
+      'isCompleted': isCompleted,
+    };
+  }
+
+  factory WorkoutSet.fromMap(Map<String, dynamic> map) {
+    return WorkoutSet(
+      weight: map['weight'] ?? 0,
+      reps: map['reps'] ?? 0,
+      isCompleted: map['isCompleted'] ?? false,
+    );
+  }
+}
+
+class Workout {
+  final String id;
+  final DateTime date;
+  final Duration duration;
+  final List<WorkoutExercise> exercises;
+  final int totalSets;
+  final int completedSets;
+  final String userId;
+
+  Workout({
+    required this.id,
+    required this.date,
+    required this.duration,
+    required this.exercises,
+    required this.totalSets,
+    required this.completedSets,
+    required this.userId,
+  });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'date': Timestamp.fromDate(date),
+      'durationSeconds': duration.inSeconds,
+      'exercises': exercises.map((exercise) => exercise.toMap()).toList(),
+      'totalSets': totalSets,
+      'completedSets': completedSets,
+      'userId': userId,
+    };
+  }
+
+  factory Workout.fromMap(Map<String, dynamic> map, String documentId) {
+    return Workout(
+      id: documentId,
+      date: (map['date'] as Timestamp).toDate(),
+      duration: Duration(seconds: map['durationSeconds'] ?? 0),
+      exercises: (map['exercises'] as List<dynamic>?)
+          ?.map((exercise) => WorkoutExercise.fromMap(exercise as Map<String, dynamic>))
+          .toList() ?? [],
+      totalSets: map['totalSets'] ?? 0,
+      completedSets: map['completedSets'] ?? 0,
+      userId: map['userId'] ?? '',
+    );
+  }
+
+  factory Workout.fromSnapshot(DocumentSnapshot snapshot) {
+    final data = snapshot.data() as Map<String, dynamic>;
+    return Workout.fromMap(data, snapshot.id);
+  }
+} 

@@ -1,13 +1,97 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:gymfit/pages/quick_start_page.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:gymfit/pages/workout/quick_start_page.dart';
 
 class QuickStartOverlay {
   static OverlayEntry? _minibarEntry;
   static List<QuickStartExercise> selectedExercises = [];
   static bool _wasMinibarVisible = false;
+  static Timer? _timer;
+  static Duration _elapsedTime = Duration.zero;
+  static DateTime? _startTime;
+  static VoidCallback? _pageUpdateCallback;
+
+  /// Get current elapsed time
+  static Duration get elapsedTime => _elapsedTime;
+
+  /// Set callback for page updates
+  static void setPageUpdateCallback(VoidCallback? callback) {
+    _pageUpdateCallback = callback;
+  }
 
   /// Checks if the minibar is currently visible
   static bool get isMinibarVisible => _minibarEntry != null;
+
+  /// Start the timer
+  static void startTimer() {
+    if (_timer != null) return; // Don't start multiple timers
+    _startTime = DateTime.now();
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      _elapsedTime = DateTime.now().difference(_startTime!);
+      _updateMinibar();
+      _pageUpdateCallback?.call();
+    });
+  }
+
+  /// Stop the timer
+  static void stopTimer() {
+    _timer?.cancel();
+    _timer = null;
+  }
+
+  /// Reset the timer
+  static void resetTimer() {
+    stopTimer();
+    _elapsedTime = Duration.zero;
+    _startTime = null;
+  }
+
+  /// Format duration for display
+  static String _formatDuration(Duration duration) {
+    String twoDigits(int n) => n.toString().padLeft(2, '0');
+    String hours = twoDigits(duration.inHours);
+    String minutes = twoDigits(duration.inMinutes.remainder(60));
+    String seconds = twoDigits(duration.inSeconds.remainder(60));
+    
+    if (duration.inHours > 0) {
+      return '$hours:$minutes:$seconds';
+    } else {
+      return '$minutes:$seconds';
+    }
+  }
+
+  /// Update the minibar to reflect current timer state
+  static void _updateMinibar() {
+    if (_minibarEntry != null) {
+      _minibarEntry!.markNeedsBuild();
+    }
+  }
+
+  /// Widget builder for the timer display
+  static Widget _buildTimerDisplay() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const Icon(Icons.keyboard_arrow_up, color: Colors.black),
+        const SizedBox(width: 8),
+        const FaIcon(
+          FontAwesomeIcons.stopwatch,
+          color: Colors.black,
+          size: 16,
+        ),
+        const SizedBox(width: 6),
+        Text(
+          _formatDuration(_elapsedTime),
+          style: const TextStyle(
+            color: Colors.black,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
+    );
+  }
 
   /// Hides the minibar and remembers if it was visible
   static void hideMinibarWithMemory() {
@@ -66,17 +150,7 @@ class QuickStartOverlay {
                       hideMinibar();
                       openQuickStart(context);
                     },
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: const [
-                        Icon(Icons.keyboard_arrow_up, color: Colors.black),
-                        SizedBox(width: 8),
-                        Text(
-                          'Quick Start',
-                          style: TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
+                    child: _buildTimerDisplay(),
                   ),
                 ),
                 // Cancel button
@@ -162,23 +236,13 @@ class QuickStartOverlay {
               children: [
                 // Main tap area for opening Quick Start
                 Expanded(
-                  child: GestureDetector(
-                    onTap: () {
-                      hideMinibar();
-                      openQuickStart(ctx);
-                    },
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: const [
-                        Icon(Icons.keyboard_arrow_up, color: Colors.black),
-                        SizedBox(width: 8),
-                        Text(
-                          'Quick Start',
-                          style: TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.bold),
-                        ),
-                      ],
+                                      child: GestureDetector(
+                      onTap: () {
+                        hideMinibar();
+                        openQuickStart(ctx);
+                      },
+                      child: _buildTimerDisplay(),
                     ),
-                  ),
                 ),
                 // Cancel button
                 Padding(
@@ -227,23 +291,13 @@ class QuickStartOverlay {
               children: [
                 // Main tap area for opening Quick Start
                 Expanded(
-                  child: GestureDetector(
-                    onTap: () {
-                      hideMinibar();
-                      openQuickStart(context);
-                    },
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: const [
-                        Icon(Icons.keyboard_arrow_up, color: Colors.black),
-                        SizedBox(width: 8),
-                        Text(
-                          'Quick Start',
-                          style: TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.bold),
-                        ),
-                      ],
+                                      child: GestureDetector(
+                      onTap: () {
+                        hideMinibar();
+                        openQuickStart(context);
+                      },
+                      child: _buildTimerDisplay(),
                     ),
-                  ),
                 ),
                 // Cancel button
                 Padding(
@@ -300,6 +354,7 @@ class QuickStartOverlay {
     if (confirmed == true) {
       // Cancel the Quick Start session
       selectedExercises.clear();
+      resetTimer();
       hideMinibar();
       _wasMinibarVisible = false; // Reset state
     }

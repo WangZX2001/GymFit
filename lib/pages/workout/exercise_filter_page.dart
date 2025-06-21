@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:gymfit/pages/muscle_group_selection_page.dart';
-import 'package:gymfit/pages/experience_level_selection_page.dart';
-import 'package:gymfit/pages/equipment_selection_page.dart';
+import 'package:gymfit/pages/workout/muscle_group_selection_page.dart';
+import 'package:gymfit/pages/workout/experience_level_selection_page.dart';
+import 'package:gymfit/pages/workout/equipment_selection_page.dart';
 
 class ExerciseFilterPage extends StatefulWidget {
   final Map<String, dynamic>? initialFilters;

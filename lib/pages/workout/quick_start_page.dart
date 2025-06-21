@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:gymfit/components/quick_start_overlay.dart';
-import 'package:gymfit/pages/exercise_information_page.dart';
+import 'package:gymfit/pages/workout/exercise_information_page.dart';
+import 'package:gymfit/pages/workout/workout_summary_page.dart';
 
 // Model to track individual set data
 class ExerciseSet {
@@ -37,6 +39,36 @@ class _QuickStartPageState extends State<QuickStartPage> {
   void initState() {
     super.initState();
     _selectedExercises = widget.initialSelectedExercises.map((e) => QuickStartExercise(title: e.title, sets: e.sets)).toList();
+    
+    // Start the shared timer in overlay if not already started
+    QuickStartOverlay.startTimer();
+    
+    // Register for timer updates
+    QuickStartOverlay.setPageUpdateCallback(() {
+      if (mounted) {
+        setState(() {});
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    // Clear the page update callback
+    QuickStartOverlay.setPageUpdateCallback(null);
+    super.dispose();
+  }
+
+  String _formatDuration(Duration duration) {
+    String twoDigits(int n) => n.toString().padLeft(2, '0');
+    String hours = twoDigits(duration.inHours);
+    String minutes = twoDigits(duration.inMinutes.remainder(60));
+    String seconds = twoDigits(duration.inSeconds.remainder(60));
+    
+    if (duration.inHours > 0) {
+      return '$hours:$minutes:$seconds';
+    } else {
+      return '$minutes:$seconds';
+    }
   }
 
   @override
@@ -53,12 +85,23 @@ class _QuickStartPageState extends State<QuickStartPage> {
             QuickStartOverlay.minimize(context);
           },
         ),
-        title: const Text(
-          'Quick Start',
-          style: TextStyle(
-            color: Colors.black,
-            fontWeight: FontWeight.bold,
-          ),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const FaIcon(
+              FontAwesomeIcons.stopwatch,
+              color: Colors.black,
+              size: 20,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              _formatDuration(QuickStartOverlay.elapsedTime),
+              style: const TextStyle(
+                color: Colors.black,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
         ),
       ),
       body: SafeArea(
@@ -496,24 +539,34 @@ class _QuickStartPageState extends State<QuickStartPage> {
                                           ),
                                         ),
                                         SizedBox(width: screenWidth < 350 ? 12 : 16),
-                                        Expanded(
-                                          child: ElevatedButton(
-                                            onPressed: () {},
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor: Colors.green.shade700,
-                                              shape: const StadiumBorder(),
-                                              padding: buttonPadding,
-                                            ),
-                                            child: Text(
-                                              'Finish',
-                                              style: TextStyle(
-                                                color: Colors.white, 
-                                                fontSize: buttonFontSize, 
-                                                fontWeight: FontWeight.bold
-                                              ),
-                                            ),
-                                          ),
-                                        ),
+                                                                Expanded(
+                          child: ElevatedButton(
+                            onPressed: () {
+                              // Navigate to workout summary page
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) => WorkoutSummaryPage(
+                                    completedExercises: _selectedExercises,
+                                    workoutDuration: QuickStartOverlay.elapsedTime,
+                                  ),
+                                ),
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green.shade700,
+                              shape: const StadiumBorder(),
+                              padding: buttonPadding,
+                            ),
+                            child: Text(
+                              'Finish',
+                              style: TextStyle(
+                                color: Colors.white, 
+                                fontSize: buttonFontSize, 
+                                fontWeight: FontWeight.bold
+                              ),
+                            ),
+                          ),
+                        ),
                                       ],
                                     );
                                   },

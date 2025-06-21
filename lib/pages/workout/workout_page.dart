@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:gymfit/pages/exercise_information_page.dart';
+import 'package:gymfit/pages/workout/exercise_information_page.dart';
 import 'package:gymfit/components/quick_start_overlay.dart';
 
 class WorkoutPage extends StatelessWidget {
