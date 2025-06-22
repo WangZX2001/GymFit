@@ -1,13 +1,102 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:gymfit/pages/auth_page.dart';
+import 'package:gymfit/models/workout.dart';
+import 'package:gymfit/services/workout_service.dart';
 
-class MePage extends StatelessWidget {
+class MePage extends StatefulWidget {
   const MePage({super.key});
+
+  @override
+  State<MePage> createState() => _MePageState();
+}
+
+class _MePageState extends State<MePage> {
+  List<Workout> workouts = [];
+  Set<DateTime> workoutDays = {};
+  int currentStreak = 0;
+  int longestStreak = 0;
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadWorkouts();
+  }
+
+  Future<void> _loadWorkouts() async {
+    try {
+      final fetchedWorkouts = await WorkoutService.getUserWorkouts();
+      setState(() {
+        workouts = fetchedWorkouts;
+        workoutDays = _getWorkoutDays(fetchedWorkouts);
+        _calculateStreaks();
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  Set<DateTime> _getWorkoutDays(List<Workout> workouts) {
+    return workouts.map((workout) {
+      return DateTime(workout.date.year, workout.date.month, workout.date.day);
+    }).toSet();
+  }
+
+  void _calculateStreaks() {
+    if (workoutDays.isEmpty) {
+      currentStreak = 0;
+      longestStreak = 0;
+      return;
+    }
+
+    final sortedDays = workoutDays.toList()..sort();
+    final today = DateTime.now();
+    final todayDate = DateTime(today.year, today.month, today.day);
+    
+    // Calculate current streak
+    currentStreak = 0;
+    DateTime checkDate = todayDate;
+    
+    while (workoutDays.contains(checkDate)) {
+      currentStreak++;
+      checkDate = checkDate.subtract(const Duration(days: 1));
+    }
+    
+    // If no workout today, check if there was one yesterday
+    if (currentStreak == 0 && workoutDays.contains(todayDate.subtract(const Duration(days: 1)))) {
+      checkDate = todayDate.subtract(const Duration(days: 1));
+      while (workoutDays.contains(checkDate)) {
+        currentStreak++;
+        checkDate = checkDate.subtract(const Duration(days: 1));
+      }
+    }
+
+    // Calculate longest streak
+    longestStreak = 0;
+    int tempStreak = 1;
+    
+    for (int i = 1; i < sortedDays.length; i++) {
+      final previousDay = sortedDays[i - 1];
+      final currentDay = sortedDays[i];
+      
+      if (currentDay.difference(previousDay).inDays == 1) {
+        tempStreak++;
+      } else {
+        longestStreak = longestStreak > tempStreak ? longestStreak : tempStreak;
+        tempStreak = 1;
+      }
+    }
+    longestStreak = longestStreak > tempStreak ? longestStreak : tempStreak;
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey.shade200,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -33,7 +122,6 @@ class MePage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const SizedBox(height: 20),
               // User Profile Section
               Container(
                 width: double.infinity,
@@ -76,10 +164,101 @@ class MePage extends StatelessWidget {
                       textAlign: TextAlign.center,
                     ),
                   ],
+                                  ),
                 ),
-              ),
-            ],
+                
+                const SizedBox(height: 24),
+                
+                // Workout Statistics
+                if (!isLoading) ...[
+                  // Streak Information Cards
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildStreakCard(
+                          'Current Streak',
+                          currentStreak.toString(),
+                          Icons.local_fire_department,
+                          Colors.orange,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildStreakCard(
+                          'Longest Streak',
+                          longestStreak.toString(),
+                          Icons.military_tech,
+                          Colors.purple,
+                        ),
+                      ),
+                    ],
+                  ),
+                  
+                  const SizedBox(height: 16),
+                  
+                  // Total Workouts Card
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildStreakCard(
+                          'Total Workouts',
+                          workouts.length.toString(),
+                          Icons.fitness_center,
+                          Colors.green,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildStreakCard(
+                          'Workout Days',
+                          workoutDays.length.toString(),
+                          Icons.calendar_month,
+                          Colors.blue,
+                        ),
+                      ),
+                    ],
+                  ),
+                ] else ...[
+                  const SizedBox(height: 40),
+                  const Center(child: CircularProgressIndicator()),
+                ],
+              ],
+            ),
           ),
+        ),
+    );
+  }
+
+  Widget _buildStreakCard(String title, String value, IconData icon, Color color) {
+    return Card(
+      color: Colors.white,
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            Icon(icon, color: color, size: 24),
+            const SizedBox(height: 8),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+            ),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey.shade600,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
         ),
       ),
     );

@@ -4,6 +4,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:gymfit/models/workout.dart';
 import 'package:gymfit/services/workout_service.dart';
 import 'package:gymfit/pages/workout_details_page.dart';
+import 'package:gymfit/pages/workout_calendar_page.dart';
 import 'package:intl/intl.dart';
 
 class HistoryPage extends StatelessWidget {
@@ -37,6 +38,19 @@ class HistoryPage extends StatelessWidget {
           ),
         ),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const FaIcon(FontAwesomeIcons.calendar, color: Colors.black),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => WorkoutCalendarPage(),
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: SafeArea(
         child: StreamBuilder<List<Workout>>(
