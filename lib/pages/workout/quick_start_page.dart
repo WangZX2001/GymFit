@@ -4,6 +4,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:gymfit/components/quick_start_overlay.dart';
 import 'package:gymfit/pages/workout/exercise_information_page.dart';
 import 'package:gymfit/pages/workout/workout_summary_page.dart';
+import 'package:gymfit/models/workout.dart';
 
 // Model to track individual set data
 class ExerciseSet {
@@ -33,11 +34,18 @@ class QuickStartPage extends StatefulWidget {
 
 class _QuickStartPageState extends State<QuickStartPage> {
   List<QuickStartExercise> _selectedExercises = [];
+  late ScrollController _scrollController;
+  bool _showWorkoutNameInAppBar = false;
+  String? _customWorkoutName;
 
   @override
   void initState() {
     super.initState();
     _selectedExercises = widget.initialSelectedExercises.map((e) => QuickStartExercise(title: e.title, sets: e.sets)).toList();
+    
+    // Initialize scroll controller
+    _scrollController = ScrollController();
+    _scrollController.addListener(_onScroll);
     
     // Start the shared timer in overlay if not already started
     QuickStartOverlay.startTimer();
@@ -50,10 +58,63 @@ class _QuickStartPageState extends State<QuickStartPage> {
     });
   }
 
+  void _onScroll() {
+    // Show workout name in app bar when scrolled past the workout name card (approximately 100 pixels)
+    const double threshold = 100.0;
+    bool shouldShow = _scrollController.offset > threshold;
+    
+    if (shouldShow != _showWorkoutNameInAppBar) {
+      setState(() {
+        _showWorkoutNameInAppBar = shouldShow;
+      });
+    }
+  }
+
+  void _showEditWorkoutNameDialog() {
+    final TextEditingController controller = TextEditingController(
+      text: _customWorkoutName ?? _getWorkoutName(),
+    );
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Edit Workout Name'),
+          content: TextField(
+            controller: controller,
+            decoration: const InputDecoration(
+              hintText: 'Enter workout name',
+              border: OutlineInputBorder(),
+            ),
+            maxLength: 50,
+            autofocus: true,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  _customWorkoutName = controller.text.trim();
+                });
+                Navigator.of(context).pop();
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   void dispose() {
     // Clear the page update callback
     QuickStartOverlay.setPageUpdateCallback(null);
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -70,6 +131,39 @@ class _QuickStartPageState extends State<QuickStartPage> {
     }
   }
 
+  String _getWorkoutName() {
+    // Return custom name if set
+    if (_customWorkoutName != null && _customWorkoutName!.isNotEmpty) {
+      return _customWorkoutName!;
+    }
+    
+    final startTime = QuickStartOverlay.startTime ?? DateTime.now().subtract(QuickStartOverlay.elapsedTime);
+    
+    // If no exercises selected, show a generic name based on time
+    if (_selectedExercises.isEmpty) {
+      final hour = startTime.hour;
+      String timeOfDay;
+      
+      if (hour >= 5 && hour < 12) {
+        timeOfDay = 'Morning';
+      } else if (hour >= 12 && hour < 17) {
+        timeOfDay = 'Afternoon';
+      } else if (hour >= 17 && hour < 21) {
+        timeOfDay = 'Evening';
+      } else {
+        timeOfDay = 'Night';
+      }
+      
+      return '$timeOfDay Workout';
+    }
+    
+    return Workout.generateDefaultName(
+      startTime: startTime,
+      workoutDuration: QuickStartOverlay.elapsedTime,
+      exerciseNames: _selectedExercises.map((e) => e.title).toList(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -84,25 +178,118 @@ class _QuickStartPageState extends State<QuickStartPage> {
             QuickStartOverlay.minimize(context);
           },
         ),
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const FaIcon(
-              FontAwesomeIcons.stopwatch,
-              color: Colors.black,
-              size: 20,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              _formatDuration(QuickStartOverlay.elapsedTime),
-              style: const TextStyle(
-                color: Colors.black,
-                fontWeight: FontWeight.bold,
+        title: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 500),
+          switchInCurve: Curves.easeOutQuart,
+          switchOutCurve: Curves.easeInQuart,
+          transitionBuilder: (Widget child, Animation<double> animation) {
+            return SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(0.0, 0.5),
+                end: Offset.zero,
+              ).animate(CurvedAnimation(
+                parent: animation,
+                curve: Curves.easeOutQuart,
+              )),
+              child: FadeTransition(
+                opacity: animation,
+                child: child,
               ),
-            ),
-          ],
+            );
+          },
+          child: _showWorkoutNameInAppBar
+              ? Row(
+                  key: const ValueKey('workout-name'),
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const FaIcon(
+                      FontAwesomeIcons.tag,
+                      color: Colors.purple,
+                      size: 16,
+                    ),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: GestureDetector(
+                        onTap: _showEditWorkoutNameDialog,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Flexible(
+                              child: Text(
+                                _getWorkoutName(),
+                                style: const TextStyle(
+                                  color: Colors.purple,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            const FaIcon(
+                              FontAwesomeIcons.pen,
+                              color: Colors.purple,
+                              size: 12,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                )
+              : Row(
+                  key: const ValueKey('timer'),
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const FaIcon(
+                      FontAwesomeIcons.stopwatch,
+                      color: Colors.black,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      _formatDuration(QuickStartOverlay.elapsedTime),
+                      style: const TextStyle(
+                        color: Colors.black,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
         ),
         actions: [
+          // Show timer when workout name is in app bar
+          if (_showWorkoutNameInAppBar)
+            Center(
+              child: Container(
+                margin: const EdgeInsets.only(right: 8.0),
+                padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const FaIcon(
+                      FontAwesomeIcons.stopwatch,
+                      color: Colors.black87,
+                      size: 11,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      _formatDuration(QuickStartOverlay.elapsedTime),
+                      style: const TextStyle(
+                        color: Colors.black87,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           IconButton(
             icon: FaIcon(
               QuickStartOverlay.isPaused ? FontAwesomeIcons.play : FontAwesomeIcons.pause,
@@ -125,6 +312,86 @@ class _QuickStartPageState extends State<QuickStartPage> {
               padding: EdgeInsets.fromLTRB(mainPadding, mainPadding, mainPadding, 0.0),
               child: Column(
                 children: [
+                  // Workout Name Display at the top with smooth transition
+                  AnimatedSize(
+                    duration: const Duration(milliseconds: 500),
+                    curve: Curves.easeOutQuart,
+                    child: _showWorkoutNameInAppBar
+                        ? const SizedBox.shrink()
+                        : Card(
+                            color: Colors.white,
+                            margin: const EdgeInsets.only(bottom: 16),
+                            child: Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Row(
+                                children: [
+                                  const FaIcon(
+                                    FontAwesomeIcons.tag,
+                                    color: Colors.purple,
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            const Text(
+                                              'Workout Name',
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.grey,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                            if (_customWorkoutName != null && _customWorkoutName!.isNotEmpty)
+                                              Container(
+                                                margin: const EdgeInsets.only(left: 6),
+                                                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.purple.withValues(alpha: 0.1),
+                                                  borderRadius: BorderRadius.circular(4),
+                                                ),
+                                                child: const Text(
+                                                  'Custom',
+                                                  style: TextStyle(
+                                                    fontSize: 10,
+                                                    color: Colors.purple,
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                                ),
+                                              ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          _getWorkoutName(),
+                                          style: const TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.purple,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  IconButton(
+                                    onPressed: _showEditWorkoutNameDialog,
+                                    icon: const FaIcon(
+                                      FontAwesomeIcons.pen,
+                                      color: Colors.grey,
+                                      size: 16,
+                                    ),
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                  ),
+                  
                   Expanded(
                     child: _selectedExercises.isEmpty
                         ? Center(
@@ -158,6 +425,7 @@ class _QuickStartPageState extends State<QuickStartPage> {
                             ),
                           )
                         : SingleChildScrollView(
+                            controller: _scrollController,
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
@@ -559,6 +827,7 @@ class _QuickStartPageState extends State<QuickStartPage> {
                                   builder: (context) => WorkoutSummaryPage(
                                     completedExercises: _selectedExercises,
                                     workoutDuration: QuickStartOverlay.elapsedTime,
+                                    customWorkoutName: _customWorkoutName,
                                   ),
                                 ),
                               );

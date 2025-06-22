@@ -11,6 +11,8 @@ class WorkoutService {
   static Future<String> saveWorkout({
     required List<QuickStartExercise> exercises,
     required Duration duration,
+    DateTime? startTime,
+    String? customWorkoutName,
   }) async {
     final user = _auth.currentUser;
     if (user == null) {
@@ -38,8 +40,21 @@ class WorkoutService {
     final completedSets = exercises.fold(0, (total, exercise) => 
         total + exercise.sets.where((set) => set.isChecked).length);
 
+    // Calculate workout start time (end time minus duration)
+    final workoutStartTime = startTime ?? DateTime.now().subtract(duration);
+    
+    // Use custom name if provided, otherwise generate default name
+    final workoutName = customWorkoutName?.isNotEmpty == true 
+        ? customWorkoutName!
+        : Workout.generateDefaultName(
+            startTime: workoutStartTime,
+            workoutDuration: duration,
+            exerciseNames: exercises.map((e) => e.title).toList(),
+          );
+
     final workout = Workout(
       id: '', // Will be set by Firestore
+      name: workoutName,
       date: DateTime.now(),
       duration: duration,
       exercises: workoutExercises,
@@ -197,13 +212,13 @@ class WorkoutService {
       if (user != null) {
         debugPrint('🧪 Testing workout collection access...');
         try {
-          final query = await _firestore
+          final querySnapshot = await _firestore
               .collection('workouts')
               .where('userId', isEqualTo: user.uid)
               .limit(1)
               .get();
           results['workoutCollection'] = true;
-          debugPrint('   Workout collection access: SUCCESS (${query.docs.length} docs found)');
+          debugPrint('   Workout collection access: SUCCESS (${querySnapshot.docs.length} docs found)');
         } catch (e) {
           results['workoutCollection'] = false;
           debugPrint('   Workout collection access: FAILED - $e');
@@ -218,7 +233,7 @@ class WorkoutService {
         debugPrint('🧪 Testing delete operation permissions...');
         try {
           // Just check if we can read a document for delete permission testing
-          final query = await _firestore
+          await _firestore
               .collection('workouts')
               .where('userId', isEqualTo: user.uid)
               .limit(1)

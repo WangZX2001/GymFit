@@ -147,15 +147,30 @@ class HistoryPage extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            // Workout Name
+                            if (workout.name.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 8.0),
+                                child: Text(
+                                  workout.name,
+                                  style: const TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.purple,
+                                  ),
+                                ),
+                              ),
+                            
                             // Date and Time
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
                                   dateFormat.format(workout.date),
-                                  style: const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
+                                  style: TextStyle(
+                                    fontSize: workout.name.isNotEmpty ? 16 : 18,
+                                    fontWeight: workout.name.isNotEmpty ? FontWeight.w600 : FontWeight.bold,
+                                    color: workout.name.isNotEmpty ? Colors.grey[700] : Colors.black,
                                   ),
                                 ),
                                 Text(
@@ -312,6 +327,7 @@ class HistoryPage extends StatelessWidget {
       context: context,
       barrierDismissible: true,
       builder: (context) => Dialog(
+        backgroundColor: Colors.grey.shade200,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         elevation: 8,
         child: Container(
@@ -325,11 +341,36 @@ class HistoryPage extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'Workout Preview',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (workout.name.isNotEmpty) ...[
+                            Text(
+                              workout.name,
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.purple,
+                              ),
+                            ),
+                            const Text(
+                              'Workout Preview',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ] else
+                            const Text(
+                              'Workout Preview',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                        ],
                       ),
                     ),
                     IconButton(

@@ -20,6 +20,9 @@ class QuickStartOverlay {
   /// Get current pause state
   static bool get isPaused => _isPaused;
 
+  /// Get workout start time
+  static DateTime? get startTime => _startTime;
+
   /// Set callback for page updates
   static void setPageUpdateCallback(VoidCallback? callback) {
     _pageUpdateCallback = callback;

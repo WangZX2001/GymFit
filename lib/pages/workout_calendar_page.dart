@@ -138,7 +138,7 @@ class _WorkoutCalendarPageState extends State<WorkoutCalendarPage> {
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -151,7 +151,7 @@ class _WorkoutCalendarPageState extends State<WorkoutCalendarPage> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Padding(
-                      padding: const EdgeInsets.all(12.0),
+                      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 12.0),
                       child: TableCalendar<DateTime>(
                         firstDay: DateTime.utc(2020, 1, 1),
                         lastDay: DateTime.utc(2030, 12, 31),
@@ -208,6 +208,18 @@ class _WorkoutCalendarPageState extends State<WorkoutCalendarPage> {
                           ),
                           formatButtonTextStyle: const TextStyle(
                             color: Colors.white,
+                          ),
+                          leftChevronPadding: const EdgeInsets.all(0),
+                          rightChevronPadding: const EdgeInsets.all(0),
+                        ),
+                        daysOfWeekStyle: const DaysOfWeekStyle(
+                          weekdayStyle: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          weekendStyle: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                         onDaySelected: _onDaySelected,
@@ -344,32 +356,44 @@ class _WorkoutCalendarPageState extends State<WorkoutCalendarPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          // Workout Name and Time
                           Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Container(
-                                padding: const EdgeInsets.all(4),
-                                decoration: BoxDecoration(
-                                  color: Colors.green.shade600,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(
-                                  Icons.fitness_center,
-                                  size: 12,
-                                  color: Colors.white,
+                              Expanded(
+                                child: Row(
+                                  children: [
+                                    const FaIcon(
+                                      FontAwesomeIcons.tag,
+                                      color: Colors.purple,
+                                      size: 14,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        workout.name.isNotEmpty ? workout.name : 'Workout',
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.purple,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                              const SizedBox(width: 8),
                               Text(
-                                'Workout at ${timeFormat.format(workout.date)}',
+                                timeFormat.format(workout.date),
                                 style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
-                                  color: Colors.green.shade700,
+                                  color: Colors.grey.shade600,
                                 ),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 12),
                           Row(
                             children: [
                               _buildWorkoutStat(
@@ -460,11 +484,36 @@ class _WorkoutCalendarPageState extends State<WorkoutCalendarPage> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'Workout Preview',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (workout.name.isNotEmpty) ...[
+                            Text(
+                              workout.name,
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.purple,
+                              ),
+                            ),
+                            const Text(
+                              'Workout Preview',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ] else
+                            const Text(
+                              'Workout Preview',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                        ],
                       ),
                     ),
                     IconButton(

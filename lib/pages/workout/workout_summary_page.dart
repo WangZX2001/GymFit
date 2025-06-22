@@ -3,15 +3,18 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:gymfit/components/quick_start_overlay.dart';
 import 'package:gymfit/pages/workout/quick_start_page.dart';
 import 'package:gymfit/services/workout_service.dart';
+import 'package:gymfit/models/workout.dart';
 
 class WorkoutSummaryPage extends StatefulWidget {
   final List<QuickStartExercise> completedExercises;
   final Duration workoutDuration;
+  final String? customWorkoutName;
 
   const WorkoutSummaryPage({
     super.key,
     required this.completedExercises,
     required this.workoutDuration,
+    this.customWorkoutName,
   });
 
   @override
@@ -41,6 +44,20 @@ class _WorkoutSummaryPageState extends State<WorkoutSummaryPage> {
     });
   }
 
+  String _getWorkoutName() {
+    // Return custom name if provided
+    if (widget.customWorkoutName != null && widget.customWorkoutName!.isNotEmpty) {
+      return widget.customWorkoutName!;
+    }
+    
+    final startTime = QuickStartOverlay.startTime ?? DateTime.now().subtract(widget.workoutDuration);
+    return Workout.generateDefaultName(
+      startTime: startTime,
+      workoutDuration: widget.workoutDuration,
+      exerciseNames: widget.completedExercises.map((e) => e.title).toList(),
+    );
+  }
+
   Future<void> _saveWorkout() async {
     if (_workoutSaved || _isSaving) return;
 
@@ -52,6 +69,8 @@ class _WorkoutSummaryPageState extends State<WorkoutSummaryPage> {
       await WorkoutService.saveWorkout(
         exercises: widget.completedExercises,
         duration: widget.workoutDuration,
+        startTime: QuickStartOverlay.startTime,
+        customWorkoutName: widget.customWorkoutName,
       );
 
       setState(() {
@@ -152,6 +171,59 @@ class _WorkoutSummaryPageState extends State<WorkoutSummaryPage> {
                                 color: Colors.grey,
                               ),
                               textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      ),
+                      
+                      const SizedBox(height: 20),
+                      
+                      // Workout Name Section
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(20.0),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.1),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            const FaIcon(
+                              FontAwesomeIcons.tag,
+                              size: 24,
+                              color: Colors.purple,
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Workout Name',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.grey,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    _getWorkoutName(),
+                                    style: const TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.purple,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ],
                         ),

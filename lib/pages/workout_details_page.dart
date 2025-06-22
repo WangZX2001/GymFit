@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:gymfit/models/workout.dart';
 import 'package:gymfit/services/workout_service.dart';
@@ -51,6 +50,41 @@ class WorkoutDetailsPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Workout Name Card
+            if (workout.name.isNotEmpty)
+              Card(
+                color: Colors.white,
+                elevation: 2,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Row(
+                    children: [
+                      const FaIcon(
+                        FontAwesomeIcons.tag,
+                        color: Colors.purple,
+                        size: 24,
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Text(
+                          workout.name,
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.purple,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            
+            if (workout.name.isNotEmpty) const SizedBox(height: 16),
+            
             // Date and Time Card
             Card(
               color: Colors.white,
