@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:gymfit/pages/workout/exercise_information_page.dart';
+import 'package:gymfit/pages/workout/custom_workout_page.dart';
 import 'package:gymfit/components/quick_start_overlay.dart';
 
 class WorkoutPage extends StatelessWidget {
@@ -16,7 +17,11 @@ class WorkoutPage extends StatelessWidget {
               _buildWorkoutCard(
                 'Quick Start',
                 'lib/images/quickStart.jpg',
-                () => QuickStartOverlay.openQuickStart(context),
+                () {
+                  // Clear any existing custom workout name for fresh start
+                  QuickStartOverlay.customWorkoutName = null;
+                  QuickStartOverlay.openQuickStart(context);
+                },
                 alignment: Alignment.bottomCenter,
               ),
               _buildWorkoutCard(
@@ -54,7 +59,14 @@ class WorkoutPage extends StatelessWidget {
               _buildWorkoutCard(
                 'Custom Workout',
                 'lib/images/customWorkout.jpg',
-                () {},
+                () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const CustomWorkoutPage(),
+                    ),
+                  );
+                },
               ),
               const SizedBox(height: 20),
             ],

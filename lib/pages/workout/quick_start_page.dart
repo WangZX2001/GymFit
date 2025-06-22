@@ -4,7 +4,10 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:gymfit/components/quick_start_overlay.dart';
 import 'package:gymfit/pages/workout/exercise_information_page.dart';
 import 'package:gymfit/pages/workout/workout_summary_page.dart';
+
 import 'package:gymfit/models/workout.dart';
+import 'package:gymfit/models/custom_workout.dart';
+import 'package:gymfit/services/custom_workout_service.dart';
 
 // Model to track individual set data
 class ExerciseSet {
@@ -12,8 +15,11 @@ class ExerciseSet {
   int weight;
   int reps;
   bool isChecked;
+  
+  static int _counter = 0;
+  
   ExerciseSet({this.weight = 0, this.reps = 0, this.isChecked = false}) 
-    : id = '${DateTime.now().millisecondsSinceEpoch}_${weight * 1000 + reps}';
+    : id = '${DateTime.now().millisecondsSinceEpoch}_${++_counter}';
 }
 
 // Model to track exercise with multiple sets
@@ -26,7 +32,8 @@ class QuickStartExercise {
 
 class QuickStartPage extends StatefulWidget {
   final List<QuickStartExercise> initialSelectedExercises;
-  const QuickStartPage({super.key, this.initialSelectedExercises = const <QuickStartExercise>[]});
+  final String? initialWorkoutName;
+  const QuickStartPage({super.key, this.initialSelectedExercises = const <QuickStartExercise>[], this.initialWorkoutName});
 
   @override
   State<QuickStartPage> createState() => _QuickStartPageState();
@@ -37,11 +44,14 @@ class _QuickStartPageState extends State<QuickStartPage> {
   late ScrollController _scrollController;
   bool _showWorkoutNameInAppBar = false;
   String? _customWorkoutName;
+  List<CustomWorkout> _customWorkouts = [];
+  bool _loadingCustomWorkouts = false;
 
   @override
   void initState() {
     super.initState();
     _selectedExercises = widget.initialSelectedExercises.map((e) => QuickStartExercise(title: e.title, sets: e.sets)).toList();
+    _customWorkoutName = widget.initialWorkoutName; // Set the initial workout name
     
     // Initialize scroll controller
     _scrollController = ScrollController();
@@ -55,6 +65,47 @@ class _QuickStartPageState extends State<QuickStartPage> {
       if (mounted) {
         setState(() {});
       }
+    });
+
+    // Load custom workouts if no exercises are selected
+    if (_selectedExercises.isEmpty) {
+      _loadCustomWorkouts();
+    }
+  }
+
+  Future<void> _loadCustomWorkouts() async {
+    setState(() {
+      _loadingCustomWorkouts = true;
+    });
+
+    try {
+      final workouts = await CustomWorkoutService.getPinnedCustomWorkouts();
+      setState(() {
+        _customWorkouts = workouts;
+        _loadingCustomWorkouts = false;
+      });
+    } catch (e) {
+      setState(() {
+        _loadingCustomWorkouts = false;
+      });
+    }
+  }
+
+  void _loadCustomWorkout(CustomWorkout workout) {
+    // Convert custom workout exercises to QuickStartExercise objects with configured sets
+    final exercises = workout.exercises.map((customExercise) {
+      final sets = customExercise.sets.map((customSet) => 
+        ExerciseSet(weight: customSet.weight, reps: customSet.reps)
+      ).toList();
+      
+      return QuickStartExercise(title: customExercise.name, sets: sets);
+    }).toList();
+
+    // Update both local state and overlay, and set the custom workout name
+    setState(() {
+      _selectedExercises = exercises;
+      _customWorkoutName = workout.name; // Use the saved workout name
+      QuickStartOverlay.selectedExercises = _selectedExercises;
     });
   }
 
@@ -172,7 +223,7 @@ class _QuickStartPageState extends State<QuickStartPage> {
         backgroundColor: Colors.grey.shade200,
         elevation: 0,
         leading: IconButton(
-          icon: const FaIcon(FontAwesomeIcons.chevronDown, color: Colors.black),
+          icon: const FaIcon(FontAwesomeIcons.chevronDown, color: Colors.black, size: 20),
           onPressed: () {
             QuickStartOverlay.selectedExercises = _selectedExercises;
             QuickStartOverlay.minimize(context);
@@ -260,45 +311,87 @@ class _QuickStartPageState extends State<QuickStartPage> {
         actions: [
           // Show timer when workout name is in app bar
           if (_showWorkoutNameInAppBar)
-            Center(
-              child: Container(
-                margin: const EdgeInsets.only(right: 8.0),
-                padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const FaIcon(
-                      FontAwesomeIcons.stopwatch,
-                      color: Colors.black87,
-                      size: 11,
+            Padding(
+              padding: const EdgeInsets.only(right: 8.0),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const FaIcon(
+                    FontAwesomeIcons.stopwatch,
+                    color: Colors.black54,
+                    size: 16,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    _formatDuration(QuickStartOverlay.elapsedTime),
+                    style: const TextStyle(
+                      color: Colors.black54,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
                     ),
-                    const SizedBox(width: 4),
-                    Text(
-                      _formatDuration(QuickStartOverlay.elapsedTime),
-                      style: const TextStyle(
-                        color: Colors.black87,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 11,
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
-          IconButton(
-            icon: FaIcon(
-              QuickStartOverlay.isPaused ? FontAwesomeIcons.play : FontAwesomeIcons.pause,
-              color: Colors.black,
-              size: 20,
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                GestureDetector(
+                  onTap: () {
+                    QuickStartOverlay.togglePause();
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    child: FaIcon(
+                      QuickStartOverlay.isPaused ? FontAwesomeIcons.play : FontAwesomeIcons.pause,
+                      color: Colors.black,
+                      size: 20,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                GestureDetector(
+                  onTap: () async {
+                    if (!mounted) return;
+                    final navigator = Navigator.of(context);
+                    final bool? confirmed = await showDialog<bool>(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return AlertDialog(
+                          title: const Text('Cancel Workout'),
+                          content: const Text('Are you sure you want to cancel this workout?'),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(false),
+                              child: const Text('No'),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(true),
+                              child: const Text('Yes'),
+                            ),
+                          ],
+                        );
+                      },
+                    );
+
+                    if (mounted && confirmed == true) {
+                      QuickStartOverlay.selectedExercises = [];
+                      navigator.pop();
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    child: const FaIcon(
+                      FontAwesomeIcons.xmark,
+                      color: Colors.black,
+                      size: 20,
+                    ),
+                  ),
+                ),
+              ],
             ),
-            onPressed: () {
-              QuickStartOverlay.togglePause();
-            },
           ),
         ],
       ),
@@ -394,10 +487,11 @@ class _QuickStartPageState extends State<QuickStartPage> {
                   
                   Expanded(
                     child: _selectedExercises.isEmpty
-                        ? Center(
+                        ? SingleChildScrollView(
+                            padding: const EdgeInsets.all(16.0),
                             child: Column(
-                              mainAxisSize: MainAxisSize.min,
                               children: [
+                                const SizedBox(height: 120),
                                 const FaIcon(
                                   FontAwesomeIcons.dumbbell,
                                   size: 48,
@@ -421,6 +515,122 @@ class _QuickStartPageState extends State<QuickStartPage> {
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
+                                const SizedBox(height: 24),
+                                // Custom workout suggestions
+                                if (_loadingCustomWorkouts) ...[
+                                  const SizedBox(height: 80),
+                                  const CircularProgressIndicator(),
+                                ] else if (_customWorkouts.isNotEmpty) ...[
+                                  const SizedBox(height: 80),
+                                  const Divider(),
+                                  const SizedBox(height: 16),
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        Icons.push_pin,
+                                        color: Colors.grey.shade700,
+                                        size: 18,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      const Text(
+                                        'Pinned',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 12),
+                                  for (int i = 0; i < _customWorkouts.length; i++) ...[
+                                                                        if (i > 0) ...[
+                                      Divider(
+                                        color: Colors.grey.shade600,
+                                        thickness: 0.5,
+                                        indent: 16,
+                                        endIndent: 16,
+                                        height: 1,
+                                      ),
+                                    ],
+                                    Container(
+                                      margin: const EdgeInsets.only(bottom: 2),
+                                      child: ListTile(
+                                        leading: Container(
+                                          width: 40,
+                                          height: 40,
+                                          decoration: BoxDecoration(
+                                            color: Colors.transparent,
+                                            borderRadius: BorderRadius.circular(20),
+                                          ),
+                                          child: const FaIcon(
+                                            FontAwesomeIcons.dumbbell,
+                                            color: Colors.black,
+                                            size: 20,
+                                          ),
+                                        ),
+                                        title: Text(
+                                          _customWorkouts[i].name,
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                        subtitle: Text(
+                                          '${_customWorkouts[i].exerciseNames.length} exercises',
+                                          style: TextStyle(
+                                            color: Colors.grey.shade600,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                        trailing: const Icon(
+                                          Icons.play_arrow,
+                                          color: Colors.green,
+                                        ),
+                                        tileColor: Colors.transparent,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        onTap: () => _loadCustomWorkout(_customWorkouts[i]),
+                                      ),
+                                    ),
+                                  ],
+                                ] else ...[
+                                  const SizedBox(height: 80),
+                                  const Divider(),
+                                  const SizedBox(height: 16),
+                                  Container(
+                                    padding: const EdgeInsets.all(16),
+                                    decoration: BoxDecoration(
+                                      color: Colors.transparent,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Column(
+                                      children: [
+                                        Icon(
+                                          Icons.push_pin_outlined,
+                                          size: 32,
+                                          color: Colors.grey.shade400,
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          'No pinned workouts',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                            color: Colors.grey.shade600,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          'Pin your favorite workouts to see them here',
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey.shade500,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ],
                             ),
                           )
@@ -771,83 +981,47 @@ class _QuickStartPageState extends State<QuickStartPage> {
                                         ? const EdgeInsets.symmetric(vertical: 12) 
                                         : const EdgeInsets.symmetric(vertical: 16);
                                     
-                                    return Row(
-                                      children: [
-                                        Expanded(
-                                          child: ElevatedButton(
-                                            onPressed: () async {
-                                              final navigator = Navigator.of(context);
-                                              final bool? confirmed = await showDialog<bool>(
-                                                context: context,
-                                                builder: (BuildContext context) {
-                                                  return AlertDialog(
-                                                    title: const Text('Delete Workout'),
-                                                    content: const Text('Are you sure you want to delete workout?'),
-                                                    actions: [
-                                                      TextButton(
-                                                        onPressed: () => Navigator.of(context).pop(false),
-                                                        child: const Text('No'),
-                                                      ),
-                                                      TextButton(
-                                                        onPressed: () => Navigator.of(context).pop(true),
-                                                        child: const Text('Yes'),
-                                                      ),
-                                                    ],
-                                                  );
-                                                },
-                                              );
-
-                                              if (confirmed == true) {
-                                                QuickStartOverlay.selectedExercises = [];
-                                                navigator.pop();
-                                              }
-                                            },
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor: Colors.red.shade700,
-                                              shape: const StadiumBorder(),
-                                              padding: buttonPadding,
-                                            ),
-                                            child: Text(
-                                              'Cancel',
-                                              style: TextStyle(
-                                                color: Colors.white, 
-                                                fontSize: buttonFontSize, 
-                                                fontWeight: FontWeight.bold
+                                    return SizedBox(
+                                      width: double.infinity,
+                                      child: OutlinedButton.icon(
+                                        onPressed: () {
+                                          // Navigate to workout summary page
+                                          Navigator.of(context).push(
+                                            MaterialPageRoute(
+                                              builder: (context) => WorkoutSummaryPage(
+                                                completedExercises: _selectedExercises,
+                                                workoutDuration: QuickStartOverlay.elapsedTime,
+                                                customWorkoutName: _customWorkoutName,
                                               ),
                                             ),
+                                          );
+                                        },
+                                        style: OutlinedButton.styleFrom(
+                                          backgroundColor: Colors.transparent,
+                                          foregroundColor: Colors.green.shade700,
+                                          side: BorderSide(
+                                            color: Colors.green.shade700,
+                                            width: 2,
+                                          ),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                          padding: buttonPadding,
+                                        ),
+                                        icon: FaIcon(
+                                          FontAwesomeIcons.flagCheckered,
+                                          color: Colors.green.shade700,
+                                          size: buttonFontSize * 0.8,
+                                        ),
+                                        label: Text(
+                                          'Finish',
+                                          style: TextStyle(
+                                            color: Colors.green.shade700, 
+                                            fontSize: buttonFontSize, 
+                                            fontWeight: FontWeight.w900
                                           ),
                                         ),
-                                        SizedBox(width: screenWidth < 350 ? 12 : 16),
-                                                                Expanded(
-                          child: ElevatedButton(
-                            onPressed: () {
-                              // Navigate to workout summary page
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (context) => WorkoutSummaryPage(
-                                    completedExercises: _selectedExercises,
-                                    workoutDuration: QuickStartOverlay.elapsedTime,
-                                    customWorkoutName: _customWorkoutName,
-                                  ),
-                                ),
-                              );
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.green.shade700,
-                              shape: const StadiumBorder(),
-                              padding: buttonPadding,
-                            ),
-                            child: Text(
-                              'Finish',
-                              style: TextStyle(
-                                color: Colors.white, 
-                                fontSize: buttonFontSize, 
-                                fontWeight: FontWeight.bold
-                              ),
-                            ),
-                          ),
-                        ),
-                                      ],
+                                      ),
                                     );
                                   },
                                 ),

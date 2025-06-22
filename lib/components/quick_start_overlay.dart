@@ -6,6 +6,7 @@ import 'package:gymfit/pages/workout/quick_start_page.dart';
 class QuickStartOverlay {
   static OverlayEntry? _minibarEntry;
   static List<QuickStartExercise> selectedExercises = [];
+  static String? customWorkoutName;
   static bool _wasMinibarVisible = false;
   static Timer? _timer;
   static Duration _elapsedTime = Duration.zero;
@@ -113,24 +114,28 @@ class QuickStartOverlay {
 
   /// Widget builder for the timer display
   static Widget _buildTimerDisplay() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        const FaIcon(
-          FontAwesomeIcons.stopwatch,
-          color: Colors.black,
-          size: 16,
-        ),
-        const SizedBox(width: 6),
-        Text(
-          _formatDuration(_elapsedTime),
-          style: const TextStyle(
+    return SizedBox(
+      width: double.infinity,
+      height: double.infinity,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const FaIcon(
+            FontAwesomeIcons.stopwatch,
             color: Colors.black,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
+            size: 22,
           ),
-        ),
-      ],
+          const SizedBox(width: 6),
+          Text(
+            _formatDuration(_elapsedTime),
+            style: const TextStyle(
+              color: Colors.black,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -182,58 +187,69 @@ class QuickStartOverlay {
               color: Colors.grey.shade300,
               borderRadius: BorderRadius.circular(16),
             ),
-            child: Row(
-              children: [
-                // Up arrow on the far left
-                Padding(
-                  padding: const EdgeInsets.only(left: 8.0),
-                  child: const Icon(
-                    Icons.keyboard_arrow_up,
-                    color: Colors.black,
-                    size: 20,
+            child: GestureDetector(
+              behavior: HitTestBehavior.translucent,
+              onTap: () {
+                hideMinibar();
+                openQuickStart(context);
+              },
+              child: Row(
+                children: [
+                  // Up arrow on the far left
+                  Padding(
+                    padding: const EdgeInsets.only(left: 8.0),
+                    child: const Icon(
+                      Icons.keyboard_arrow_up,
+                      color: Colors.black,
+                      size: 26,
+                    ),
                   ),
-                ),
-                // Main tap area for opening Quick Start
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () {
-                      hideMinibar();
-                      openQuickStart(context);
-                    },
+                  // Main tap area for opening Quick Start
+                  Expanded(
                     child: _buildTimerDisplay(),
                   ),
-                ),
-                // Pause/Resume button
-                Padding(
-                  padding: const EdgeInsets.only(right: 4.0),
-                  child: GestureDetector(
-                    onTap: () => togglePause(),
-                    child: Container(
-                      padding: const EdgeInsets.all(8.0),
-                      child: FaIcon(
-                        _isPaused ? FontAwesomeIcons.play : FontAwesomeIcons.pause,
-                        color: Colors.black54,
-                        size: 16,
+                  // Pause/Resume button
+                  Padding(
+                    padding: const EdgeInsets.only(right: 4.0),
+                    child: Material(
+                      color: Colors.transparent,
+                      borderRadius: BorderRadius.circular(20),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(20),
+                        onTap: () => togglePause(),
+                        child: Container(
+                          padding: const EdgeInsets.all(8.0),
+                          child: FaIcon(
+                            _isPaused ? FontAwesomeIcons.play : FontAwesomeIcons.pause,
+                            color: Colors.black,
+                            size: 22,
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
-                // Cancel button
-                Padding(
-                  padding: const EdgeInsets.only(right: 8.0),
-                  child: GestureDetector(
-                    onTap: () => _showCancelConfirmation(context),
-                    child: Container(
-                      padding: const EdgeInsets.all(8.0),
-                      child: const Icon(
-                        Icons.close,
-                        color: Colors.black54,
-                        size: 20,
+                  // Cancel button
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8.0),
+                    child: Material(
+                      color: Colors.transparent,
+                      borderRadius: BorderRadius.circular(20),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(20),
+                        onTap: () => _showCancelConfirmation(context),
+                        child: Container(
+                          padding: const EdgeInsets.all(8.0),
+                          child: const Icon(
+                            Icons.close,
+                            color: Colors.black,
+                            size: 26,
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -253,7 +269,10 @@ class QuickStartOverlay {
     // Open Quick Start page without nav bar, sliding up over 200ms
     Navigator.of(context, rootNavigator: true).push(
       PageRouteBuilder(
-        pageBuilder: (ctx, animation, secondaryAnimation) => QuickStartPage(initialSelectedExercises: selectedExercises),
+        pageBuilder: (ctx, animation, secondaryAnimation) => QuickStartPage(
+          initialSelectedExercises: selectedExercises,
+          initialWorkoutName: customWorkoutName,
+        ),
         transitionDuration: const Duration(milliseconds: 200),
         reverseTransitionDuration: const Duration(milliseconds: 200),
         transitionsBuilder: (ctx, animation, secAnim, child) {
@@ -297,58 +316,69 @@ class QuickStartOverlay {
               color: Colors.grey.shade300,
               borderRadius: BorderRadius.circular(16),
             ),
-            child: Row(
-              children: [
-                // Up arrow on the far left
-                Padding(
-                  padding: const EdgeInsets.only(left: 8.0),
-                  child: const Icon(
-                    Icons.keyboard_arrow_up,
-                    color: Colors.black,
-                    size: 20,
-                  ),
-                ),
-                // Main tap area for opening Quick Start
-                Expanded(
-                                      child: GestureDetector(
-                      onTap: () {
-                        hideMinibar();
-                        openQuickStart(ctx);
-                      },
-                      child: _buildTimerDisplay(),
+            child: GestureDetector(
+              behavior: HitTestBehavior.translucent,
+              onTap: () {
+                hideMinibar();
+                openQuickStart(ctx);
+              },
+              child: Row(
+                children: [
+                  // Up arrow on the far left
+                  Padding(
+                    padding: const EdgeInsets.only(left: 8.0),
+                    child: const Icon(
+                      Icons.keyboard_arrow_up,
+                      color: Colors.black,
+                      size: 26,
                     ),
-                ),
-                // Pause/Resume button
-                Padding(
-                  padding: const EdgeInsets.only(right: 4.0),
-                  child: GestureDetector(
-                    onTap: () => togglePause(),
-                    child: Container(
-                      padding: const EdgeInsets.all(8.0),
-                      child: FaIcon(
-                        _isPaused ? FontAwesomeIcons.play : FontAwesomeIcons.pause,
-                        color: Colors.black54,
-                        size: 16,
+                  ),
+                  // Main tap area for opening Quick Start
+                  Expanded(
+                    child: _buildTimerDisplay(),
+                  ),
+                  // Pause/Resume button
+                  Padding(
+                    padding: const EdgeInsets.only(right: 4.0),
+                    child: Material(
+                      color: Colors.transparent,
+                      borderRadius: BorderRadius.circular(20),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(20),
+                        onTap: () => togglePause(),
+                        child: Container(
+                          padding: const EdgeInsets.all(8.0),
+                          child: FaIcon(
+                            _isPaused ? FontAwesomeIcons.play : FontAwesomeIcons.pause,
+                            color: Colors.black,
+                            size: 22,
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
-                // Cancel button
-                Padding(
-                  padding: const EdgeInsets.only(right: 8.0),
-                  child: GestureDetector(
-                    onTap: () => _showCancelConfirmation(ctx),
-                    child: Container(
-                      padding: const EdgeInsets.all(8.0),
-                      child: const Icon(
-                        Icons.close,
-                        color: Colors.black54,
-                        size: 20,
+                  // Cancel button
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8.0),
+                    child: Material(
+                      color: Colors.transparent,
+                      borderRadius: BorderRadius.circular(20),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(20),
+                        onTap: () => _showCancelConfirmation(ctx),
+                        child: Container(
+                          padding: const EdgeInsets.all(8.0),
+                          child: const Icon(
+                            Icons.close,
+                            color: Colors.black,
+                            size: 26,
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -376,58 +406,69 @@ class QuickStartOverlay {
               color: Colors.grey.shade300,
               borderRadius: BorderRadius.circular(16),
             ),
-            child: Row(
-              children: [
-                // Up arrow on the far left
-                Padding(
-                  padding: const EdgeInsets.only(left: 8.0),
-                  child: const Icon(
-                    Icons.keyboard_arrow_up,
-                    color: Colors.black,
-                    size: 20,
-                  ),
-                ),
-                // Main tap area for opening Quick Start
-                Expanded(
-                                      child: GestureDetector(
-                      onTap: () {
-                        hideMinibar();
-                        openQuickStart(context);
-                      },
-                      child: _buildTimerDisplay(),
+            child: GestureDetector(
+              behavior: HitTestBehavior.translucent,
+              onTap: () {
+                hideMinibar();
+                openQuickStart(context);
+              },
+              child: Row(
+                children: [
+                  // Up arrow on the far left
+                  Padding(
+                    padding: const EdgeInsets.only(left: 8.0),
+                    child: const Icon(
+                      Icons.keyboard_arrow_up,
+                      color: Colors.black,
+                      size: 26,
                     ),
-                ),
-                // Pause/Resume button
-                Padding(
-                  padding: const EdgeInsets.only(right: 4.0),
-                  child: GestureDetector(
-                    onTap: () => togglePause(),
-                    child: Container(
-                      padding: const EdgeInsets.all(8.0),
-                      child: FaIcon(
-                        _isPaused ? FontAwesomeIcons.play : FontAwesomeIcons.pause,
-                        color: Colors.black54,
-                        size: 16,
+                  ),
+                  // Main tap area for opening Quick Start
+                  Expanded(
+                    child: _buildTimerDisplay(),
+                  ),
+                  // Pause/Resume button
+                  Padding(
+                    padding: const EdgeInsets.only(right: 4.0),
+                    child: Material(
+                      color: Colors.transparent,
+                      borderRadius: BorderRadius.circular(20),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(20),
+                        onTap: () => togglePause(),
+                        child: Container(
+                          padding: const EdgeInsets.all(8.0),
+                          child: FaIcon(
+                            _isPaused ? FontAwesomeIcons.play : FontAwesomeIcons.pause,
+                            color: Colors.black,
+                            size: 22,
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
-                // Cancel button
-                Padding(
-                  padding: const EdgeInsets.only(right: 8.0),
-                  child: GestureDetector(
-                    onTap: () => _showCancelConfirmation(context),
-                    child: Container(
-                      padding: const EdgeInsets.all(8.0),
-                      child: const Icon(
-                        Icons.close,
-                        color: Colors.black54,
-                        size: 20,
+                  // Cancel button
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8.0),
+                    child: Material(
+                      color: Colors.transparent,
+                      borderRadius: BorderRadius.circular(20),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(20),
+                        onTap: () => _showCancelConfirmation(context),
+                        child: Container(
+                          padding: const EdgeInsets.all(8.0),
+                          child: const Icon(
+                            Icons.close,
+                            color: Colors.black,
+                            size: 26,
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -448,8 +489,8 @@ class QuickStartOverlay {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Delete Workout'),
-          content: const Text('Are you sure you want to delete workout?'),
+          title: const Text('Cancel Workout'),
+          content: const Text('Are you sure you want to cancel this workout?'),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
