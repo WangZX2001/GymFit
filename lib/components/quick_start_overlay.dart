@@ -11,9 +11,14 @@ class QuickStartOverlay {
   static Duration _elapsedTime = Duration.zero;
   static DateTime? _startTime;
   static VoidCallback? _pageUpdateCallback;
+  static bool _isPaused = false;
+  static Duration _pausedTime = Duration.zero;
 
   /// Get current elapsed time
   static Duration get elapsedTime => _elapsedTime;
+
+  /// Get current pause state
+  static bool get isPaused => _isPaused;
 
   /// Set callback for page updates
   static void setPageUpdateCallback(VoidCallback? callback) {
@@ -26,18 +31,51 @@ class QuickStartOverlay {
   /// Start the timer
   static void startTimer() {
     if (_timer != null) return; // Don't start multiple timers
-    _startTime = DateTime.now();
+    _startTime = DateTime.now().subtract(_elapsedTime);
+    _isPaused = false;
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      _elapsedTime = DateTime.now().difference(_startTime!);
+      if (!_isPaused) {
+        _elapsedTime = DateTime.now().difference(_startTime!);
+        _updateMinibar();
+        _pageUpdateCallback?.call();
+      }
+    });
+  }
+
+  /// Pause the timer
+  static void pauseTimer() {
+    if (_timer != null && !_isPaused) {
+      _isPaused = true;
+      _pausedTime = _elapsedTime;
       _updateMinibar();
       _pageUpdateCallback?.call();
-    });
+    }
+  }
+
+  /// Resume the timer
+  static void resumeTimer() {
+    if (_timer != null && _isPaused) {
+      _isPaused = false;
+      _startTime = DateTime.now().subtract(_pausedTime);
+      _updateMinibar();
+      _pageUpdateCallback?.call();
+    }
+  }
+
+  /// Toggle pause/resume
+  static void togglePause() {
+    if (_isPaused) {
+      resumeTimer();
+    } else {
+      pauseTimer();
+    }
   }
 
   /// Stop the timer
   static void stopTimer() {
     _timer?.cancel();
     _timer = null;
+    _isPaused = false;
   }
 
   /// Reset the timer
@@ -45,6 +83,8 @@ class QuickStartOverlay {
     stopTimer();
     _elapsedTime = Duration.zero;
     _startTime = null;
+    _isPaused = false;
+    _pausedTime = Duration.zero;
   }
 
   /// Format duration for display
@@ -73,8 +113,6 @@ class QuickStartOverlay {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Icon(Icons.keyboard_arrow_up, color: Colors.black),
-        const SizedBox(width: 8),
         const FaIcon(
           FontAwesomeIcons.stopwatch,
           color: Colors.black,
@@ -143,6 +181,15 @@ class QuickStartOverlay {
             ),
             child: Row(
               children: [
+                // Up arrow on the far left
+                Padding(
+                  padding: const EdgeInsets.only(left: 8.0),
+                  child: const Icon(
+                    Icons.keyboard_arrow_up,
+                    color: Colors.black,
+                    size: 20,
+                  ),
+                ),
                 // Main tap area for opening Quick Start
                 Expanded(
                   child: GestureDetector(
@@ -151,6 +198,21 @@ class QuickStartOverlay {
                       openQuickStart(context);
                     },
                     child: _buildTimerDisplay(),
+                  ),
+                ),
+                // Pause/Resume button
+                Padding(
+                  padding: const EdgeInsets.only(right: 4.0),
+                  child: GestureDetector(
+                    onTap: () => togglePause(),
+                    child: Container(
+                      padding: const EdgeInsets.all(8.0),
+                      child: FaIcon(
+                        _isPaused ? FontAwesomeIcons.play : FontAwesomeIcons.pause,
+                        color: Colors.black54,
+                        size: 16,
+                      ),
+                    ),
                   ),
                 ),
                 // Cancel button
@@ -234,6 +296,15 @@ class QuickStartOverlay {
             ),
             child: Row(
               children: [
+                // Up arrow on the far left
+                Padding(
+                  padding: const EdgeInsets.only(left: 8.0),
+                  child: const Icon(
+                    Icons.keyboard_arrow_up,
+                    color: Colors.black,
+                    size: 20,
+                  ),
+                ),
                 // Main tap area for opening Quick Start
                 Expanded(
                                       child: GestureDetector(
@@ -243,6 +314,21 @@ class QuickStartOverlay {
                       },
                       child: _buildTimerDisplay(),
                     ),
+                ),
+                // Pause/Resume button
+                Padding(
+                  padding: const EdgeInsets.only(right: 4.0),
+                  child: GestureDetector(
+                    onTap: () => togglePause(),
+                    child: Container(
+                      padding: const EdgeInsets.all(8.0),
+                      child: FaIcon(
+                        _isPaused ? FontAwesomeIcons.play : FontAwesomeIcons.pause,
+                        color: Colors.black54,
+                        size: 16,
+                      ),
+                    ),
+                  ),
                 ),
                 // Cancel button
                 Padding(
@@ -289,6 +375,15 @@ class QuickStartOverlay {
             ),
             child: Row(
               children: [
+                // Up arrow on the far left
+                Padding(
+                  padding: const EdgeInsets.only(left: 8.0),
+                  child: const Icon(
+                    Icons.keyboard_arrow_up,
+                    color: Colors.black,
+                    size: 20,
+                  ),
+                ),
                 // Main tap area for opening Quick Start
                 Expanded(
                                       child: GestureDetector(
@@ -298,6 +393,21 @@ class QuickStartOverlay {
                       },
                       child: _buildTimerDisplay(),
                     ),
+                ),
+                // Pause/Resume button
+                Padding(
+                  padding: const EdgeInsets.only(right: 4.0),
+                  child: GestureDetector(
+                    onTap: () => togglePause(),
+                    child: Container(
+                      padding: const EdgeInsets.all(8.0),
+                      child: FaIcon(
+                        _isPaused ? FontAwesomeIcons.play : FontAwesomeIcons.pause,
+                        color: Colors.black54,
+                        size: 16,
+                      ),
+                    ),
+                  ),
                 ),
                 // Cancel button
                 Padding(

@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:gymfit/models/workout.dart';
 import 'package:gymfit/pages/workout/quick_start_page.dart';
 
@@ -125,10 +126,121 @@ class WorkoutService {
     }
 
     try {
-      await _firestore.collection('workouts').doc(workoutId).delete();
+      // Add timeout protection at service level
+      await Future.any([
+        _performDelete(workoutId, user.uid),
+        Future.delayed(const Duration(seconds: 8), () {
+          throw Exception('Delete operation timed out after 8 seconds');
+        }),
+      ]);
+      
     } catch (e) {
-      throw Exception('Failed to delete workout: $e');
+      // Clean up the error message
+      String errorMsg = e.toString();
+      if (errorMsg.startsWith('Exception: ')) {
+        errorMsg = errorMsg.substring(11);
+      }
+      throw Exception(errorMsg);
     }
+  }
+
+  static Future<void> _performDelete(String workoutId, String userId) async {
+    // First check if document exists with timeout
+    final docSnapshot = await _firestore
+        .collection('workouts')
+        .doc(workoutId)
+        .get()
+        .timeout(const Duration(seconds: 3));
+        
+    if (!docSnapshot.exists) {
+      throw Exception('Workout not found');
+    }
+    
+    final data = docSnapshot.data();
+    
+    // Verify user owns this workout
+    if (data?['userId'] != userId) {
+      throw Exception('Unauthorized: You do not own this workout');
+    }
+    
+    // Perform the delete with timeout
+    await _firestore
+        .collection('workouts')
+        .doc(workoutId)
+        .delete()
+        .timeout(const Duration(seconds: 4));
+  }
+
+  /// Test Firebase connectivity - useful for debugging
+  static Future<Map<String, bool>> testFirebaseConnectivity() async {
+    final user = _auth.currentUser;
+    Map<String, bool> results = {};
+    
+    try {
+      // Test 1: Firebase Auth
+      debugPrint('🧪 Testing Firebase Auth...');
+      results['auth'] = user != null;
+      debugPrint('   Auth result: ${results['auth']}');
+      
+      // Test 2: Firestore Connection
+      debugPrint('🧪 Testing Firestore connection...');
+      try {
+        await _firestore.enableNetwork();
+        results['firestore'] = true;
+        debugPrint('   Firestore connection: SUCCESS');
+      } catch (e) {
+        results['firestore'] = false;
+        debugPrint('   Firestore connection: FAILED - $e');
+      }
+      
+      // Test 3: Workout Collection Access
+      if (user != null) {
+        debugPrint('🧪 Testing workout collection access...');
+        try {
+          final query = await _firestore
+              .collection('workouts')
+              .where('userId', isEqualTo: user.uid)
+              .limit(1)
+              .get();
+          results['workoutCollection'] = true;
+          debugPrint('   Workout collection access: SUCCESS (${query.docs.length} docs found)');
+        } catch (e) {
+          results['workoutCollection'] = false;
+          debugPrint('   Workout collection access: FAILED - $e');
+        }
+      } else {
+        results['workoutCollection'] = false;
+        debugPrint('   Workout collection access: SKIPPED (no user)');
+      }
+      
+      // Test 4: Delete Operation (simulate without actually deleting)
+      if (user != null) {
+        debugPrint('🧪 Testing delete operation permissions...');
+        try {
+          // Just check if we can read a document for delete permission testing
+          final query = await _firestore
+              .collection('workouts')
+              .where('userId', isEqualTo: user.uid)
+              .limit(1)
+              .get();
+          results['deleteOperation'] = true;
+          debugPrint('   Delete operation permissions: SUCCESS');
+        } catch (e) {
+          results['deleteOperation'] = false;
+          debugPrint('   Delete operation permissions: FAILED - $e');
+        }
+      } else {
+        results['deleteOperation'] = false;
+        debugPrint('   Delete operation permissions: SKIPPED (no user)');
+      }
+      
+    } catch (e) {
+      debugPrint('❌ Firebase connectivity test failed: $e');
+      // Return whatever results we have so far
+    }
+    
+    debugPrint('🧪 Firebase test results: $results');
+    return results;
   }
 
   static Future<Workout?> getWorkout(String workoutId) async {

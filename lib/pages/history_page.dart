@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:gymfit/models/workout.dart';
 import 'package:gymfit/services/workout_service.dart';
+import 'package:gymfit/pages/workout_details_page.dart';
 import 'package:intl/intl.dart';
 
 class HistoryPage extends StatelessWidget {
@@ -121,6 +123,10 @@ class HistoryPage extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                       onTap: () {
                         _showWorkoutDetails(context, workout);
+                      },
+                      onLongPress: () {
+                        HapticFeedback.mediumImpact();
+                        _showWorkoutPreview(context, workout);
                       },
                       child: Padding(
                         padding: const EdgeInsets.all(16.0),
@@ -276,372 +282,296 @@ class HistoryPage extends StatelessWidget {
   }
 
   void _showWorkoutDetails(BuildContext context, Workout workout) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => WorkoutDetailsPage(workout: workout),
+      ),
+    );
+  }
+
+  void _showWorkoutPreview(BuildContext context, Workout workout) {
     final dateFormat = DateFormat('EEEE, MMM dd, yyyy');
     final timeFormat = DateFormat('h:mm a');
 
     showDialog(
       context: context,
+      barrierDismissible: true,
       builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                                                 // Header
-                Row(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        elevation: 8,
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 360, maxHeight: 700),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Header with close button
+              Container(
+                padding: const EdgeInsets.fromLTRB(20, 16, 8, 0),
+                child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Text(
-                      'Workout Details',
+                      'Workout Preview',
                       style: TextStyle(
-                        fontSize: 20,
+                        fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     IconButton(
                       onPressed: () => Navigator.of(context).pop(),
-                      icon: const Icon(Icons.close),
+                      icon: const Icon(Icons.close, size: 20),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
                     ),
                   ],
                 ),
-                
-                const SizedBox(height: 16),
-                
-                // Date and Time
-                Text(
-                  '${dateFormat.format(workout.date)} at ${timeFormat.format(workout.date)}',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey[600],
-                  ),
-                ),
-                
-                const SizedBox(height: 16),
-                
-                // Summary Stats
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      Column(
-                        children: [
-                          const FaIcon(FontAwesomeIcons.stopwatch, color: Colors.blue),
-                          const SizedBox(height: 4),
-                          Text(
-                            _formatDuration(workout.duration),
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          const Text('Duration', style: TextStyle(fontSize: 12)),
-                        ],
-                      ),
-                      Column(
-                        children: [
-                          const FaIcon(FontAwesomeIcons.dumbbell, color: Colors.green),
-                          const SizedBox(height: 4),
-                          Text(
-                            '${workout.exercises.length}',
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          const Text('Exercises', style: TextStyle(fontSize: 12)),
-                        ],
-                      ),
-                      Column(
-                        children: [
-                          const FaIcon(FontAwesomeIcons.check, color: Colors.orange),
-                          const SizedBox(height: 4),
-                          Text(
-                            '${workout.completedSets}',
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          const Text('Sets', style: TextStyle(fontSize: 12)),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                
-                const SizedBox(height: 20),
-                
-                // Exercise Breakdown
-                const Text(
-                  'Exercise Breakdown',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                
-                const SizedBox(height: 12),
-                
-                ...workout.exercises.map((exercise) => Padding(
-                  padding: const EdgeInsets.only(bottom: 16.0),
+              ),
+              
+              // Content
+              Flexible(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Exercise Title and Summary
+                      // Date and Time
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.shade50,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            const FaIcon(
+                              FontAwesomeIcons.calendar,
+                              color: Colors.blue,
+                              size: 16,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                '${dateFormat.format(workout.date)} at ${timeFormat.format(workout.date)}',
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      
+                      const SizedBox(height: 16),
+                      
+                      // Quick Stats
                       Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
-                          Expanded(
-                            child: Text(
-                              exercise.title,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
-                            ),
+                          _buildPreviewStat(
+                            FontAwesomeIcons.stopwatch,
+                            Colors.blue,
+                            _formatDuration(workout.duration),
+                            'Duration',
                           ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: exercise.completedSets > 0 
-                                  ? Colors.green.shade100
-                                  : Colors.grey.shade100,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              '${exercise.completedSets}/${exercise.totalSets} sets',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: exercise.completedSets > 0 
-                                    ? Colors.green.shade700
-                                    : Colors.grey.shade600,
-                              ),
-                            ),
+                          _buildPreviewStat(
+                            FontAwesomeIcons.dumbbell,
+                            Colors.green,
+                            '${workout.exercises.length}',
+                            'Exercises',
+                          ),
+                          _buildPreviewStat(
+                            FontAwesomeIcons.check,
+                            Colors.orange,
+                            '${workout.completedSets}',
+                            'Sets',
                           ),
                         ],
+                      ),
+                      
+                      const SizedBox(height: 16),
+                      
+                      // Exercise Summary
+                      const Text(
+                        'Exercises',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       
                       const SizedBox(height: 8),
                       
-                      // Individual Sets Details
-                      ...exercise.sets.asMap().entries.map((entry) {
-                        final index = entry.key;
-                        final set = entry.value;
-                        return Padding(
-                          padding: const EdgeInsets.only(left: 16.0, bottom: 4.0),
-                          child: Row(
+                      ...workout.exercises.map((exercise) {
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade50,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.grey.shade200),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Container(
-                                width: 24,
-                                height: 24,
-                                decoration: BoxDecoration(
-                                  color: set.isCompleted 
-                                      ? Colors.green
-                                      : Colors.grey.shade300,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    '${index + 1}',
-                                    style: TextStyle(
-                                      color: set.isCompleted 
-                                          ? Colors.white
-                                          : Colors.grey.shade600,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
+                              // Exercise Title and Summary
+                              Row(
+                                children: [
+                                  Container(
+                                    width: 8,
+                                    height: 8,
+                                    decoration: BoxDecoration(
+                                      color: exercise.completedSets > 0 
+                                          ? Colors.green 
+                                          : Colors.grey.shade400,
+                                      shape: BoxShape.circle,
                                     ),
                                   ),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  set.isCompleted 
-                                      ? '${set.weight} lbs × ${set.reps} reps'
-                                      : 'Not completed',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: set.isCompleted 
-                                        ? Colors.black87
-                                        : Colors.grey.shade500,
-                                    fontWeight: set.isCompleted 
-                                        ? FontWeight.w500
-                                        : FontWeight.normal,
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      exercise.title,
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
                                   ),
-                                ),
+                                  Text(
+                                    '${exercise.completedSets}/${exercise.totalSets}',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey.shade600,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
                               ),
+                              
+                              const SizedBox(height: 8),
+                              
+                              // All Sets Details
+                              ...exercise.sets.asMap().entries.map((entry) {
+                                final int setIndex = entry.key;
+                                final set = entry.value;
+                                
+                                return Container(
+                                  margin: const EdgeInsets.only(top: 4),
+                                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: set.isCompleted 
+                                        ? Colors.green.shade50 
+                                        : Colors.grey.shade100,
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(
+                                      color: set.isCompleted 
+                                          ? Colors.green.shade200 
+                                          : Colors.grey.shade300,
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        'Set ${setIndex + 1}',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w500,
+                                          color: set.isCompleted 
+                                              ? Colors.green.shade700 
+                                              : Colors.grey.shade600,
+                                        ),
+                                      ),
+                                      Text(
+                                        '${set.weight} kg × ${set.reps} reps',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w500,
+                                          color: set.isCompleted 
+                                              ? Colors.green.shade700 
+                                              : Colors.grey.shade500,
+                                        ),
+                                      ),
+                                      Icon(
+                                        set.isCompleted 
+                                            ? Icons.check_circle 
+                                            : Icons.radio_button_unchecked,
+                                        size: 16,
+                                        color: set.isCompleted 
+                                            ? Colors.green 
+                                            : Colors.grey.shade400,
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }),
                             ],
                           ),
                         );
                       }),
+                      
+                      const SizedBox(height: 16),
+                      
+                      // View Details Button
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                            _showWorkoutDetails(context, workout);
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.black,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: const Text(
+                            'View Full Details',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
-                )),
-                
-                const SizedBox(height: 24),
-                
-                // Delete Button at Bottom
-                SizedBox(
-                  width: double.infinity,
-                  child: TextButton.icon(
-                    onPressed: () => _deleteWorkoutConfirmation(context, workout),
-                    icon: const FaIcon(
-                      FontAwesomeIcons.trash,
-                      size: 14,
-                      color: Colors.red,
-                    ),
-                    label: const Text(
-                      'Delete Workout',
-                      style: TextStyle(
-                        color: Colors.red,
-                        fontSize: 14,
-                      ),
-                    ),
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                  ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
 
-  Future<void> _deleteWorkoutConfirmation(BuildContext context, Workout workout) async {
-    final dateFormat = DateFormat('MMM dd, yyyy');
-    
-    final bool? confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
-          children: [
-            const FaIcon(
-              FontAwesomeIcons.trash,
-              color: Colors.red,
-              size: 20,
-            ),
-            const SizedBox(width: 8),
-            const Text('Delete Workout'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Are you sure you want to delete this workout?',
-              style: const TextStyle(fontSize: 16),
-            ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    dateFormat.format(workout.date),
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${workout.exercises.length} exercises • ${workout.completedSets} sets • ${_formatDuration(workout.duration)}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              'This action cannot be undone.',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.red,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
+  Widget _buildPreviewStat(IconData icon, Color color, String value, String label) {
+    return Column(
+      children: [
+        FaIcon(icon, color: color, size: 18),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 14,
           ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Delete'),
+        ),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 11,
+            color: Colors.grey,
           ),
-        ],
-      ),
+        ),
+      ],
     );
-
-    if (confirmed == true && context.mounted) {
-      await _deleteWorkout(context, workout);
-    }
   }
 
-  Future<void> _deleteWorkout(BuildContext context, Workout workout) async {
-    // Close the workout details dialog first
-    Navigator.of(context).pop();
-    
-    // Show loading indicator
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(
-        child: CircularProgressIndicator(),
-      ),
-    );
 
-    try {
-      await WorkoutService.deleteWorkout(workout.id);
-      
-      // Close loading dialog
-      if (context.mounted) {
-        Navigator.of(context).pop();
-        
-        // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Workout deleted successfully'),
-            backgroundColor: Colors.green,
-            duration: Duration(seconds: 2),
-          ),
-        );
-      }
-    } catch (e) {
-      // Close loading dialog
-      if (context.mounted) {
-        Navigator.of(context).pop();
-        
-        // Show error message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to delete workout: $e'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      }
-    }
-  }
 } 

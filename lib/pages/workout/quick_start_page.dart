@@ -102,6 +102,18 @@ class _QuickStartPageState extends State<QuickStartPage> {
             ),
           ],
         ),
+        actions: [
+          IconButton(
+            icon: FaIcon(
+              QuickStartOverlay.isPaused ? FontAwesomeIcons.play : FontAwesomeIcons.pause,
+              color: Colors.black,
+              size: 20,
+            ),
+            onPressed: () {
+              QuickStartOverlay.togglePause();
+            },
+          ),
+        ],
       ),
       body: SafeArea(
         child: LayoutBuilder(
