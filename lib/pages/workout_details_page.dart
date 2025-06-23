@@ -340,12 +340,12 @@ class WorkoutDetailsPage extends StatelessWidget {
                       ),
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red.shade50.withOpacity(0.4),
+                      backgroundColor: Colors.red.shade50.withValues(alpha: 0.4),
                       foregroundColor: Colors.red,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
-                        side: BorderSide(color: Colors.red.shade100.withOpacity(0.6), width: 1.5),
+                        side: BorderSide(color: Colors.red.shade100.withValues(alpha: 0.6), width: 1.5),
                       ),
                       elevation: 0,
                     ),

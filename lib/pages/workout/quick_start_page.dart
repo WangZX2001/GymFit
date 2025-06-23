@@ -1030,10 +1030,10 @@ class _QuickStartPageState extends State<QuickStartPage> {
                                               );
                                             },
                                             style: OutlinedButton.styleFrom(
-                                              backgroundColor: Colors.white.withOpacity(0.9),
+                                              backgroundColor: Colors.white.withValues(alpha: 0.9),
                                               foregroundColor: Colors.black,
                                               side: BorderSide(
-                                                color: Colors.grey.shade300.withOpacity(0.8),
+                                                color: Colors.grey.shade300.withValues(alpha: 0.8),
                                                 width: 1.5,
                                               ),
                                               shape: RoundedRectangleBorder(
