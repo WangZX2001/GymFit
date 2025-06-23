@@ -30,7 +30,34 @@ class _WorkoutNameDescriptionPageState extends State<WorkoutNameDescriptionPage>
   Future<void> _saveCustomWorkout() async {
     if (_nameController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a workout name')),
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(
+                Icons.warning_outlined,
+                color: Colors.white,
+                size: 20,
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  'Please enter a workout name',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: Colors.black87,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          margin: const EdgeInsets.all(16),
+          duration: const Duration(seconds: 2),
+        ),
       );
       return;
     }
@@ -80,7 +107,7 @@ class _WorkoutNameDescriptionPageState extends State<WorkoutNameDescriptionPage>
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text(
-          'Workout Details',
+          'Save Workout',
           style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
         ),
         actions: [
@@ -101,51 +128,6 @@ class _WorkoutNameDescriptionPageState extends State<WorkoutNameDescriptionPage>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Workout Summary
-            Card(
-              color: Colors.white,
-              elevation: 2,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const FaIcon(
-                          FontAwesomeIcons.dumbbell,
-                          color: Colors.purple,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          'Workout Summary',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey.shade800,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      '${widget.exercises.length} exercises configured',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey.shade600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            
-            const SizedBox(height: 20),
-            
             // Workout Name Input
             Card(
               color: Colors.white,
@@ -260,37 +242,126 @@ class _WorkoutNameDescriptionPageState extends State<WorkoutNameDescriptionPage>
               ),
             ),
             
-            const Spacer(),
+            const SizedBox(height: 16),
             
-            // Save instruction
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.blue.shade50,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.blue.shade200),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.info_outline,
-                    color: Colors.blue.shade600,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'Tap the tick button to save your custom workout',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.blue.shade800,
-                        fontWeight: FontWeight.w500,
+            // Workout Summary (Dynamic sizing based on exercise count)
+            widget.exercises.length <= 5
+                ? Card(
+                    color: Colors.white,
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              const FaIcon(
+                                FontAwesomeIcons.dumbbell,
+                                color: Colors.purple,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                'Workout Summary',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.grey.shade800,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          // Exercise list for few exercises (no scrolling needed)
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: widget.exercises.map((exercise) {
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 2.0),
+                                child: Text(
+                                  '${exercise.sets.length} x ${exercise.name}',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.grey.shade700,
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                : Expanded(
+                    child: Card(
+                      color: Colors.white,
+                      elevation: 2,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const FaIcon(
+                                  FontAwesomeIcons.dumbbell,
+                                  color: Colors.purple,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  'Workout Summary',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.grey.shade800,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            // Exercise list for many exercises (scrollable)
+                            Expanded(
+                              child: Scrollbar(
+                                thumbVisibility: true,
+                                thickness: 6,
+                                radius: const Radius.circular(3),
+                                trackVisibility: false,
+                                child: ListView.builder(
+                                  itemCount: widget.exercises.length,
+                                  itemBuilder: (context, index) {
+                                    final exercise = widget.exercises[index];
+                                    return Padding(
+                                      padding: const EdgeInsets.symmetric(vertical: 2.0),
+                                      child: Text(
+                                        '${exercise.sets.length} x ${exercise.name}',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.grey.shade700,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                ],
-              ),
-            ),
+            
+            // Add spacer only when few exercises to push content up
+            if (widget.exercises.length <= 5) const Spacer(),
           ],
         ),
       ),

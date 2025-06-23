@@ -65,14 +65,18 @@ class _CustomWorkoutPageState extends State<CustomWorkoutPage> {
           ),
           child: Container(
             constraints: const BoxConstraints(maxHeight: 600),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade200,
+              borderRadius: BorderRadius.circular(16),
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 // Header
                 Container(
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.purple.shade50,
+                    color: Colors.grey.shade200,
                     borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(16),
                       topRight: Radius.circular(16),
@@ -82,7 +86,7 @@ class _CustomWorkoutPageState extends State<CustomWorkoutPage> {
                     children: [
                       const FaIcon(
                         FontAwesomeIcons.dumbbell,
-                        color: Colors.purple,
+                        color: Colors.black,
                         size: 24,
                       ),
                       const SizedBox(width: 12),
@@ -92,7 +96,7 @@ class _CustomWorkoutPageState extends State<CustomWorkoutPage> {
                           style: const TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
-                            color: Colors.purple,
+                            color: Colors.black,
                           ),
                         ),
                       ),
@@ -107,13 +111,36 @@ class _CustomWorkoutPageState extends State<CustomWorkoutPage> {
                 Flexible(
                   child: ListView.builder(
                     shrinkWrap: true,
-                    padding: const EdgeInsets.all(16),
-                    itemCount: workout.exercises.length,
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                    itemCount: workout.exercises.length + (workout.description != null && workout.description!.isNotEmpty ? 1 : 0),
                     itemBuilder: (context, index) {
-                      final exercise = workout.exercises[index];
+                      // Show description first if it exists
+                      if (workout.description != null && workout.description!.isNotEmpty && index == 0) {
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 16),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade100,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            workout.description!,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey.shade700,
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                        );
+                      }
+                      
+                      // Adjust exercise index based on whether description is shown
+                      final exerciseIndex = workout.description != null && workout.description!.isNotEmpty ? index - 1 : index;
+                      final exercise = workout.exercises[exerciseIndex];
                       return Card(
                         margin: const EdgeInsets.only(bottom: 12),
                         elevation: 2,
+                        color: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -189,7 +216,7 @@ class _CustomWorkoutPageState extends State<CustomWorkoutPage> {
                         _startCustomWorkout(workout);
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.purple,
+                        backgroundColor: Colors.black,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -600,7 +627,21 @@ class _CustomWorkoutPageState extends State<CustomWorkoutPage> {
                                                         !workout.pinned,
                                                       );
                                                       if (mounted) {
-                                                        _loadSavedWorkouts();
+                                                        // Update the local workout state instead of reloading
+                                                        setState(() {
+                                                          final workoutIndex = _savedWorkouts.indexWhere((w) => w.id == workout.id);
+                                                          if (workoutIndex != -1) {
+                                                            _savedWorkouts[workoutIndex] = CustomWorkout(
+                                                              id: workout.id,
+                                                              name: workout.name,
+                                                              exercises: workout.exercises,
+                                                              createdAt: workout.createdAt,
+                                                              userId: workout.userId,
+                                                              pinned: !workout.pinned,
+                                                              description: workout.description,
+                                                            );
+                                                          }
+                                                        });
                                                         scaffoldMessenger.showSnackBar(
                                                           SnackBar(
                                                             content: Row(
@@ -828,7 +869,21 @@ class _CustomWorkoutPageState extends State<CustomWorkoutPage> {
                                               !workout.pinned,
                                             );
                                             if (mounted) {
-                                              _loadSavedWorkouts();
+                                              // Update the local workout state instead of reloading
+                                              setState(() {
+                                                final workoutIndex = _savedWorkouts.indexWhere((w) => w.id == workout.id);
+                                                if (workoutIndex != -1) {
+                                                  _savedWorkouts[workoutIndex] = CustomWorkout(
+                                                    id: workout.id,
+                                                    name: workout.name,
+                                                    exercises: workout.exercises,
+                                                    createdAt: workout.createdAt,
+                                                    userId: workout.userId,
+                                                    pinned: !workout.pinned,
+                                                    description: workout.description,
+                                                  );
+                                                }
+                                              });
                                               scaffoldMessenger.showSnackBar(
                                                 SnackBar(
                                                   content: Row(
