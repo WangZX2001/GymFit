@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:gymfit/models/workout.dart';
@@ -319,30 +320,36 @@ class WorkoutDetailsPage extends StatelessWidget {
             // Delete Button at Bottom
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () => _deleteWorkoutConfirmation(context),
-                icon: const FaIcon(
-                  FontAwesomeIcons.trash,
-                  size: 16,
-                  color: Colors.red,
-                ),
-                label: const Text(
-                  'Delete Workout',
-                  style: TextStyle(
-                    color: Colors.red,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: ElevatedButton.icon(
+                    onPressed: () => _deleteWorkoutConfirmation(context),
+                    icon: const FaIcon(
+                      FontAwesomeIcons.trash,
+                      size: 16,
+                      color: Colors.red,
+                    ),
+                    label: const Text(
+                      'Delete Workout',
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red.shade50.withOpacity(0.4),
+                      foregroundColor: Colors.red,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(color: Colors.red.shade100.withOpacity(0.6), width: 1.5),
+                      ),
+                      elevation: 0,
+                    ),
                   ),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.transparent,
-                  foregroundColor: Colors.red,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    side: const BorderSide(color: Colors.red, width: 1),
-                  ),
-                  elevation: 0,
                 ),
               ),
             ),

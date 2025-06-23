@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -46,12 +47,17 @@ class _QuickStartPageState extends State<QuickStartPage> {
   String? _customWorkoutName;
   List<CustomWorkout> _customWorkouts = [];
   bool _loadingCustomWorkouts = false;
+  bool _isEditingWorkoutName = false;
+  late TextEditingController _workoutNameController;
 
   @override
   void initState() {
     super.initState();
     _selectedExercises = widget.initialSelectedExercises.map((e) => QuickStartExercise(title: e.title, sets: e.sets)).toList();
     _customWorkoutName = widget.initialWorkoutName; // Set the initial workout name
+    
+    // Initialize text controller
+    _workoutNameController = TextEditingController(text: _customWorkoutName ?? '');
     
     // Initialize scroll controller
     _scrollController = ScrollController();
@@ -121,43 +127,25 @@ class _QuickStartPageState extends State<QuickStartPage> {
     }
   }
 
-  void _showEditWorkoutNameDialog() {
-    final TextEditingController controller = TextEditingController(
-      text: _customWorkoutName ?? _getWorkoutName(),
-    );
+  void _toggleWorkoutNameEditing() {
+    setState(() {
+      if (_isEditingWorkoutName) {
+        // Save the workout name
+        _customWorkoutName = _workoutNameController.text.trim();
+        _isEditingWorkoutName = false;
+      } else {
+        // Start editing
+        _workoutNameController.text = _customWorkoutName ?? _getWorkoutName();
+        _isEditingWorkoutName = true;
+      }
+    });
+  }
 
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Edit Workout Name'),
-          content: TextField(
-            controller: controller,
-            decoration: const InputDecoration(
-              hintText: 'Enter workout name',
-              border: OutlineInputBorder(),
-            ),
-            maxLength: 50,
-            autofocus: true,
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                setState(() {
-                  _customWorkoutName = controller.text.trim();
-                });
-                Navigator.of(context).pop();
-              },
-              child: const Text('Save'),
-            ),
-          ],
-        );
-      },
-    );
+  void _onWorkoutNameSubmitted() {
+    setState(() {
+      _customWorkoutName = _workoutNameController.text.trim();
+      _isEditingWorkoutName = false;
+    });
   }
 
   @override
@@ -166,6 +154,7 @@ class _QuickStartPageState extends State<QuickStartPage> {
     QuickStartOverlay.setPageUpdateCallback(null);
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
+    _workoutNameController.dispose();
     super.dispose();
   }
 
@@ -261,7 +250,7 @@ class _QuickStartPageState extends State<QuickStartPage> {
                     const SizedBox(width: 8),
                     Flexible(
                       child: GestureDetector(
-                        onTap: _showEditWorkoutNameDialog,
+                        onTap: _toggleWorkoutNameEditing,
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -411,12 +400,13 @@ class _QuickStartPageState extends State<QuickStartPage> {
                     curve: Curves.easeOutQuart,
                     child: _showWorkoutNameInAppBar
                         ? const SizedBox.shrink()
-                        : Card(
+                        :                           Card(
                             color: Colors.white,
                             margin: const EdgeInsets.only(bottom: 16),
                             child: Padding(
-                              padding: const EdgeInsets.all(16.0),
+                              padding: const EdgeInsets.all(12.0),
                               child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
                                   const FaIcon(
                                     FontAwesomeIcons.tag,
@@ -428,52 +418,68 @@ class _QuickStartPageState extends State<QuickStartPage> {
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Row(
-                                          children: [
-                                            const Text(
-                                              'Workout Name',
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                color: Colors.grey,
-                                                fontWeight: FontWeight.w500,
-                                              ),
-                                            ),
-                                            if (_customWorkoutName != null && _customWorkoutName!.isNotEmpty)
-                                              Container(
-                                                margin: const EdgeInsets.only(left: 6),
-                                                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                                                decoration: BoxDecoration(
-                                                  color: Colors.purple.withValues(alpha: 0.1),
-                                                  borderRadius: BorderRadius.circular(4),
+                                        const Text(
+                                          'Workout Name',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        _isEditingWorkoutName
+                                            ? TextField(
+                                                controller: _workoutNameController,
+                                                decoration: InputDecoration(
+                                                  border: OutlineInputBorder(
+                                                    borderRadius: BorderRadius.circular(8),
+                                                    borderSide: const BorderSide(color: Colors.purple),
+                                                  ),
+                                                  focusedBorder: OutlineInputBorder(
+                                                    borderRadius: BorderRadius.circular(8),
+                                                    borderSide: const BorderSide(color: Colors.purple, width: 2),
+                                                  ),
+                                                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                                  hintText: 'Enter workout name',
+                                                  hintStyle: TextStyle(color: Colors.grey.shade400),
                                                 ),
-                                                child: const Text(
-                                                  'Custom',
-                                                  style: TextStyle(
-                                                    fontSize: 10,
-                                                    color: Colors.purple,
-                                                    fontWeight: FontWeight.w600,
+                                                style: const TextStyle(
+                                                  fontSize: 18,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Colors.purple,
+                                                ),
+                                                maxLength: 50,
+                                                autofocus: true,
+                                                onSubmitted: (_) => _onWorkoutNameSubmitted(),
+                                                textInputAction: TextInputAction.done,
+                                              )
+                                            : GestureDetector(
+                                                onTap: _toggleWorkoutNameEditing,
+                                                child: Container(
+                                                  width: double.infinity,
+                                                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                                                  decoration: BoxDecoration(
+                                                    border: Border.all(color: Colors.transparent, width: 1),
+                                                    borderRadius: BorderRadius.circular(8),
+                                                  ),
+                                                  child: Text(
+                                                    _getWorkoutName(),
+                                                    style: const TextStyle(
+                                                      fontSize: 18,
+                                                      fontWeight: FontWeight.bold,
+                                                      color: Colors.purple,
+                                                    ),
                                                   ),
                                                 ),
                                               ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          _getWorkoutName(),
-                                          style: const TextStyle(
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.purple,
-                                          ),
-                                        ),
                                       ],
                                     ),
                                   ),
                                   IconButton(
-                                    onPressed: _showEditWorkoutNameDialog,
-                                    icon: const FaIcon(
-                                      FontAwesomeIcons.pen,
-                                      color: Colors.grey,
+                                    onPressed: _toggleWorkoutNameEditing,
+                                    icon: FaIcon(
+                                      _isEditingWorkoutName ? FontAwesomeIcons.check : FontAwesomeIcons.pen,
+                                      color: _isEditingWorkoutName ? Colors.green : Colors.grey,
                                       size: 16,
                                     ),
                                     padding: EdgeInsets.zero,
@@ -641,166 +647,69 @@ class _QuickStartPageState extends State<QuickStartPage> {
                               children: [
                                 Column(
                                   children: _selectedExercises
+                                      .asMap()
+                                      .entries
                                       .map(
-                                        (e) => Card(
-                                          color: Colors.white,
-                                          margin: const EdgeInsets.symmetric(vertical: 4),
-                                          child: Column(
-                                            children: [
-                                              LayoutBuilder(
-                                                builder: (context, constraints) {
-                                                  final isSmallScreen = constraints.maxWidth < 350;
-                                                  final cardPadding = isSmallScreen ? 6.0 : 8.0;
-                                                  
-                                                  return Padding(
-                                                    padding: EdgeInsets.all(cardPadding),
-                                                    child: Column(
-                                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                                      children: [
-                                                        Row(
-                                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        (entry) {
+                                          final index = entry.key;
+                                          final e = entry.value;
+                                          return Dismissible(
+                                            key: Key('exercise_${e.title}_$index'),
+                                            direction: DismissDirection.endToStart,
+                                            background: Container(
+                                              alignment: Alignment.centerRight,
+                                              padding: const EdgeInsets.only(right: 20),
+                                              margin: const EdgeInsets.symmetric(vertical: 4),
+                                              decoration: BoxDecoration(
+                                                color: Colors.red,
+                                                borderRadius: BorderRadius.circular(12),
+                                              ),
+                                              child: const FaIcon(
+                                                FontAwesomeIcons.trash,
+                                                color: Colors.white,
+                                                size: 24,
+                                              ),
+                                            ),
+                                            onDismissed: (direction) {
+                                              setState(() {
+                                                _selectedExercises.remove(e);
+                                                QuickStartOverlay.selectedExercises = _selectedExercises;
+                                              });
+                                            },
+                                            child: Card(
+                                              color: Colors.white,
+                                              margin: const EdgeInsets.symmetric(vertical: 4),
+                                              child: Column(
+                                                children: [
+                                                  LayoutBuilder(
+                                                    builder: (context, constraints) {
+                                                      final isSmallScreen = constraints.maxWidth < 350;
+                                                      final cardPadding = isSmallScreen ? 6.0 : 8.0;
+                                                      
+                                                      return Padding(
+                                                        padding: EdgeInsets.all(cardPadding),
+                                                        child: Column(
+                                                          crossAxisAlignment: CrossAxisAlignment.start,
                                                           children: [
-                                                            Text(
-                                                              e.title,
-                                                              style: const TextStyle(
-                                                                fontSize: 16,
-                                                                fontWeight: FontWeight.bold,
+                                                            Row(
+                                                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                              children: [
+                                                                Text(
+                                                                  e.title,
+                                                                  style: const TextStyle(
+                                                                    fontSize: 16,
+                                                                    fontWeight: FontWeight.bold,
+                                                                  ),
+                                                                ),
+                                                              ],
+                                                            ),
+                                                            const SizedBox(height: 8),
+                                                            Container(
+                                                              padding: const EdgeInsets.symmetric(vertical: 4),
+                                                              decoration: BoxDecoration(
+                                                                color: Colors.grey.shade100,
+                                                                borderRadius: BorderRadius.circular(12),
                                                               ),
-                                                            ),
-                                                            IconButton(
-                                                              icon: const FaIcon(FontAwesomeIcons.trash, color: Colors.red, size: 18),
-                                                              onPressed: () {
-                                                                setState(() {
-                                                                  _selectedExercises.remove(e);
-                                                                  QuickStartOverlay.selectedExercises = _selectedExercises;
-                                                                });
-                                                              },
-                                                            ),
-                                                          ],
-                                                        ),
-                                                        const SizedBox(height: 8),
-                                                        Container(
-                                                          padding: const EdgeInsets.symmetric(vertical: 4),
-                                                          decoration: BoxDecoration(
-                                                            color: Colors.grey.shade100,
-                                                            borderRadius: BorderRadius.circular(12),
-                                                          ),
-                                                          child: LayoutBuilder(
-                                                            builder: (context, constraints) {
-                                                              final availableWidth = constraints.maxWidth;
-                                                              final isSmallScreen = availableWidth < 350;
-                                                              final spacing = isSmallScreen ? 6.0 : 8.0;
-                                                              final minCheckboxSize = 48.0;
-                                                              
-                                                              return Row(
-                                                                children: [
-                                                                  // Set number - fixed small width
-                                                                  SizedBox(
-                                                                    width: isSmallScreen ? 35 : 45,
-                                                                    child: Center(
-                                                                      child: Text(
-                                                                        'Set',
-                                                                        style: TextStyle(
-                                                                          fontWeight: FontWeight.bold,
-                                                                          fontSize: isSmallScreen ? 14 : 16,
-                                                                        ),
-                                                                        textAlign: TextAlign.center,
-                                                                        overflow: TextOverflow.ellipsis,
-                                                                      ),
-                                                                    ),
-                                                                  ),
-                                                                  SizedBox(width: spacing),
-                                                                  // Weight - flexible
-                                                                  Expanded(
-                                                                    flex: 2,
-                                                                    child: Center(
-                                                                      child: Text(
-                                                                        'Weight (kg)',
-                                                                        style: TextStyle(
-                                                                          fontWeight: FontWeight.bold,
-                                                                          fontSize: isSmallScreen ? 14 : 16,
-                                                                        ),
-                                                                        textAlign: TextAlign.center,
-                                                                        overflow: TextOverflow.ellipsis,
-                                                                      ),
-                                                                    ),
-                                                                  ),
-                                                                  SizedBox(width: spacing),
-                                                                  // Reps - flexible
-                                                                  Expanded(
-                                                                    flex: 2,
-                                                                    child: Center(
-                                                                      child: Text(
-                                                                        'Reps',
-                                                                        style: TextStyle(
-                                                                          fontWeight: FontWeight.bold,
-                                                                          fontSize: isSmallScreen ? 14 : 16,
-                                                                        ),
-                                                                        textAlign: TextAlign.center,
-                                                                        overflow: TextOverflow.ellipsis,
-                                                                      ),
-                                                                    ),
-                                                                  ),
-                                                                  SizedBox(width: spacing),
-                                                                  // Checkbox - fixed minimum size
-                                                                  SizedBox(
-                                                                    width: minCheckboxSize,
-                                                                    height: minCheckboxSize,
-                                                                    child: Center(
-                                                                      child: Checkbox(
-                                                                        value: e.sets.every((set) => set.isChecked),
-                                                                        tristate: true,
-                                                                        fillColor: WidgetStateProperty.resolveWith<Color>((Set<WidgetState> states) {
-                                                                          if (states.contains(WidgetState.selected)) {
-                                                                            return Colors.green;
-                                                                          }
-                                                                          return Colors.grey.shade300;
-                                                                        }),
-                                                                        onChanged: (val) {
-                                                                          setState(() {
-                                                                            bool newValue = val ?? false;
-                                                                            for (var set in e.sets) {
-                                                                              set.isChecked = newValue;
-                                                                            }
-                                                                            QuickStartOverlay.selectedExercises = _selectedExercises;
-                                                                          });
-                                                                        },
-                                                                      ),
-                                                                    ),
-                                                                  ),
-                                                                ],
-                                                              );
-                                                            },
-                                                          ),
-                                                        ),
-                                                        const SizedBox(height: 8),
-                                                        ...e.sets.asMap().entries.map((entry) {
-                                                          int setIndex = entry.key;
-                                                          ExerciseSet exerciseSet = entry.value;
-                                                          return Dismissible(
-                                                            key: Key('${e.title}_${exerciseSet.id}'),
-                                                            direction: DismissDirection.endToStart,
-                                                            background: Container(
-                                                              alignment: Alignment.centerRight,
-                                                              padding: const EdgeInsets.only(right: 20),
-                                                              color: Colors.red,
-                                                              child: const FaIcon(
-                                                                FontAwesomeIcons.trash,
-                                                                color: Colors.white,
-                                                                size: 24,
-                                                              ),
-                                                            ),
-                                                            onDismissed: (direction) {
-                                                              setState(() {
-                                                                e.sets.remove(exerciseSet);
-                                                                QuickStartOverlay.selectedExercises = _selectedExercises;
-                                                              });
-                                                            },
-                                                            child: Container(
-                                                              width: double.infinity,
-                                                              color: exerciseSet.isChecked ? Colors.green.shade100 : Colors.transparent,
-                                                              padding: const EdgeInsets.all(4),
-                                                              margin: const EdgeInsets.symmetric(vertical: 2),
                                                               child: LayoutBuilder(
                                                                 builder: (context, constraints) {
                                                                   final availableWidth = constraints.maxWidth;
@@ -815,93 +724,45 @@ class _QuickStartPageState extends State<QuickStartPage> {
                                                                         width: isSmallScreen ? 35 : 45,
                                                                         child: Center(
                                                                           child: Text(
-                                                                            '${setIndex + 1}',
+                                                                            'Set',
                                                                             style: TextStyle(
-                                                                              fontSize: isSmallScreen ? 16 : 18,
                                                                               fontWeight: FontWeight.bold,
+                                                                              fontSize: isSmallScreen ? 14 : 16,
                                                                             ),
+                                                                            textAlign: TextAlign.center,
+                                                                            overflow: TextOverflow.ellipsis,
                                                                           ),
                                                                         ),
                                                                       ),
                                                                       SizedBox(width: spacing),
-                                                                      // Weight input - flexible
+                                                                      // Weight - flexible
                                                                       Expanded(
                                                                         flex: 2,
                                                                         child: Center(
-                                                                          child: ConstrainedBox(
-                                                                            constraints: BoxConstraints(
-                                                                              maxWidth: isSmallScreen ? 60 : 80,
-                                                                              minWidth: 50,
+                                                                          child: Text(
+                                                                            'Weight (kg)',
+                                                                            style: TextStyle(
+                                                                              fontWeight: FontWeight.bold,
+                                                                              fontSize: isSmallScreen ? 14 : 16,
                                                                             ),
-                                                                            child: TextFormField(
-                                                                              initialValue: exerciseSet.weight.toString(),
-                                                                              style: TextStyle(
-                                                                                fontWeight: FontWeight.bold,
-                                                                                fontSize: isSmallScreen ? 14 : 16,
-                                                                              ),
-                                                                              textAlign: TextAlign.center,
-                                                                              decoration: InputDecoration(
-                                                                                border: OutlineInputBorder(
-                                                                                  borderRadius: BorderRadius.circular(8),
-                                                                                  borderSide: BorderSide.none,
-                                                                                ),
-                                                                                filled: true,
-                                                                                fillColor: exerciseSet.isChecked ? Colors.green.shade200 : Colors.grey.shade300,
-                                                                                contentPadding: EdgeInsets.symmetric(
-                                                                                  horizontal: isSmallScreen ? 4 : 6,
-                                                                                  vertical: 4,
-                                                                                ),
-                                                                              ),
-                                                                              keyboardType: TextInputType.number,
-                                                                              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                                                                              onChanged: (val) {
-                                                                                setState(() {
-                                                                                  exerciseSet.weight = int.tryParse(val) ?? 0;
-                                                                                  QuickStartOverlay.selectedExercises = _selectedExercises;
-                                                                                });
-                                                                              },
-                                                                            ),
+                                                                            textAlign: TextAlign.center,
+                                                                            overflow: TextOverflow.ellipsis,
                                                                           ),
                                                                         ),
                                                                       ),
                                                                       SizedBox(width: spacing),
-                                                                      // Reps input - flexible
+                                                                      // Reps - flexible
                                                                       Expanded(
                                                                         flex: 2,
                                                                         child: Center(
-                                                                          child: ConstrainedBox(
-                                                                            constraints: BoxConstraints(
-                                                                              maxWidth: isSmallScreen ? 60 : 80,
-                                                                              minWidth: 50,
+                                                                          child: Text(
+                                                                            'Reps',
+                                                                            style: TextStyle(
+                                                                              fontWeight: FontWeight.bold,
+                                                                              fontSize: isSmallScreen ? 14 : 16,
                                                                             ),
-                                                                            child: TextFormField(
-                                                                              initialValue: exerciseSet.reps.toString(),
-                                                                              style: TextStyle(
-                                                                                fontWeight: FontWeight.bold,
-                                                                                fontSize: isSmallScreen ? 14 : 16,
-                                                                              ),
-                                                                              textAlign: TextAlign.center,
-                                                                              decoration: InputDecoration(
-                                                                                border: OutlineInputBorder(
-                                                                                  borderRadius: BorderRadius.circular(8),
-                                                                                  borderSide: BorderSide.none,
-                                                                                ),
-                                                                                filled: true,
-                                                                                fillColor: exerciseSet.isChecked ? Colors.green.shade200 : Colors.grey.shade300,
-                                                                                contentPadding: EdgeInsets.symmetric(
-                                                                                  horizontal: isSmallScreen ? 4 : 6,
-                                                                                  vertical: 4,
-                                                                                ),
-                                                                              ),
-                                                                              keyboardType: TextInputType.number,
-                                                                              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                                                                              onChanged: (val) {
-                                                                                setState(() {
-                                                                                  exerciseSet.reps = int.tryParse(val) ?? 0;
-                                                                                  QuickStartOverlay.selectedExercises = _selectedExercises;
-                                                                                });
-                                                                              },
-                                                                            ),
+                                                                            textAlign: TextAlign.center,
+                                                                            overflow: TextOverflow.ellipsis,
                                                                           ),
                                                                         ),
                                                                       ),
@@ -912,7 +773,8 @@ class _QuickStartPageState extends State<QuickStartPage> {
                                                                         height: minCheckboxSize,
                                                                         child: Center(
                                                                           child: Checkbox(
-                                                                            value: exerciseSet.isChecked,
+                                                                            value: e.sets.every((set) => set.isChecked),
+                                                                            tristate: true,
                                                                             fillColor: WidgetStateProperty.resolveWith<Color>((Set<WidgetState> states) {
                                                                               if (states.contains(WidgetState.selected)) {
                                                                                 return Colors.green;
@@ -920,8 +782,12 @@ class _QuickStartPageState extends State<QuickStartPage> {
                                                                               return Colors.grey.shade300;
                                                                             }),
                                                                             onChanged: (val) {
+                                                                              HapticFeedback.lightImpact();
                                                                               setState(() {
-                                                                                exerciseSet.isChecked = val ?? false;
+                                                                                bool newValue = val ?? false;
+                                                                                for (var set in e.sets) {
+                                                                                  set.isChecked = newValue;
+                                                                                }
                                                                                 QuickStartOverlay.selectedExercises = _selectedExercises;
                                                                               });
                                                                             },
@@ -933,43 +799,206 @@ class _QuickStartPageState extends State<QuickStartPage> {
                                                                 },
                                                               ),
                                                             ),
-                                                          );
-                                                        }),
-                                                      ],
-                                                    ),
-                                                  );
-                                                },
-                                              ),
-                                              SizedBox(
-                                                width: double.infinity,
-                                                child: ElevatedButton(
-                                                  onPressed: () {
-                                                    setState(() {
-                                                      e.sets.add(ExerciseSet());
-                                                      QuickStartOverlay.selectedExercises = _selectedExercises;
-                                                    });
-                                                  },
-                                                  style: ElevatedButton.styleFrom(
-                                                    backgroundColor: Colors.grey.shade200,
-                                                    foregroundColor: Colors.grey.shade600,
-                                                    elevation: 0,
-                                                    padding: const EdgeInsets.symmetric(vertical: 8),
-                                                    side: BorderSide.none,
-                                                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                                    shape: const RoundedRectangleBorder(
-                                                      borderRadius: BorderRadius.only(
-                                                        bottomLeft: Radius.circular(12),
-                                                        bottomRight: Radius.circular(12),
+                                                            const SizedBox(height: 8),
+                                                            ...e.sets.asMap().entries.map((entry) {
+                                                              int setIndex = entry.key;
+                                                              ExerciseSet exerciseSet = entry.value;
+                                                              return Dismissible(
+                                                                key: Key('${e.title}_${exerciseSet.id}'),
+                                                                direction: DismissDirection.endToStart,
+                                                                background: Container(
+                                                                  alignment: Alignment.centerRight,
+                                                                  padding: const EdgeInsets.only(right: 20),
+                                                                  color: Colors.red,
+                                                                  child: const FaIcon(
+                                                                    FontAwesomeIcons.trash,
+                                                                    color: Colors.white,
+                                                                    size: 24,
+                                                                  ),
+                                                                ),
+                                                                onDismissed: (direction) {
+                                                                  setState(() {
+                                                                    e.sets.remove(exerciseSet);
+                                                                    QuickStartOverlay.selectedExercises = _selectedExercises;
+                                                                  });
+                                                                },
+                                                                child: Container(
+                                                                  width: double.infinity,
+                                                                  color: exerciseSet.isChecked ? Colors.green.shade100 : Colors.transparent,
+                                                                  padding: const EdgeInsets.all(4),
+                                                                  margin: const EdgeInsets.symmetric(vertical: 2),
+                                                                  child: LayoutBuilder(
+                                                                    builder: (context, constraints) {
+                                                                      final availableWidth = constraints.maxWidth;
+                                                                      final isSmallScreen = availableWidth < 350;
+                                                                      final spacing = isSmallScreen ? 6.0 : 8.0;
+                                                                      final minCheckboxSize = 48.0;
+                                                                      
+                                                                      return Row(
+                                                                        children: [
+                                                                          // Set number - fixed small width
+                                                                          SizedBox(
+                                                                            width: isSmallScreen ? 35 : 45,
+                                                                            child: Center(
+                                                                              child: Text(
+                                                                                '${setIndex + 1}',
+                                                                                style: TextStyle(
+                                                                                  fontSize: isSmallScreen ? 16 : 18,
+                                                                                  fontWeight: FontWeight.bold,
+                                                                                ),
+                                                                              ),
+                                                                            ),
+                                                                          ),
+                                                                          SizedBox(width: spacing),
+                                                                          // Weight input - flexible
+                                                                          Expanded(
+                                                                            flex: 2,
+                                                                            child: Center(
+                                                                              child: ConstrainedBox(
+                                                                                constraints: BoxConstraints(
+                                                                                  maxWidth: isSmallScreen ? 60 : 80,
+                                                                                  minWidth: 50,
+                                                                                ),
+                                                                                child: TextFormField(
+                                                                                  initialValue: exerciseSet.weight.toString(),
+                                                                                  style: TextStyle(
+                                                                                    fontWeight: FontWeight.bold,
+                                                                                    fontSize: isSmallScreen ? 14 : 16,
+                                                                                  ),
+                                                                                  textAlign: TextAlign.center,
+                                                                                  decoration: InputDecoration(
+                                                                                    border: OutlineInputBorder(
+                                                                                      borderRadius: BorderRadius.circular(8),
+                                                                                      borderSide: BorderSide.none,
+                                                                                    ),
+                                                                                    filled: true,
+                                                                                    fillColor: exerciseSet.isChecked ? Colors.green.shade200 : Colors.grey.shade300,
+                                                                                    contentPadding: EdgeInsets.symmetric(
+                                                                                      horizontal: isSmallScreen ? 4 : 6,
+                                                                                      vertical: 4,
+                                                                                    ),
+                                                                                  ),
+                                                                                  keyboardType: TextInputType.number,
+                                                                                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                                                                                  onChanged: (val) {
+                                                                                    setState(() {
+                                                                                      exerciseSet.weight = int.tryParse(val) ?? 0;
+                                                                                      QuickStartOverlay.selectedExercises = _selectedExercises;
+                                                                                    });
+                                                                                  },
+                                                                                ),
+                                                                              ),
+                                                                            ),
+                                                                          ),
+                                                                          SizedBox(width: spacing),
+                                                                          // Reps input - flexible
+                                                                          Expanded(
+                                                                            flex: 2,
+                                                                            child: Center(
+                                                                              child: ConstrainedBox(
+                                                                                constraints: BoxConstraints(
+                                                                                  maxWidth: isSmallScreen ? 60 : 80,
+                                                                                  minWidth: 50,
+                                                                                ),
+                                                                                child: TextFormField(
+                                                                                  initialValue: exerciseSet.reps.toString(),
+                                                                                  style: TextStyle(
+                                                                                    fontWeight: FontWeight.bold,
+                                                                                    fontSize: isSmallScreen ? 14 : 16,
+                                                                                  ),
+                                                                                  textAlign: TextAlign.center,
+                                                                                  decoration: InputDecoration(
+                                                                                    border: OutlineInputBorder(
+                                                                                      borderRadius: BorderRadius.circular(8),
+                                                                                      borderSide: BorderSide.none,
+                                                                                    ),
+                                                                                    filled: true,
+                                                                                    fillColor: exerciseSet.isChecked ? Colors.green.shade200 : Colors.grey.shade300,
+                                                                                    contentPadding: EdgeInsets.symmetric(
+                                                                                      horizontal: isSmallScreen ? 4 : 6,
+                                                                                      vertical: 4,
+                                                                                    ),
+                                                                                  ),
+                                                                                  keyboardType: TextInputType.number,
+                                                                                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                                                                                  onChanged: (val) {
+                                                                                    setState(() {
+                                                                                      exerciseSet.reps = int.tryParse(val) ?? 0;
+                                                                                      QuickStartOverlay.selectedExercises = _selectedExercises;
+                                                                                    });
+                                                                                  },
+                                                                                ),
+                                                                              ),
+                                                                            ),
+                                                                          ),
+                                                                          SizedBox(width: spacing),
+                                                                          // Checkbox - fixed minimum size
+                                                                          SizedBox(
+                                                                            width: minCheckboxSize,
+                                                                            height: minCheckboxSize,
+                                                                            child: Center(
+                                                                              child: Checkbox(
+                                                                                value: exerciseSet.isChecked,
+                                                                                fillColor: WidgetStateProperty.resolveWith<Color>((Set<WidgetState> states) {
+                                                                                  if (states.contains(WidgetState.selected)) {
+                                                                                    return Colors.green;
+                                                                                  }
+                                                                                  return Colors.grey.shade300;
+                                                                                }),
+                                                                                onChanged: (val) {
+                                                                                  HapticFeedback.lightImpact();
+                                                                                  setState(() {
+                                                                                    exerciseSet.isChecked = val ?? false;
+                                                                                    QuickStartOverlay.selectedExercises = _selectedExercises;
+                                                                                  });
+                                                                                },
+                                                                              ),
+                                                                            ),
+                                                                          ),
+                                                                        ],
+                                                                      );
+                                                                    },
+                                                                  ),
+                                                                ),
+                                                              );
+                                                            }),
+                                                          ],
+                                                        ),
+                                                      );
+                                                    },
+                                                  ),
+                                                  SizedBox(
+                                                    width: double.infinity,
+                                                    child: ElevatedButton(
+                                                      onPressed: () {
+                                                        setState(() {
+                                                          e.sets.add(ExerciseSet());
+                                                          QuickStartOverlay.selectedExercises = _selectedExercises;
+                                                        });
+                                                      },
+                                                      style: ElevatedButton.styleFrom(
+                                                        backgroundColor: Colors.grey.shade200,
+                                                        foregroundColor: Colors.grey.shade600,
+                                                        elevation: 0,
+                                                        padding: const EdgeInsets.symmetric(vertical: 8),
+                                                        side: BorderSide.none,
+                                                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                                        shape: const RoundedRectangleBorder(
+                                                          borderRadius: BorderRadius.only(
+                                                            bottomLeft: Radius.circular(12),
+                                                            bottomRight: Radius.circular(12),
+                                                          ),
+                                                          side: BorderSide.none,
+                                                        ),
                                                       ),
-                                                      side: BorderSide.none,
+                                                      child: const FaIcon(FontAwesomeIcons.plus, color: Colors.grey),
                                                     ),
                                                   ),
-                                                  child: const FaIcon(FontAwesomeIcons.plus, color: Colors.grey),
-                                                ),
+                                                ],
                                               ),
-                                            ],
-                                          ),
-                                        ),
+                                            ),
+                                          );
+                                        },
                                       ).toList(),
                                 ),
                                 const SizedBox(height: 16),
@@ -983,42 +1012,48 @@ class _QuickStartPageState extends State<QuickStartPage> {
                                     
                                     return SizedBox(
                                       width: double.infinity,
-                                      child: OutlinedButton.icon(
-                                        onPressed: () {
-                                          // Navigate to workout summary page
-                                          Navigator.of(context).push(
-                                            MaterialPageRoute(
-                                              builder: (context) => WorkoutSummaryPage(
-                                                completedExercises: _selectedExercises,
-                                                workoutDuration: QuickStartOverlay.elapsedTime,
-                                                customWorkoutName: _customWorkoutName,
+                                      child: ClipRRect(
+                                        borderRadius: BorderRadius.circular(12),
+                                        child: BackdropFilter(
+                                          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                                          child: OutlinedButton.icon(
+                                            onPressed: () {
+                                              // Navigate to workout summary page
+                                              Navigator.of(context).push(
+                                                MaterialPageRoute(
+                                                  builder: (context) => WorkoutSummaryPage(
+                                                    completedExercises: _selectedExercises,
+                                                    workoutDuration: QuickStartOverlay.elapsedTime,
+                                                    customWorkoutName: _customWorkoutName,
+                                                  ),
+                                                ),
+                                              );
+                                            },
+                                            style: OutlinedButton.styleFrom(
+                                              backgroundColor: Colors.white.withOpacity(0.9),
+                                              foregroundColor: Colors.black,
+                                              side: BorderSide(
+                                                color: Colors.grey.shade300.withOpacity(0.8),
+                                                width: 1.5,
+                                              ),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.circular(12),
+                                              ),
+                                              padding: buttonPadding,
+                                            ),
+                                            icon: FaIcon(
+                                              FontAwesomeIcons.flagCheckered,
+                                              color: Colors.black,
+                                              size: buttonFontSize * 0.8,
+                                            ),
+                                            label: Text(
+                                              'Finish',
+                                              style: TextStyle(
+                                                color: Colors.black, 
+                                                fontSize: buttonFontSize, 
+                                                fontWeight: FontWeight.w900
                                               ),
                                             ),
-                                          );
-                                        },
-                                        style: OutlinedButton.styleFrom(
-                                          backgroundColor: Colors.transparent,
-                                          foregroundColor: Colors.green.shade700,
-                                          side: BorderSide(
-                                            color: Colors.green.shade700,
-                                            width: 2,
-                                          ),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(12),
-                                          ),
-                                          padding: buttonPadding,
-                                        ),
-                                        icon: FaIcon(
-                                          FontAwesomeIcons.flagCheckered,
-                                          color: Colors.green.shade700,
-                                          size: buttonFontSize * 0.8,
-                                        ),
-                                        label: Text(
-                                          'Finish',
-                                          style: TextStyle(
-                                            color: Colors.green.shade700, 
-                                            fontSize: buttonFontSize, 
-                                            fontWeight: FontWeight.w900
                                           ),
                                         ),
                                       ),

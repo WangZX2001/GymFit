@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:gymfit/models/custom_workout.dart';
-import 'package:gymfit/services/custom_workout_service.dart';
+import 'package:gymfit/pages/workout/exercise_information_page.dart';
+import 'package:gymfit/pages/workout/workout_name_description_page.dart';
 
 // Model to track individual set data for template
 class TemplateExerciseSet {
@@ -36,8 +38,6 @@ class CustomWorkoutConfigurationPage extends StatefulWidget {
 
 class _CustomWorkoutConfigurationPageState extends State<CustomWorkoutConfigurationPage> {
   List<ConfigExercise> _exercises = [];
-  final TextEditingController _nameController = TextEditingController();
-  bool _isSaving = false;
 
   @override
   void initState() {
@@ -45,57 +45,34 @@ class _CustomWorkoutConfigurationPageState extends State<CustomWorkoutConfigurat
     _exercises = widget.exerciseNames.map((name) => ConfigExercise(title: name)).toList();
   }
 
-  @override
-  void dispose() {
-    _nameController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _saveCustomWorkout() async {
-    if (_nameController.text.trim().isEmpty) {
+  void _proceedToNameDescription() {
+    if (_exercises.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a workout name')),
+        const SnackBar(content: Text('Please add at least one exercise')),
       );
       return;
     }
 
-    setState(() {
-      _isSaving = true;
-    });
-
-    try {
-      final customExercises = _exercises.map((exercise) {
-        final customSets = exercise.sets.map((set) => 
-          CustomWorkoutSet(weight: set.weight, reps: set.reps)
-        ).toList();
-        
-        return CustomWorkoutExercise(
-          name: exercise.title,
-          sets: customSets,
-        );
-      }).toList();
-
-      await CustomWorkoutService.saveCustomWorkout(
-        name: _nameController.text.trim(),
-        exercises: customExercises,
+    // Convert exercises to CustomWorkoutExercise format
+    final customExercises = _exercises.map((exercise) {
+      final customSets = exercise.sets.map((set) => 
+        CustomWorkoutSet(weight: set.weight, reps: set.reps)
+      ).toList();
+      
+      return CustomWorkoutExercise(
+        name: exercise.title,
+        sets: customSets,
       );
+    }).toList();
 
-      if (mounted) {
-        Navigator.of(context).popUntil((route) => route.isFirst);
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isSaving = false;
-        });
-      }
-    }
+    // Navigate to name/description page
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => WorkoutNameDescriptionPage(
+          exercises: customExercises,
+        ),
+      ),
+    );
   }
 
   @override
@@ -114,114 +91,351 @@ class _CustomWorkoutConfigurationPageState extends State<CustomWorkoutConfigurat
           style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
         ),
         actions: [
-          TextButton(
-            onPressed: _isSaving ? null : _saveCustomWorkout,
-            child: _isSaving
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Text('Save', style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold)),
+          IconButton(
+            onPressed: _proceedToNameDescription,
+            icon: const Icon(Icons.done, color: Colors.black, size: 24),
           ),
         ],
       ),
       body: Column(
         children: [
-          Container(
-            margin: const EdgeInsets.all(16.0),
-            padding: const EdgeInsets.all(16.0),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: TextField(
-              controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: 'Workout Name',
-                hintText: 'Enter workout name',
-                border: OutlineInputBorder(),
-              ),
-            ),
-          ),
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               itemCount: _exercises.length,
               itemBuilder: (context, index) {
                 final exercise = _exercises[index];
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
+                return Dismissible(
+                  key: Key('exercise_${exercise.title}_$index'),
+                  direction: DismissDirection.endToStart,
+                  background: Container(
+                    alignment: Alignment.centerRight,
+                    padding: const EdgeInsets.only(right: 20),
+                    margin: const EdgeInsets.symmetric(vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const FaIcon(
+                      FontAwesomeIcons.trash,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                  ),
+                  onDismissed: (direction) {
+                    setState(() {
+                      _exercises.removeAt(index);
+                    });
+                  },
+                  child: Card(
+                    color: Colors.white,
+                    margin: const EdgeInsets.symmetric(vertical: 4),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          exercise.title,
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 16),
-                        ...exercise.sets.asMap().entries.map((entry) {
-                          final setIndex = entry.key;
-                          final set = entry.value;
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 8.0),
-                            child: Row(
-                              children: [
-                                Text('Set ${setIndex + 1}:'),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: TextField(
-                                    decoration: const InputDecoration(
-                                      labelText: 'Weight (kg)',
-                                      border: OutlineInputBorder(),
-                                      contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                                    ),
-                                    keyboardType: TextInputType.number,
-                                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                                    onChanged: (value) {
-                                      set.weight = int.tryParse(value) ?? 0;
-                                    },
+                        LayoutBuilder(
+                          builder: (context, constraints) {
+                            final isSmallScreen = constraints.maxWidth < 350;
+                            final cardPadding = isSmallScreen ? 6.0 : 8.0;
+                            
+                            return Padding(
+                              padding: EdgeInsets.all(cardPadding),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        exercise.title,
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: TextField(
-                                    decoration: const InputDecoration(
-                                      labelText: 'Reps',
-                                      border: OutlineInputBorder(),
-                                      contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                                  const SizedBox(height: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey.shade100,
+                                      borderRadius: BorderRadius.circular(12),
                                     ),
-                                    keyboardType: TextInputType.number,
-                                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                                    onChanged: (value) {
-                                      set.reps = int.tryParse(value) ?? 0;
-                                    },
+                                    child: LayoutBuilder(
+                                      builder: (context, constraints) {
+                                        final availableWidth = constraints.maxWidth;
+                                        final isSmallScreen = availableWidth < 350;
+                                        final spacing = isSmallScreen ? 6.0 : 8.0;
+                                        
+                                        return Row(
+                                          children: [
+                                            // Set number - fixed small width
+                                            SizedBox(
+                                              width: isSmallScreen ? 35 : 45,
+                                              child: Center(
+                                                child: Text(
+                                                  'Set',
+                                                  style: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: isSmallScreen ? 14 : 16,
+                                                  ),
+                                                  textAlign: TextAlign.center,
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                            ),
+                                            SizedBox(width: spacing),
+                                            // Weight - flexible
+                                            Expanded(
+                                              flex: 2,
+                                              child: Center(
+                                                child: Text(
+                                                  'Weight (kg)',
+                                                  style: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: isSmallScreen ? 14 : 16,
+                                                  ),
+                                                  textAlign: TextAlign.center,
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                            ),
+                                            SizedBox(width: spacing),
+                                            // Reps - flexible
+                                            Expanded(
+                                              flex: 2,
+                                              child: Center(
+                                                child: Text(
+                                                  'Reps',
+                                                  style: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: isSmallScreen ? 14 : 16,
+                                                  ),
+                                                  textAlign: TextAlign.center,
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        );
+                                      },
+                                    ),
                                   ),
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.remove_circle, color: Colors.red),
-                                  onPressed: exercise.sets.length > 1 ? () {
-                                    setState(() {
-                                      exercise.sets.remove(set);
-                                    });
-                                  } : null,
-                                ),
-                              ],
-                            ),
-                          );
-                        }),
-                        ElevatedButton.icon(
-                          onPressed: () {
-                            setState(() {
-                              exercise.sets.add(ConfigSet());
-                            });
+                                  const SizedBox(height: 8),
+                                  ...exercise.sets.asMap().entries.map((entry) {
+                                    final setIndex = entry.key;
+                                    final set = entry.value;
+                                    return Dismissible(
+                                      key: Key('${exercise.title}_${set.id}'),
+                                      direction: DismissDirection.endToStart,
+                                      background: Container(
+                                        alignment: Alignment.centerRight,
+                                        padding: const EdgeInsets.only(right: 20),
+                                        margin: const EdgeInsets.symmetric(vertical: 2),
+                                        color: Colors.red,
+                                        child: const FaIcon(
+                                          FontAwesomeIcons.trash,
+                                          color: Colors.white,
+                                          size: 24,
+                                        ),
+                                      ),
+                                      onDismissed: (direction) {
+                                        if (exercise.sets.length > 1) {
+                                          setState(() {
+                                            exercise.sets.remove(set);
+                                          });
+                                        }
+                                      },
+                                      child: Container(
+                                        width: double.infinity,
+                                        padding: const EdgeInsets.all(4),
+                                        margin: const EdgeInsets.symmetric(vertical: 2),
+                                        child: LayoutBuilder(
+                                          builder: (context, constraints) {
+                                            final availableWidth = constraints.maxWidth;
+                                            final isSmallScreen = availableWidth < 350;
+                                            final spacing = isSmallScreen ? 6.0 : 8.0;
+                                            
+                                            return Row(
+                                              children: [
+                                                // Set number - fixed small width
+                                                SizedBox(
+                                                  width: isSmallScreen ? 35 : 45,
+                                                  child: Center(
+                                                    child: Text(
+                                                      '${setIndex + 1}',
+                                                      style: TextStyle(
+                                                        fontSize: isSmallScreen ? 16 : 18,
+                                                        fontWeight: FontWeight.bold,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                                SizedBox(width: spacing),
+                                                // Weight input - flexible
+                                                Expanded(
+                                                  flex: 2,
+                                                  child: Center(
+                                                    child: ConstrainedBox(
+                                                      constraints: BoxConstraints(
+                                                        maxWidth: isSmallScreen ? 60 : 80,
+                                                        minWidth: 50,
+                                                      ),
+                                                      child: TextFormField(
+                                                        initialValue: set.weight.toString(),
+                                                        style: TextStyle(
+                                                          fontWeight: FontWeight.bold,
+                                                          fontSize: isSmallScreen ? 14 : 16,
+                                                        ),
+                                                        textAlign: TextAlign.center,
+                                                        decoration: InputDecoration(
+                                                          border: OutlineInputBorder(
+                                                            borderRadius: BorderRadius.circular(8),
+                                                            borderSide: BorderSide.none,
+                                                          ),
+                                                          filled: true,
+                                                          fillColor: Colors.grey.shade300,
+                                                          contentPadding: EdgeInsets.symmetric(
+                                                            horizontal: isSmallScreen ? 4 : 6,
+                                                            vertical: 4,
+                                                          ),
+                                                        ),
+                                                        keyboardType: TextInputType.number,
+                                                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                                                        onChanged: (value) {
+                                                          set.weight = int.tryParse(value) ?? 0;
+                                                        },
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                                SizedBox(width: spacing),
+                                                // Reps input - flexible
+                                                Expanded(
+                                                  flex: 2,
+                                                  child: Center(
+                                                    child: ConstrainedBox(
+                                                      constraints: BoxConstraints(
+                                                        maxWidth: isSmallScreen ? 60 : 80,
+                                                        minWidth: 50,
+                                                      ),
+                                                      child: TextFormField(
+                                                        initialValue: set.reps.toString(),
+                                                        style: TextStyle(
+                                                          fontWeight: FontWeight.bold,
+                                                          fontSize: isSmallScreen ? 14 : 16,
+                                                        ),
+                                                        textAlign: TextAlign.center,
+                                                        decoration: InputDecoration(
+                                                          border: OutlineInputBorder(
+                                                            borderRadius: BorderRadius.circular(8),
+                                                            borderSide: BorderSide.none,
+                                                          ),
+                                                          filled: true,
+                                                          fillColor: Colors.grey.shade300,
+                                                          contentPadding: EdgeInsets.symmetric(
+                                                            horizontal: isSmallScreen ? 4 : 6,
+                                                            vertical: 4,
+                                                          ),
+                                                        ),
+                                                        keyboardType: TextInputType.number,
+                                                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                                                        onChanged: (value) {
+                                                          set.reps = int.tryParse(value) ?? 0;
+                                                        },
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            );
+                                          },
+                                        ),
+                                      ),
+                                    );
+                                  }),
+                                ],
+                              ),
+                            );
                           },
-                          icon: const Icon(Icons.add),
-                          label: const Text('Add Set'),
+                        ),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              setState(() {
+                                exercise.sets.add(ConfigSet());
+                              });
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.grey.shade200,
+                              foregroundColor: Colors.grey.shade600,
+                              elevation: 0,
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              side: BorderSide.none,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              shape: const RoundedRectangleBorder(
+                                borderRadius: BorderRadius.only(
+                                  bottomLeft: Radius.circular(12),
+                                  bottomRight: Radius.circular(12),
+                                ),
+                                side: BorderSide.none,
+                              ),
+                            ),
+                            child: const FaIcon(FontAwesomeIcons.plus, color: Colors.grey),
+                          ),
                         ),
                       ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          // Add Exercises Button
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final screenWidth = MediaQuery.of(context).size.width;
+                final buttonFontSize = screenWidth < 350 ? 16.0 : 18.0;
+                final buttonPadding = screenWidth < 350 
+                    ? const EdgeInsets.symmetric(vertical: 12) 
+                    : const EdgeInsets.symmetric(vertical: 16);
+                
+                return SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () async {
+                      final navigator = Navigator.of(context);
+                      final result = await navigator.push<List<String>>(
+                        MaterialPageRoute(
+                          builder: (ctx) => const ExerciseInformationPage(
+                            isSelectionMode: true,
+                          ),
+                        ),
+                      );
+                      if (result != null && mounted) {
+                        setState(() {
+                          // Append new exercises as ConfigExercise entries
+                          final newExercises = result.map((title) => ConfigExercise(title: title)).toList();
+                          _exercises.addAll(newExercises);
+                        });
+                      }
+                    },
+                    icon: const FaIcon(FontAwesomeIcons.plus, color: Colors.white),
+                    label: Text(
+                      'Add Exercises',
+                      style: TextStyle(
+                        color: Colors.white, 
+                        fontSize: buttonFontSize, 
+                        fontWeight: FontWeight.bold
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.black,
+                      shape: const StadiumBorder(),
+                      padding: buttonPadding,
                     ),
                   ),
                 );
@@ -242,6 +456,11 @@ class ConfigExercise {
 }
 
 class ConfigSet {
+  final String id;
   int weight = 0;
   int reps = 0;
+  
+  static int _counter = 0;
+  
+  ConfigSet() : id = '${DateTime.now().millisecondsSinceEpoch}_${++_counter}';
 } 

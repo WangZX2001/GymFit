@@ -10,6 +10,7 @@ class CustomWorkoutService {
   static Future<String> saveCustomWorkout({
     required String name,
     required List<CustomWorkoutExercise> exercises,
+    String? description,
   }) async {
     final user = _auth.currentUser;
     if (user == null) {
@@ -30,6 +31,7 @@ class CustomWorkoutService {
       exercises: exercises,
       createdAt: DateTime.now(),
       userId: user.uid,
+      description: description,
     );
 
     try {

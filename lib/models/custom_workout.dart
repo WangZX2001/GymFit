@@ -57,6 +57,7 @@ class CustomWorkout {
   final DateTime createdAt;
   final String userId;
   final bool pinned;
+  final String? description;
 
   CustomWorkout({
     required this.id,
@@ -65,6 +66,7 @@ class CustomWorkout {
     required this.createdAt,
     required this.userId,
     this.pinned = false,
+    this.description,
   });
 
   // Backward compatibility - get exercise names
@@ -79,6 +81,7 @@ class CustomWorkout {
       'createdAt': Timestamp.fromDate(createdAt),
       'userId': userId,
       'pinned': pinned,
+      'description': description,
     };
   }
 
@@ -107,6 +110,7 @@ class CustomWorkout {
       createdAt: (map['createdAt'] as Timestamp).toDate(),
       userId: map['userId'] ?? '',
       pinned: map['pinned'] ?? false,
+      description: map['description'],
     );
   }
 

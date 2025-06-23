@@ -55,7 +55,164 @@ class _CustomWorkoutPageState extends State<CustomWorkoutPage> {
     }
   }
 
-
+  void _showWorkoutDetails(CustomWorkout workout) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Container(
+            constraints: const BoxConstraints(maxHeight: 600),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Header
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.purple.shade50,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(16),
+                      topRight: Radius.circular(16),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      const FaIcon(
+                        FontAwesomeIcons.dumbbell,
+                        color: Colors.purple,
+                        size: 24,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          workout.name,
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.purple,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        icon: const Icon(Icons.close, color: Colors.grey),
+                      ),
+                    ],
+                  ),
+                ),
+                // Exercise list
+                Flexible(
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    padding: const EdgeInsets.all(16),
+                    itemCount: workout.exercises.length,
+                    itemBuilder: (context, index) {
+                      final exercise = workout.exercises[index];
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        elevation: 2,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Exercise name
+                              Text(
+                                exercise.name,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              // Sets details
+                              ...exercise.sets.asMap().entries.map((entry) {
+                                final setIndex = entry.key;
+                                final set = entry.value;
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 8),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 28,
+                                        height: 28,
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey.shade200,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: Center(
+                                          child: Text(
+                                            '${setIndex + 1}',
+                                            style: TextStyle(
+                                              color: Colors.grey.shade700,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Text(
+                                          '${set.weight} kg × ${set.reps} reps',
+                                          style: const TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                // Footer with start workout button
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        _startCustomWorkout(workout);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.purple,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        'Start Workout',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
 
   void _browseExercises() async {
     if (!mounted) return;
@@ -281,223 +438,234 @@ class _CustomWorkoutPageState extends State<CustomWorkoutPage> {
                           if (_firstSlideCompleted.contains(workout.id)) {
                             return Container(
                               margin: const EdgeInsets.only(bottom: 12),
-                              height: 100,
-                              child: Stack(
-                                children: [
-                                  // Delete button background
-                                  Container(
-                                    decoration: BoxDecoration(
-                                      color: Colors.red.shade400,
-                                      borderRadius: BorderRadius.circular(15),
-                                    ),
-                                    child: Align(
-                                      alignment: Alignment.centerRight,
-                                      child: Padding(
-                                        padding: const EdgeInsets.only(right: 20),
-                                        child: GestureDetector(
-                                          onTap: () => _deleteWorkout(workout),
-                                          child: const Icon(
-                                            Icons.delete,
-                                            color: Colors.white,
-                                            size: 24,
+                              child: IntrinsicHeight(
+                                child: Stack(
+                                  children: [
+                                    // Delete button background
+                                    Container(
+                                      decoration: BoxDecoration(
+                                        color: Colors.red.shade400,
+                                        borderRadius: BorderRadius.circular(15),
+                                      ),
+                                      child: Align(
+                                        alignment: Alignment.centerRight,
+                                        child: Padding(
+                                          padding: const EdgeInsets.only(right: 20),
+                                          child: GestureDetector(
+                                            onTap: () => _deleteWorkout(workout),
+                                            child: const Icon(
+                                              Icons.delete,
+                                              color: Colors.white,
+                                              size: 24,
+                                            ),
                                           ),
                                         ),
                                       ),
                                     ),
-                                  ),
-                                  // Main content (slides over the delete button)
-                                  AnimatedContainer(
-                                    duration: const Duration(milliseconds: 500),
-                                    curve: Curves.easeOutQuart,
-                                    transform: Matrix4.translationValues(-80, 0, 0),
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        color: Colors.white,
-                                        borderRadius: BorderRadius.circular(15),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: Colors.black.withValues(alpha: 0.05),
-                                            blurRadius: 10,
-                                            offset: const Offset(0, 2),
-                                          ),
-                                        ],
-                                      ),
-                                      child: InkWell(
-                                        onTap: () {
-                                          setState(() {
-                                            _firstSlideCompleted.remove(workout.id);
-                                          });
-                                          _startCustomWorkout(workout);
-                                        },
-                                        borderRadius: BorderRadius.circular(15),
-                                        child: Padding(
-                                          padding: const EdgeInsets.all(16),
-                                          child: Row(
-                                            children: [
-                                              // Leading icon
-                                              Container(
-                                                width: 50,
-                                                height: 50,
-                                                decoration: BoxDecoration(
-                                                  color: Colors.transparent,
-                                                  borderRadius: BorderRadius.circular(25),
+                                    // Main content (slides over the delete button)
+                                    AnimatedContainer(
+                                      duration: const Duration(milliseconds: 500),
+                                      curve: Curves.easeOutQuart,
+                                      transform: Matrix4.translationValues(-80, 0, 0),
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          borderRadius: BorderRadius.circular(15),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black.withValues(alpha: 0.05),
+                                              blurRadius: 10,
+                                              offset: const Offset(0, 2),
+                                            ),
+                                          ],
+                                        ),
+                                        child: InkWell(
+                                          onTap: () {
+                                            setState(() {
+                                              _firstSlideCompleted.remove(workout.id);
+                                            });
+                                            _startCustomWorkout(workout);
+                                          },
+                                          onLongPress: () {
+                                            setState(() {
+                                              _firstSlideCompleted.remove(workout.id);
+                                            });
+                                            _showWorkoutDetails(workout);
+                                          },
+                                          borderRadius: BorderRadius.circular(15),
+                                          child: Padding(
+                                            padding: const EdgeInsets.all(16),
+                                            child: Row(
+                                              children: [
+                                                // Leading icon
+                                                Container(
+                                                  width: 50,
+                                                  height: 50,
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.transparent,
+                                                    borderRadius: BorderRadius.circular(25),
+                                                  ),
+                                                  child: const FaIcon(
+                                                    FontAwesomeIcons.dumbbell,
+                                                    color: Colors.black,
+                                                    size: 24,
+                                                  ),
                                                 ),
-                                                child: const FaIcon(
-                                                  FontAwesomeIcons.dumbbell,
-                                                  color: Colors.black,
-                                                  size: 24,
-                                                ),
-                                              ),
-                                              const SizedBox(width: 16),
-                                              // Title and exercise tags
-                                              Expanded(
-                                                child: Column(
-                                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                                  children: [
-                                                    // Title row with exercise count
-                                                    Row(
-                                                      children: [
-                                                        Expanded(
-                                                          child: Text(
-                                                            workout.name,
-                                                            style: const TextStyle(
-                                                              fontWeight: FontWeight.bold,
-                                                              fontSize: 16,
+                                                const SizedBox(width: 16),
+                                                // Title and exercise tags
+                                                Expanded(
+                                                  child: Column(
+                                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                                    mainAxisSize: MainAxisSize.min,
+                                                    children: [
+                                                      // Title row with exercise count
+                                                      Row(
+                                                        children: [
+                                                          Expanded(
+                                                            child: Text(
+                                                              workout.name,
+                                                              style: const TextStyle(
+                                                                fontWeight: FontWeight.bold,
+                                                                fontSize: 16,
+                                                              ),
+                                                              overflow: TextOverflow.ellipsis,
                                                             ),
                                                           ),
-                                                        ),
-                                                        Text(
-                                                          '${workout.exerciseNames.length} exercises',
-                                                          style: TextStyle(
-                                                            color: Colors.grey.shade600,
-                                                            fontSize: 12,
-                                                            fontWeight: FontWeight.w500,
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                    const SizedBox(height: 8),
-                                                    Wrap(
-                                                      spacing: 6,
-                                                      runSpacing: 4,
-                                                      children: workout.exerciseNames.take(3).map((exercise) {
-                                                        return Container(
-                                                          padding: const EdgeInsets.symmetric(
-                                                            horizontal: 6,
-                                                            vertical: 2,
-                                                          ),
-                                                          decoration: BoxDecoration(
-                                                            color: Colors.grey.shade200,
-                                                            borderRadius: BorderRadius.circular(8),
-                                                          ),
-                                                          child: Text(
-                                                            exercise,
+                                                          Text(
+                                                            '${workout.exerciseNames.length} exercises',
                                                             style: TextStyle(
-                                                              fontSize: 10,
-                                                              color: Colors.grey.shade700,
+                                                              color: Colors.grey.shade600,
+                                                              fontSize: 12,
+                                                              fontWeight: FontWeight.w500,
                                                             ),
                                                           ),
-                                                        );
-                                                      }).toList()
-                                                        ..addAll(workout.exerciseNames.length > 3 
-                                                          ? [Container(
+                                                        ],
+                                                      ),
+                                                      const SizedBox(height: 8),
+                                                      Flexible(
+                                                        child: Wrap(
+                                                          spacing: 6,
+                                                          runSpacing: 4,
+                                                          children: workout.exerciseNames.take(3).map((exercise) {
+                                                            return Container(
                                                               padding: const EdgeInsets.symmetric(
                                                                 horizontal: 6,
                                                                 vertical: 2,
                                                               ),
                                                               decoration: BoxDecoration(
-                                                                color: Colors.grey.shade300,
+                                                                color: Colors.grey.shade200,
                                                                 borderRadius: BorderRadius.circular(8),
                                                               ),
                                                               child: Text(
-                                                                '+${workout.exerciseNames.length - 3} more',
+                                                                exercise,
                                                                 style: TextStyle(
                                                                   fontSize: 10,
                                                                   color: Colors.grey.shade700,
                                                                 ),
                                                               ),
-                                                            )]
-                                                          : []),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                              // Pin button
-                                              GestureDetector(
-                                                onTap: () async {
-                                                  if (!mounted) return;
-                                                  final scaffoldMessenger = ScaffoldMessenger.of(context);
-                                                  try {
-                                                    await CustomWorkoutService.toggleWorkoutPin(
-                                                      workout.id,
-                                                      !workout.pinned,
-                                                    );
-                                                    if (mounted) {
-                                                      _loadSavedWorkouts();
-                                                      scaffoldMessenger.showSnackBar(
-                                                        SnackBar(
-                                                          content: Row(
-                                                            children: [
-                                                              Icon(
-                                                                workout.pinned 
-                                                                    ? Icons.push_pin_outlined 
-                                                                    : Icons.push_pin,
-                                                                color: Colors.white,
-                                                                size: 20,
-                                                              ),
-                                                              const SizedBox(width: 12),
-                                                              Expanded(
-                                                                child: Text(
-                                                                  workout.pinned 
-                                                                      ? '${workout.name} unpinned from Quick Start' 
-                                                                      : '${workout.name} pinned to Quick Start',
-                                                                  style: const TextStyle(
-                                                                    fontSize: 14,
-                                                                    fontWeight: FontWeight.w500,
+                                                            );
+                                                          }).toList()
+                                                            ..addAll(workout.exerciseNames.length > 3 
+                                                              ? [Container(
+                                                                  padding: const EdgeInsets.symmetric(
+                                                                    horizontal: 6,
+                                                                    vertical: 2,
                                                                   ),
-                                                                ),
-                                                              ),
-                                                            ],
-                                                          ),
-                                                          backgroundColor: Colors.black87,
-                                                          behavior: SnackBarBehavior.floating,
-                                                          shape: RoundedRectangleBorder(
-                                                            borderRadius: BorderRadius.circular(12),
-                                                          ),
-                                                          margin: const EdgeInsets.all(16),
-                                                          duration: const Duration(seconds: 2),
+                                                                  decoration: BoxDecoration(
+                                                                    color: Colors.grey.shade300,
+                                                                    borderRadius: BorderRadius.circular(8),
+                                                                  ),
+                                                                  child: Text(
+                                                                    '+${workout.exerciseNames.length - 3} more',
+                                                                    style: TextStyle(
+                                                                      fontSize: 10,
+                                                                      color: Colors.grey.shade700,
+                                                                    ),
+                                                                  ),
+                                                                )]
+                                                              : []),
                                                         ),
-                                                      );
-                                                    }
-                                                  } catch (e) {
-                                                    if (mounted) {
-                                                      scaffoldMessenger.showSnackBar(
-                                                        SnackBar(
-                                                          content: Text('Error: ${e.toString()}'),
-                                                          backgroundColor: Colors.red,
-                                                        ),
-                                                      );
-                                                    }
-                                                  }
-                                                },
-                                                child: Container(
-                                                  padding: const EdgeInsets.all(8),
-                                                  child: Icon(
-                                                    workout.pinned 
-                                                        ? Icons.push_pin 
-                                                        : Icons.push_pin_outlined,
-                                                    color: Colors.black,
-                                                    size: 20,
+                                                      ),
+                                                    ],
                                                   ),
                                                 ),
-                                              ),
-                                            ],
+                                                // Pin button
+                                                GestureDetector(
+                                                  onTap: () async {
+                                                    if (!mounted) return;
+                                                    final scaffoldMessenger = ScaffoldMessenger.of(context);
+                                                    try {
+                                                      await CustomWorkoutService.toggleWorkoutPin(
+                                                        workout.id,
+                                                        !workout.pinned,
+                                                      );
+                                                      if (mounted) {
+                                                        _loadSavedWorkouts();
+                                                        scaffoldMessenger.showSnackBar(
+                                                          SnackBar(
+                                                            content: Row(
+                                                              children: [
+                                                                Icon(
+                                                                  workout.pinned 
+                                                                      ? Icons.push_pin_outlined 
+                                                                      : Icons.push_pin,
+                                                                  color: Colors.white,
+                                                                  size: 20,
+                                                                ),
+                                                                const SizedBox(width: 12),
+                                                                Expanded(
+                                                                  child: Text(
+                                                                    workout.pinned 
+                                                                        ? '${workout.name} unpinned from Quick Start' 
+                                                                        : '${workout.name} pinned to Quick Start',
+                                                                    style: const TextStyle(
+                                                                      fontSize: 14,
+                                                                      fontWeight: FontWeight.w500,
+                                                                    ),
+                                                                  ),
+                                                                ),
+                                                              ],
+                                                            ),
+                                                            backgroundColor: Colors.black87,
+                                                            behavior: SnackBarBehavior.floating,
+                                                            shape: RoundedRectangleBorder(
+                                                              borderRadius: BorderRadius.circular(12),
+                                                            ),
+                                                            margin: const EdgeInsets.all(16),
+                                                            duration: const Duration(seconds: 2),
+                                                          ),
+                                                        );
+                                                      }
+                                                    } catch (e) {
+                                                      if (mounted) {
+                                                        scaffoldMessenger.showSnackBar(
+                                                          SnackBar(
+                                                            content: Text('Error: ${e.toString()}'),
+                                                            backgroundColor: Colors.red,
+                                                          ),
+                                                        );
+                                                      }
+                                                    }
+                                                  },
+                                                  child: Container(
+                                                    padding: const EdgeInsets.all(8),
+                                                    child: Icon(
+                                                      workout.pinned 
+                                                          ? Icons.push_pin 
+                                                          : Icons.push_pin_outlined,
+                                                      color: Colors.black,
+                                                      size: 20,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
                                           ),
                                         ),
                                       ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
                             );
                           }
@@ -555,6 +723,7 @@ class _CustomWorkoutPageState extends State<CustomWorkoutPage> {
                               ),
                               child: InkWell(
                                 onTap: () => _startCustomWorkout(workout),
+                                onLongPress: () => _showWorkoutDetails(workout),
                                 borderRadius: BorderRadius.circular(15),
                                 child: Padding(
                                   padding: const EdgeInsets.all(16),
