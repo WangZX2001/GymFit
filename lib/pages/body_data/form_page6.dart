@@ -4,7 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:gymfit/pages/body_data/form_page7.dart';
 
 class FormPage6 extends StatefulWidget {
-  const FormPage6({super.key});
+  final double? userWeight;
+  final double? mockTargetWeight;
+
+  const FormPage6({super.key, this.userWeight, this.mockTargetWeight});
 
   @override
   State<FormPage6> createState() => _FormPage6State();
@@ -14,57 +17,26 @@ class _FormPage6State extends State<FormPage6> {
   final List<double> weight = List.generate(
     2000,
     (index) => (index + 1) * 0.1,
-  ); // 0.1 to 200.0
+  );
   double selectedWeight = 70.0;
-  double? userWeight;
   late ScrollController scrollController;
-  final double itemWidth = 80 + 20; // 60 width + 10px margin left & right
+  final double itemWidth = 80 + 20;
 
   @override
   void initState() {
     super.initState();
     scrollController = ScrollController();
-    fetchUserWeight();
 
-    // Scroll to initial position after first frame
+    if (widget.mockTargetWeight != null) {
+      selectedWeight = widget.mockTargetWeight!;
+    }
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (scrollController.hasClients) {
         final defaultIndex = weight.indexOf(selectedWeight);
         scrollController.jumpTo(defaultIndex * itemWidth);
       }
     });
-
-    // Auto-update selected weight based on center position
-    scrollController.addListener(() {
-      if (!scrollController.hasClients) return;
-
-      final screenCenter = MediaQuery.of(context).size.width / 2;
-      final centerOffset =
-          scrollController.offset + (screenCenter - itemWidth / 2);
-      int centerIndex = (centerOffset / itemWidth).round();
-      final newSelected = weight[centerIndex];
-      if (newSelected != selectedWeight) {
-        setState(() {
-          selectedWeight = newSelected;
-        });
-      }
-    });
-  }
-
-  Future<void> fetchUserWeight() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      final doc =
-          await FirebaseFirestore.instance
-              .collection('users')
-              .doc(user.uid)
-              .get();
-      if (doc.exists && doc.data()!.containsKey('starting weight')) {
-        setState(() {
-          userWeight = (doc['starting weight'] as num).toDouble();
-        });
-      }
-    }
   }
 
   @override
@@ -95,11 +67,9 @@ class _FormPage6State extends State<FormPage6> {
   }
 
   Widget weightchatbot() {
-    if (userWeight == null) {
-      return const SizedBox(); // show nothing until userWeight is loaded
-    }
+    if (widget.userWeight == null) return const SizedBox();
 
-    final diff = selectedWeight - userWeight!;
+    final diff = selectedWeight - widget.userWeight!;
     final Color diffColor = diff < 0 ? Colors.red : Colors.green;
     final String diffText =
         "${diff > 0 ? "+" : ""}${diff.toStringAsFixed(1)} kg";
@@ -192,17 +162,20 @@ class _FormPage6State extends State<FormPage6> {
             child: Column(
               children: [
                 const SizedBox(height: 20),
-                Text.rich(
-                  TextSpan(
-                    text: 'What is your ',
-                    style: textTheme.headlineMedium,
-                    children: const [
-                      TextSpan(
-                        text: 'TARGET',
-                        style: TextStyle(color: Colors.green),
-                      ),
-                      TextSpan(text: ' weight ?'),
-                    ],
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text.rich(
+                    TextSpan(
+                      text: 'What is your ',
+                      style: textTheme.headlineMedium,
+                      children: const [
+                        TextSpan(
+                          text: 'TARGET',
+                          style: TextStyle(color: Colors.green),
+                        ),
+                        TextSpan(text: ' weight?'),
+                      ],
+                    ),
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -229,6 +202,8 @@ class _FormPage6State extends State<FormPage6> {
                   ),
                 ),
                 const SizedBox(height: 20),
+                weightchatbot(),
+                const SizedBox(height: 20),
                 Stack(
                   alignment: Alignment.center,
                   children: [
@@ -246,27 +221,25 @@ class _FormPage6State extends State<FormPage6> {
                             width: 80,
                             margin: const EdgeInsets.symmetric(horizontal: 10),
                             alignment: Alignment.center,
-                            decoration:
-                                isSelected
-                                    ? BoxDecoration(
-                                      border: Border.all(
-                                        color: const Color(0xFF0070F0),
-                                        width: 3,
-                                      ),
-                                      borderRadius: BorderRadius.circular(30),
-                                      color: const Color(0x4780BBFF),
-                                    )
-                                    : null,
+                            decoration: isSelected
+                                ? BoxDecoration(
+                                    border: Border.all(
+                                      color: const Color(0xFF0070F0),
+                                      width: 3,
+                                    ),
+                                    borderRadius: BorderRadius.circular(30),
+                                    color: const Color(0x4780BBFF),
+                                  )
+                                : null,
                             child: Text(
                               weightinkg.toStringAsFixed(1),
                               style: TextStyle(
                                 fontFamily: 'DM Sans',
                                 fontSize: 20,
                                 fontWeight: FontWeight.w700,
-                                color:
-                                    isSelected
-                                        ? const Color(0xFF0070F0)
-                                        : Colors.grey,
+                                color: isSelected
+                                    ? const Color(0xFF0070F0)
+                                    : Colors.grey,
                               ),
                             ),
                           );
@@ -275,10 +248,8 @@ class _FormPage6State extends State<FormPage6> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 50),
-                weightchatbot(),
                 const SizedBox(height: 20),
-                Spacer(),
+                const Spacer(),
                 nextButton(),
                 const SizedBox(height: 50),
               ],
