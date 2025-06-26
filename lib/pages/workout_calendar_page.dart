@@ -340,8 +340,7 @@ class _WorkoutCalendarPageState extends State<WorkoutCalendarPage> {
                   child: InkWell(
                     borderRadius: BorderRadius.circular(8),
                     onTap: () {
-                      Navigator.push(
-                        context,
+                      Navigator.of(context, rootNavigator: true).push(
                         MaterialPageRoute(
                           builder: (context) => WorkoutDetailsPage(workout: workout),
                         ),
@@ -471,10 +470,11 @@ class _WorkoutCalendarPageState extends State<WorkoutCalendarPage> {
       context: context,
       barrierDismissible: true,
       builder: (context) => Dialog(
+        backgroundColor: Colors.grey.shade200,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         elevation: 8,
         child: Container(
-          constraints: const BoxConstraints(maxWidth: 360, maxHeight: 700),
+          constraints: const BoxConstraints(maxWidth: 800, maxHeight: 1200),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -718,8 +718,7 @@ class _WorkoutCalendarPageState extends State<WorkoutCalendarPage> {
                         child: ElevatedButton(
                           onPressed: () {
                             Navigator.of(context).pop();
-                            Navigator.push(
-                              context,
+                            Navigator.of(context, rootNavigator: true).push(
                               MaterialPageRoute(
                                 builder: (context) => WorkoutDetailsPage(workout: workout),
                               ),

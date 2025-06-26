@@ -38,14 +38,58 @@ class CustomWorkoutConfigurationPage extends StatefulWidget {
 
 class _CustomWorkoutConfigurationPageState extends State<CustomWorkoutConfigurationPage> {
   List<ConfigExercise> _exercises = [];
+  bool _preventAutoFocus = false;
+  bool _isAnyFieldFocused = false;
 
   @override
   void initState() {
     super.initState();
     _exercises = widget.exerciseNames.map((name) => ConfigExercise(title: name)).toList();
+    _setupFocusListeners();
   }
 
-  void _proceedToNameDescription() {
+  void _updateFocusState() {
+    bool anyFieldFocused = false;
+    for (var exercise in _exercises) {
+      for (var set in exercise.sets) {
+        if (set.weightFocusNode.hasFocus || set.repsFocusNode.hasFocus) {
+          anyFieldFocused = true;
+          break;
+        }
+      }
+      if (anyFieldFocused) break;
+    }
+    
+    if (anyFieldFocused != _isAnyFieldFocused) {
+      setState(() {
+        _isAnyFieldFocused = anyFieldFocused;
+      });
+    }
+  }
+
+  void _setupFocusListeners() {
+    for (var exercise in _exercises) {
+      for (var set in exercise.sets) {
+        set.addFocusListeners(_updateFocusState);
+      }
+    }
+  }
+
+  void _removeFocusListeners() {
+    for (var exercise in _exercises) {
+      for (var set in exercise.sets) {
+        set.removeFocusListeners(_updateFocusState);
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _removeFocusListeners();
+    super.dispose();
+  }
+
+  void _proceedToNameDescription() async {
     if (_exercises.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please add at least one exercise')),
@@ -66,13 +110,30 @@ class _CustomWorkoutConfigurationPageState extends State<CustomWorkoutConfigurat
     }).toList();
 
     // Navigate to name/description page
-    Navigator.of(context).push(
+    await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => WorkoutNameDescriptionPage(
           exercises: customExercises,
         ),
       ),
     );
+
+    // Prevent auto-focus when returning from workout name description page
+    if (mounted) {
+      setState(() {
+        _preventAutoFocus = true;
+      });
+      
+      // Re-enable interaction after build is complete
+      Future.microtask(() {
+        if (mounted) {
+          setState(() {
+            _preventAutoFocus = false;
+          });
+          FocusScope.of(context).unfocus();
+        }
+      });
+    }
   }
 
   @override
@@ -97,10 +158,16 @@ class _CustomWorkoutConfigurationPageState extends State<CustomWorkoutConfigurat
           ),
         ],
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: ListView.builder(
+      body: GestureDetector(
+        onTap: () {
+          // Dismiss keyboard when tapping outside text fields
+          FocusScope.of(context).unfocus();
+        },
+        behavior: HitTestBehavior.translucent,
+        child: Column(
+          children: [
+            Expanded(
+              child: ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               itemCount: _exercises.length,
               itemBuilder: (context, index) {
@@ -281,13 +348,15 @@ class _CustomWorkoutConfigurationPageState extends State<CustomWorkoutConfigurat
                                                         maxWidth: isSmallScreen ? 60 : 80,
                                                         minWidth: 50,
                                                       ),
-                                                      child: TextFormField(
-                                                        initialValue: set.weight.toString(),
-                                                        style: TextStyle(
-                                                          fontWeight: FontWeight.bold,
-                                                          fontSize: isSmallScreen ? 14 : 16,
-                                                        ),
-                                                        textAlign: TextAlign.center,
+                                                                                                              child: TextFormField(
+                                                          controller: set.weightController,
+                                                          focusNode: set.weightFocusNode,
+                                                          readOnly: _preventAutoFocus,
+                                                          style: TextStyle(
+                                                            fontWeight: FontWeight.bold,
+                                                            fontSize: isSmallScreen ? 14 : 16,
+                                                          ),
+                                                          textAlign: TextAlign.center,
                                                         decoration: InputDecoration(
                                                           border: OutlineInputBorder(
                                                             borderRadius: BorderRadius.circular(8),
@@ -302,8 +371,26 @@ class _CustomWorkoutConfigurationPageState extends State<CustomWorkoutConfigurat
                                                         ),
                                                         keyboardType: TextInputType.number,
                                                         inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                                                        onTap: () {
+                                                          // Toggle selection state based on our tracking
+                                                          if (set._weightSelected) {
+                                                            // Clear selection
+                                                            set.weightController.selection = TextSelection.collapsed(
+                                                              offset: set.weightController.text.length,
+                                                            );
+                                                            set._weightSelected = false;
+                                                          } else {
+                                                            // Select all text
+                                                            set.weightController.selection = TextSelection(
+                                                              baseOffset: 0, 
+                                                              extentOffset: set.weightController.text.length,
+                                                            );
+                                                            set._weightSelected = true;
+                                                          }
+                                                        },
                                                         onChanged: (value) {
                                                           set.weight = int.tryParse(value) ?? 0;
+                                                          set._weightSelected = false; // Reset selection state when typing
                                                         },
                                                       ),
                                                     ),
@@ -319,13 +406,15 @@ class _CustomWorkoutConfigurationPageState extends State<CustomWorkoutConfigurat
                                                         maxWidth: isSmallScreen ? 60 : 80,
                                                         minWidth: 50,
                                                       ),
-                                                      child: TextFormField(
-                                                        initialValue: set.reps.toString(),
-                                                        style: TextStyle(
-                                                          fontWeight: FontWeight.bold,
-                                                          fontSize: isSmallScreen ? 14 : 16,
-                                                        ),
-                                                        textAlign: TextAlign.center,
+                                                                                                              child: TextFormField(
+                                                          controller: set.repsController,
+                                                          focusNode: set.repsFocusNode,
+                                                          readOnly: _preventAutoFocus,
+                                                          style: TextStyle(
+                                                            fontWeight: FontWeight.bold,
+                                                            fontSize: isSmallScreen ? 14 : 16,
+                                                          ),
+                                                          textAlign: TextAlign.center,
                                                         decoration: InputDecoration(
                                                           border: OutlineInputBorder(
                                                             borderRadius: BorderRadius.circular(8),
@@ -340,8 +429,26 @@ class _CustomWorkoutConfigurationPageState extends State<CustomWorkoutConfigurat
                                                         ),
                                                         keyboardType: TextInputType.number,
                                                         inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                                                        onTap: () {
+                                                          // Toggle selection state based on our tracking
+                                                          if (set._repsSelected) {
+                                                            // Clear selection
+                                                            set.repsController.selection = TextSelection.collapsed(
+                                                              offset: set.repsController.text.length,
+                                                            );
+                                                            set._repsSelected = false;
+                                                          } else {
+                                                            // Select all text
+                                                            set.repsController.selection = TextSelection(
+                                                              baseOffset: 0, 
+                                                              extentOffset: set.repsController.text.length,
+                                                            );
+                                                            set._repsSelected = true;
+                                                          }
+                                                        },
                                                         onChanged: (value) {
                                                           set.reps = int.tryParse(value) ?? 0;
+                                                          set._repsSelected = false; // Reset selection state when typing
                                                         },
                                                       ),
                                                     ),
@@ -364,7 +471,9 @@ class _CustomWorkoutConfigurationPageState extends State<CustomWorkoutConfigurat
                           child: ElevatedButton(
                             onPressed: () {
                               setState(() {
-                                exercise.sets.add(ConfigSet());
+                                final newSet = ConfigSet();
+                                newSet.addFocusListeners(_updateFocusState);
+                                exercise.sets.add(newSet);
                               });
                             },
                             style: ElevatedButton.styleFrom(
@@ -392,58 +501,96 @@ class _CustomWorkoutConfigurationPageState extends State<CustomWorkoutConfigurat
               },
             ),
           ),
-          // Add Exercises Button
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final screenWidth = MediaQuery.of(context).size.width;
-                final buttonFontSize = screenWidth < 350 ? 16.0 : 18.0;
-                final buttonPadding = screenWidth < 350 
-                    ? const EdgeInsets.symmetric(vertical: 12) 
-                    : const EdgeInsets.symmetric(vertical: 16);
-                
-                return SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: () async {
-                      final navigator = Navigator.of(context);
-                      final result = await navigator.push<List<String>>(
-                        MaterialPageRoute(
-                          builder: (ctx) => const ExerciseInformationPage(
-                            isSelectionMode: true,
+          // Add Exercises Button with keyboard-aware visibility
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            height: _isAnyFieldFocused ? 0 : null,
+            child: _isAnyFieldFocused 
+                ? const SizedBox.shrink()
+                : Padding(
+                    padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 32.0),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final screenWidth = MediaQuery.of(context).size.width;
+                        final buttonFontSize = screenWidth < 350 ? 16.0 : 18.0;
+                        final buttonPadding = screenWidth < 350 
+                            ? const EdgeInsets.symmetric(vertical: 12) 
+                            : const EdgeInsets.symmetric(vertical: 16);
+                        
+                        return SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: () async {
+                              final navigator = Navigator.of(context, rootNavigator: true);
+                              final result = await navigator.push<List<String>>(
+                                MaterialPageRoute(
+                                  builder: (ctx) => const ExerciseInformationPage(
+                                    isSelectionMode: true,
+                                  ),
+                                ),
+                              );
+                              if (result != null && mounted) {
+                                setState(() {
+                                  _preventAutoFocus = true; // Temporarily disable interaction
+                                  // Append new exercises as ConfigExercise entries
+                                  final newExercises = result.map((title) => ConfigExercise(title: title)).toList();
+                                  // Add focus listeners to new exercises
+                                  for (var exercise in newExercises) {
+                                    for (var set in exercise.sets) {
+                                      set.addFocusListeners(_updateFocusState);
+                                    }
+                                  }
+                                  _exercises.addAll(newExercises);
+                                });
+                                
+                                // Re-enable interaction after build is complete
+                                Future.microtask(() {
+                                  if (mounted) {
+                                    setState(() {
+                                      _preventAutoFocus = false;
+                                    });
+                                    FocusScope.of(context).unfocus();
+                                  }
+                                });
+                              } else if (mounted) {
+                                // Apply auto-focus prevention even when no exercises are selected
+                                setState(() {
+                                  _preventAutoFocus = true;
+                                });
+                                
+                                Future.microtask(() {
+                                  if (mounted) {
+                                    setState(() {
+                                      _preventAutoFocus = false;
+                                    });
+                                    FocusScope.of(context).unfocus();
+                                  }
+                                });
+                              }
+                            },
+                            icon: const FaIcon(FontAwesomeIcons.plus, color: Colors.white),
+                            label: Text(
+                              'Add Exercises',
+                              style: TextStyle(
+                                color: Colors.white, 
+                                fontSize: buttonFontSize, 
+                                fontWeight: FontWeight.bold
+                              ),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.black,
+                              shape: const StadiumBorder(),
+                              padding: buttonPadding,
+                            ),
                           ),
-                        ),
-                      );
-                      if (result != null && mounted) {
-                        setState(() {
-                          // Append new exercises as ConfigExercise entries
-                          final newExercises = result.map((title) => ConfigExercise(title: title)).toList();
-                          _exercises.addAll(newExercises);
-                        });
-                      }
-                    },
-                    icon: const FaIcon(FontAwesomeIcons.plus, color: Colors.white),
-                    label: Text(
-                      'Add Exercises',
-                      style: TextStyle(
-                        color: Colors.white, 
-                        fontSize: buttonFontSize, 
-                        fontWeight: FontWeight.bold
-                      ),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.black,
-                      shape: const StadiumBorder(),
-                      padding: buttonPadding,
+                        );
+                      },
                     ),
                   ),
-                );
-              },
-            ),
           ),
         ],
       ),
+        ),
     );
   }
 }
@@ -459,8 +606,36 @@ class ConfigSet {
   final String id;
   int weight = 0;
   int reps = 0;
+  late final TextEditingController weightController;
+  late final TextEditingController repsController;
+  late final FocusNode weightFocusNode;
+  late final FocusNode repsFocusNode;
+  bool _weightSelected = false;
+  bool _repsSelected = false;
   
   static int _counter = 0;
   
-  ConfigSet() : id = '${DateTime.now().millisecondsSinceEpoch}_${++_counter}';
+  ConfigSet() : id = '${DateTime.now().millisecondsSinceEpoch}_${++_counter}' {
+    weightController = TextEditingController(text: weight.toString());
+    repsController = TextEditingController(text: reps.toString());
+    weightFocusNode = FocusNode();
+    repsFocusNode = FocusNode();
+  }
+  
+  void addFocusListeners(VoidCallback onFocusChange) {
+    weightFocusNode.addListener(onFocusChange);
+    repsFocusNode.addListener(onFocusChange);
+  }
+  
+  void removeFocusListeners(VoidCallback onFocusChange) {
+    weightFocusNode.removeListener(onFocusChange);
+    repsFocusNode.removeListener(onFocusChange);
+  }
+  
+  void dispose() {
+    weightController.dispose();
+    repsController.dispose();
+    weightFocusNode.dispose();
+    repsFocusNode.dispose();
+  }
 } 

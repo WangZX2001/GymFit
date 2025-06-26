@@ -244,8 +244,7 @@ class _CustomWorkoutPageState extends State<CustomWorkoutPage> {
   void _browseExercises() async {
     if (!mounted) return;
     
-    final selectedExercises = await Navigator.push<List<String>>(
-      context,
+    final selectedExercises = await Navigator.of(context, rootNavigator: true).push<List<String>>(
       MaterialPageRoute(
         builder: (context) => const ExerciseInformationPage(
           isSelectionMode: true,
@@ -257,8 +256,7 @@ class _CustomWorkoutPageState extends State<CustomWorkoutPage> {
 
     if (selectedExercises != null && selectedExercises.isNotEmpty) {
       // Navigate to configuration page
-      final result = await Navigator.push(
-        context,
+      final result = await Navigator.of(context, rootNavigator: true).push(
         MaterialPageRoute(
           builder: (context) => CustomWorkoutConfigurationPage(
             exerciseNames: selectedExercises,

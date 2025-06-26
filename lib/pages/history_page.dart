@@ -42,8 +42,7 @@ class HistoryPage extends StatelessWidget {
           IconButton(
             icon: const FaIcon(FontAwesomeIcons.calendar, color: Colors.black),
             onPressed: () {
-              Navigator.push(
-                context,
+              Navigator.of(context, rootNavigator: true).push(
                 MaterialPageRoute(
                   builder: (context) => WorkoutCalendarPage(),
                 ),
@@ -311,8 +310,7 @@ class HistoryPage extends StatelessWidget {
   }
 
   void _showWorkoutDetails(BuildContext context, Workout workout) {
-    Navigator.push(
-      context,
+    Navigator.of(context, rootNavigator: true).push(
       MaterialPageRoute(
         builder: (context) => WorkoutDetailsPage(workout: workout),
       ),
@@ -331,7 +329,7 @@ class HistoryPage extends StatelessWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         elevation: 8,
         child: Container(
-          constraints: const BoxConstraints(maxWidth: 360, maxHeight: 700),
+          constraints: const BoxConstraints(maxWidth: 800, maxHeight: 1200),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [

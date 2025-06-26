@@ -326,23 +326,29 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage> {
             child: Container(color: Colors.grey[300], height: 1.0),
           ),
         ),
-        body: FutureBuilder<List<ExerciseInformation>>(
-          future: _exerciseFuture,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState != ConnectionState.done) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            if (snapshot.hasError) {
-              return Center(child: Text('Error: \${snapshot.error}'));
-            }
-            final items = snapshot.data ?? [];
-            final filteredItems = _applyFilters(items);
-            final sortedItems = List<ExerciseInformation>.from(
-              filteredItems,
-            )..sort(
-              (a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()),
-            );
-            return Column(
+        body: GestureDetector(
+          onTap: () {
+            // Dismiss keyboard when tapping outside text fields
+            FocusScope.of(context).unfocus();
+          },
+          behavior: HitTestBehavior.translucent,
+          child: FutureBuilder<List<ExerciseInformation>>(
+            future: _exerciseFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState != ConnectionState.done) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (snapshot.hasError) {
+                return Center(child: Text('Error: \${snapshot.error}'));
+              }
+              final items = snapshot.data ?? [];
+              final filteredItems = _applyFilters(items);
+              final sortedItems = List<ExerciseInformation>.from(
+                filteredItems,
+              )..sort(
+                (a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()),
+              );
+              return Column(
               children: [
                 // Floating Search Bar
                 _buildFloatingSearchBar(),
@@ -372,15 +378,21 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage> {
                     ),
                   ),
                 Expanded(
-                  child: GridView.count(
-                    crossAxisCount: 2,
-                    padding: EdgeInsets.all(
-                      16,
-                    ).copyWith(bottom: widget.isSelectionMode ? 0 : 16),
-                    mainAxisSpacing: 6,
-                    crossAxisSpacing: 6,
-                    childAspectRatio: 1,
-                    children:
+                  child: GestureDetector(
+                    onTap: () {
+                      // Dismiss keyboard when tapping in grid area
+                      FocusScope.of(context).unfocus();
+                    },
+                    behavior: HitTestBehavior.translucent,
+                    child: GridView.count(
+                      crossAxisCount: 2,
+                      padding: EdgeInsets.all(
+                        16,
+                      ).copyWith(bottom: widget.isSelectionMode ? 0 : 16),
+                      mainAxisSpacing: 6,
+                      crossAxisSpacing: 6,
+                      childAspectRatio: 1,
+                      children:
                         sortedItems.map((e) {
                           final isSelected =
                               widget.isSelectionMode &&
@@ -446,6 +458,7 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage> {
                             ),
                           );
                         }).toList(),
+                    ),
                   ),
                 ),
                 if (widget.isSelectionMode)
@@ -483,6 +496,7 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage> {
               ],
             );
           },
+        ),
         ),
       ),
     );

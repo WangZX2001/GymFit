@@ -28,8 +28,7 @@ class WorkoutPage extends StatelessWidget {
                 'Exercise Information',
                 'lib/images/exerciseInformation.jpg',
                 () {
-                  Navigator.push(
-                    context,
+                  Navigator.of(context, rootNavigator: true).push(
                     MaterialPageRoute(
                       builder: (context) => const ExerciseInformationPage(),
                     ),
@@ -60,8 +59,7 @@ class WorkoutPage extends StatelessWidget {
                 'Custom Workout',
                 'lib/images/customWorkout.jpg',
                 () {
-                  Navigator.push(
-                    context,
+                  Navigator.of(context, rootNavigator: true).push(
                     MaterialPageRoute(
                       builder: (context) => const CustomWorkoutPage(),
                     ),
