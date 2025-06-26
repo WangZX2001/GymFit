@@ -1262,7 +1262,6 @@ class _QuickStartPageState extends State<QuickStartPage> {
                                               setState(() {
                                                 _preventAutoFocus = false;
                                               });
-                                              FocusScope.of(context).unfocus();
                                             }
                                           });
                                         } else if (mounted) {
@@ -1276,7 +1275,6 @@ class _QuickStartPageState extends State<QuickStartPage> {
                                               setState(() {
                                                 _preventAutoFocus = false;
                                               });
-                                              FocusScope.of(context).unfocus();
                                             }
                                           });
                                         }

@@ -549,7 +549,6 @@ class _CustomWorkoutConfigurationPageState extends State<CustomWorkoutConfigurat
                                     setState(() {
                                       _preventAutoFocus = false;
                                     });
-                                    FocusScope.of(context).unfocus();
                                   }
                                 });
                               } else if (mounted) {
@@ -563,7 +562,6 @@ class _CustomWorkoutConfigurationPageState extends State<CustomWorkoutConfigurat
                                     setState(() {
                                       _preventAutoFocus = false;
                                     });
-                                    FocusScope.of(context).unfocus();
                                   }
                                 });
                               }
