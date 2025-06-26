@@ -4,7 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:gymfit/pages/body_data/form_page6.dart';
 
 class FormPage5 extends StatefulWidget {
-  const FormPage5({super.key});
+  final double? mockHeight;
+  final double? mockWeight;
+
+  const FormPage5({super.key, this.mockHeight, this.mockWeight});
 
   @override
   State<FormPage5> createState() => _FormPage5State();
@@ -21,51 +24,51 @@ class _FormPage5State extends State<FormPage5> {
   final double itemWidth = 80 + 20; // 60 width + 10px margin left & right
 
   @override
-  void initState() {
-    super.initState();
-    scrollController = ScrollController();
-    fetchUserHeight();
+void initState() {
+  super.initState();
+  scrollController = ScrollController();
 
-    // Scroll to initial position after first frame
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (scrollController.hasClients) {
-        final defaultIndex = weight.indexOf(selectedWeight);
-        scrollController.jumpTo(defaultIndex * itemWidth);
-      }
-    });
-
-    // Auto-update selected weight based on center position
-    scrollController.addListener(() {
-      if (!scrollController.hasClients) return;
-
-      final screenCenter = MediaQuery.of(context).size.width / 2;
-      final centerOffset =
-          scrollController.offset + (screenCenter - itemWidth / 2);
-      int centerIndex = (centerOffset / itemWidth).round();
-      final newSelected = weight[centerIndex];
-      if (newSelected != selectedWeight) {
-        setState(() {
-          selectedWeight = newSelected;
-        });
-      }
-    });
+  if (widget.mockWeight != null) {
+    selectedWeight = widget.mockWeight!;
   }
 
-  Future<void> fetchUserHeight() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      final doc =
-          await FirebaseFirestore.instance
-              .collection('users')
-              .doc(user.uid)
-              .get();
-      if (doc.exists && doc.data()!.containsKey('height')) {
-        setState(() {
-          userHeight = (doc['height'] as num).toDouble();
-        });
-      }
+  if (widget.mockHeight != null) {
+    userHeight = widget.mockHeight!;
+  } else {
+    fetchUserHeight();
+  }
+
+  // Scroll to weight after build
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (scrollController.hasClients) {
+      final defaultIndex = weight.indexOf(selectedWeight);
+      scrollController.jumpTo(defaultIndex * itemWidth);
+    }
+  });
+
+  scrollController.addListener(() {
+  });
+}
+
+Future<void> fetchUserHeight() async {
+  if (widget.mockHeight != null) {
+    setState(() {
+      userHeight = widget.mockHeight;
+    });
+    return;
+  }
+
+  final user = FirebaseAuth.instance.currentUser;
+  if (user != null) {
+    final doc =
+        await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+    if (doc.exists && doc.data()!.containsKey('height')) {
+      setState(() {
+        userHeight = (doc['height'] as num).toDouble();
+      });
     }
   }
+}
 
   @override
   void dispose() {
