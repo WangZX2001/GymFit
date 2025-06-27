@@ -164,6 +164,13 @@ class QuickStartOverlay {
     }
   }
 
+  /// Shows minibar if there's an active Quick Start and no minibar is currently visible
+  static void showMinibarIfNeeded(BuildContext context) {
+    if (selectedExercises.isNotEmpty && !isMinibarVisible) {
+      showMinibar(context);
+    }
+  }
+
   /// Internal method to show minibar with consistent positioning
   static void _showMinibarWithStoredPosition(BuildContext context) {
     hideMinibar();
@@ -284,6 +291,24 @@ class QuickStartOverlay {
         },
       ),
     );
+  }
+
+  /// Minimizes the Quick Start page without showing the minibar
+  static Future<void> minimizeWithoutMinibar(BuildContext context) async {
+    hideMinibar();
+    // Set the memory flag to true so the minibar will be restored when leaving the current page
+    _wasMinibarVisible = true;
+    
+    // Capture navigator before async gap
+    final navigator = Navigator.of(context, rootNavigator: true);
+    
+    // Pop the Quick Start page
+    navigator.pop();
+    
+    // Delay to allow slide-down animation to complete
+    await Future.delayed(const Duration(milliseconds: 200));
+    
+    // Don't show the minibar - just return
   }
 
   /// Minimizes the Quick Start page and shows a non-blocking minibar above the bottom nav bar.

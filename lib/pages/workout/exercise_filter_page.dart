@@ -14,7 +14,6 @@ class ExerciseFilterPage extends StatefulWidget {
 
 class _ExerciseFilterPageState extends State<ExerciseFilterPage> {
   Set<String> selectedMainMuscles = {};
-  Set<String> selectedSecondaryMuscles = {};
   Set<String> selectedExperienceLevels = {};
   Set<String> selectedEquipment = {};
 
@@ -30,18 +29,9 @@ class _ExerciseFilterPageState extends State<ExerciseFilterPage> {
     'Cardio',
   ];
 
-  final List<String> secondaryMuscles = [
-    'Triceps',
-    'Biceps',
-    'Forearms',
-    'Lats',
-    'Traps',
-    'Delts',
-    'Quads',
-    'Hamstrings',
-    'Calves',
-    'Abs',
-  ];
+  final Map<String, List<String>> muscleSubGroups = {
+    'Back': ['Upper Back', 'Lower Back', 'Traps', 'Neck', 'Lats'],
+  };
 
 
 
@@ -50,7 +40,6 @@ class _ExerciseFilterPageState extends State<ExerciseFilterPage> {
     super.initState();
     if (widget.initialFilters != null) {
       selectedMainMuscles = Set.from(widget.initialFilters!['mainMuscles'] ?? []);
-      selectedSecondaryMuscles = Set.from(widget.initialFilters!['secondaryMuscles'] ?? []);
       selectedExperienceLevels = Set.from(widget.initialFilters!['experienceLevels'] ?? []);
       selectedEquipment = Set.from(widget.initialFilters!['equipment'] ?? []);
     }
@@ -83,6 +72,7 @@ class _ExerciseFilterPageState extends State<ExerciseFilterPage> {
                 title: title,
                 muscleGroups: options,
                 initialSelected: selected,
+                subGroups: title == 'Main Muscle' ? muscleSubGroups : null,
               ),
             ),
           );
@@ -176,7 +166,6 @@ class _ExerciseFilterPageState extends State<ExerciseFilterPage> {
   void _clearAllFilters() {
     setState(() {
       selectedMainMuscles.clear();
-      selectedSecondaryMuscles.clear();
       selectedExperienceLevels.clear();
       selectedEquipment.clear();
     });
@@ -185,7 +174,6 @@ class _ExerciseFilterPageState extends State<ExerciseFilterPage> {
   Map<String, dynamic> _getFilterResults() {
     return {
       'mainMuscles': selectedMainMuscles.toList(),
-      'secondaryMuscles': selectedSecondaryMuscles.toList(),
       'experienceLevels': selectedExperienceLevels.toList(),
       'equipment': selectedEquipment.toList(),
     };
@@ -239,22 +227,12 @@ class _ExerciseFilterPageState extends State<ExerciseFilterPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _buildMuscleGroupSection(
-                      'Main Muscle Groups',
+                      'Main Muscle',
                       mainMuscles,
                       selectedMainMuscles,
                       (selection) {
                         setState(() {
                           selectedMainMuscles = Set.from(selection);
-                        });
-                      },
-                    ),
-                    _buildMuscleGroupSection(
-                      'Secondary Muscle Groups',
-                      secondaryMuscles,
-                      selectedSecondaryMuscles,
-                      (selection) {
-                        setState(() {
-                          selectedSecondaryMuscles = Set.from(selection);
                         });
                       },
                     ),

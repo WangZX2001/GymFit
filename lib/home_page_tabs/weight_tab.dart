@@ -45,15 +45,17 @@ class _WeightTabState extends State<WeightTab> {
               .get();
 
       if (data != null) {
-        setState(() {
-          startingWeight = (data['starting weight'] as num?)?.toDouble();
-          targetWeight = (data['target weight'] as num?)?.toDouble();
-          if (weightLogSnap.docs.isNotEmpty) {
-            currentWeight =
-                (weightLogSnap.docs.first['weight'] as num?)?.toDouble();
-          }
-          isLoading = false;
-        });
+        if (mounted) {
+          setState(() {
+            startingWeight = (data['starting weight'] as num?)?.toDouble();
+            targetWeight = (data['target weight'] as num?)?.toDouble();
+            if (weightLogSnap.docs.isNotEmpty) {
+              currentWeight =
+                  (weightLogSnap.docs.first['weight'] as num?)?.toDouble();
+            }
+            isLoading = false;
+          });
+        }
       }
     }
   }
@@ -240,8 +242,10 @@ class _WeightTabState extends State<WeightTab> {
                     builder: (context) => const AddWeightPage(),
                   ),
                 ).then((_) {
-                  fetchWeights(); // refresh current weight
-                  _graphKey.currentState?.refresh(); // refresh graph
+                  if (mounted) {
+                    fetchWeights(); // refresh current weight
+                    _graphKey.currentState?.refresh(); // refresh graph
+                  }
                 });
               },
               child: Container(

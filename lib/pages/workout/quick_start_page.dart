@@ -80,7 +80,13 @@ class QuickStartExercise {
 class QuickStartPage extends StatefulWidget {
   final List<QuickStartExercise> initialSelectedExercises;
   final String? initialWorkoutName;
-  const QuickStartPage({super.key, this.initialSelectedExercises = const <QuickStartExercise>[], this.initialWorkoutName});
+  final bool showMinibarOnMinimize;
+  const QuickStartPage({
+    super.key, 
+    this.initialSelectedExercises = const <QuickStartExercise>[], 
+    this.initialWorkoutName,
+    this.showMinibarOnMinimize = true,
+  });
 
   @override
   State<QuickStartPage> createState() => _QuickStartPageState();
@@ -309,7 +315,11 @@ class _QuickStartPageState extends State<QuickStartPage> {
           icon: const FaIcon(FontAwesomeIcons.chevronDown, color: Colors.black, size: 20),
           onPressed: () {
             QuickStartOverlay.selectedExercises = _selectedExercises;
-            QuickStartOverlay.minimize(context);
+            if (widget.showMinibarOnMinimize) {
+              QuickStartOverlay.minimize(context);
+            } else {
+              QuickStartOverlay.minimizeWithoutMinibar(context);
+            }
           },
         ),
         title: AnimatedSwitcher(

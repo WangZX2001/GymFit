@@ -4,12 +4,14 @@ class MuscleGroupSelectionPage extends StatefulWidget {
   final String title;
   final List<String> muscleGroups;
   final Set<String> initialSelected;
+  final Map<String, List<String>>? subGroups;
   
   const MuscleGroupSelectionPage({
     super.key,
     required this.title,
     required this.muscleGroups,
     required this.initialSelected,
+    this.subGroups,
   });
 
   @override
@@ -18,6 +20,7 @@ class MuscleGroupSelectionPage extends StatefulWidget {
 
 class _MuscleGroupSelectionPageState extends State<MuscleGroupSelectionPage> {
   late Set<String> selectedMuscles;
+  Set<String> expandedGroups = {};
 
   @override
   void initState() {
@@ -25,19 +28,72 @@ class _MuscleGroupSelectionPageState extends State<MuscleGroupSelectionPage> {
     selectedMuscles = Set.from(widget.initialSelected);
   }
 
+  List<String> _getAllMuscleOptions() {
+    List<String> allOptions = [];
+    for (String muscle in widget.muscleGroups) {
+      allOptions.add(muscle);
+      if (widget.subGroups?.containsKey(muscle) == true) {
+        allOptions.addAll(widget.subGroups![muscle]!);
+      }
+    }
+    return allOptions;
+  }
+
   void _toggleSelection(String muscle) {
     setState(() {
       if (selectedMuscles.contains(muscle)) {
         selectedMuscles.remove(muscle);
+        
+        // If this is a parent muscle, also remove all its sub-muscles
+        if (widget.subGroups?.containsKey(muscle) == true) {
+          for (String subMuscle in widget.subGroups![muscle]!) {
+            selectedMuscles.remove(subMuscle);
+          }
+        }
       } else {
         selectedMuscles.add(muscle);
+        
+        // If this is a parent muscle, also add all its sub-muscles
+        if (widget.subGroups?.containsKey(muscle) == true) {
+          for (String subMuscle in widget.subGroups![muscle]!) {
+            selectedMuscles.add(subMuscle);
+          }
+        }
+        
+        // If this is a sub-muscle, check if all siblings are selected to select parent
+        _checkParentSelection(muscle);
+      }
+    });
+  }
+
+  void _checkParentSelection(String subMuscle) {
+    // Find if this sub-muscle belongs to any parent
+    widget.subGroups?.forEach((parent, subMuscles) {
+      if (subMuscles.contains(subMuscle)) {
+        // Check if all sub-muscles of this parent are selected
+        bool allSelected = subMuscles.every((sm) => selectedMuscles.contains(sm));
+        if (allSelected && !selectedMuscles.contains(parent)) {
+          selectedMuscles.add(parent);
+        } else if (!allSelected && selectedMuscles.contains(parent)) {
+          selectedMuscles.remove(parent);
+        }
+      }
+    });
+  }
+
+  void _toggleExpansion(String muscle) {
+    setState(() {
+      if (expandedGroups.contains(muscle)) {
+        expandedGroups.remove(muscle);
+      } else {
+        expandedGroups.add(muscle);
       }
     });
   }
 
   void _selectAll() {
     setState(() {
-      selectedMuscles = Set.from(widget.muscleGroups);
+      selectedMuscles = Set.from(_getAllMuscleOptions());
     });
   }
 
@@ -47,8 +103,60 @@ class _MuscleGroupSelectionPageState extends State<MuscleGroupSelectionPage> {
     });
   }
 
+  bool _isParentMuscle(String muscle) {
+    return widget.subGroups?.containsKey(muscle) == true;
+  }
+
+  Widget _buildMuscleItem(String muscle, {bool isSubMuscle = false}) {
+    final isSelected = selectedMuscles.contains(muscle);
+    final isParent = _isParentMuscle(muscle);
+    final isExpanded = expandedGroups.contains(muscle);
+    
+    return Container(
+      color: Colors.white,
+      child: Column(
+        children: [
+          CheckboxListTile(
+            contentPadding: EdgeInsets.only(
+              left: isSubMuscle ? 48.0 : 16.0,
+              right: 16.0,
+            ),
+            title: Row(
+              children: [
+                                 Expanded(
+                   child: Text(
+                     muscle,
+                   ),
+                 ),
+                if (isParent)
+                  GestureDetector(
+                    onTap: () => _toggleExpansion(muscle),
+                    child: Icon(
+                      isExpanded ? Icons.expand_less : Icons.expand_more,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+              ],
+            ),
+            value: isSelected,
+            onChanged: (bool? value) {
+              _toggleSelection(muscle);
+            },
+            activeColor: Colors.blue,
+          ),
+          if (isParent && isExpanded && widget.subGroups != null)
+            ...widget.subGroups![muscle]!.map(
+              (subMuscle) => _buildMuscleItem(subMuscle, isSubMuscle: true),
+            ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final allOptions = _getAllMuscleOptions();
+    
     return Scaffold(
       backgroundColor: Colors.grey.shade200,
       appBar: AppBar(
@@ -95,7 +203,7 @@ class _MuscleGroupSelectionPageState extends State<MuscleGroupSelectionPage> {
                 'Select All',
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
-              value: selectedMuscles.length == widget.muscleGroups.length,
+              value: selectedMuscles.length == allOptions.length,
               tristate: true,
               onChanged: (bool? value) {
                 if (value == true) {
@@ -115,19 +223,7 @@ class _MuscleGroupSelectionPageState extends State<MuscleGroupSelectionPage> {
               separatorBuilder: (context, index) => const Divider(height: 1),
               itemBuilder: (context, index) {
                 final muscle = widget.muscleGroups[index];
-                final isSelected = selectedMuscles.contains(muscle);
-                
-                return Container(
-                  color: Colors.white,
-                  child: CheckboxListTile(
-                    title: Text(muscle),
-                    value: isSelected,
-                    onChanged: (bool? value) {
-                      _toggleSelection(muscle);
-                    },
-                    activeColor: Colors.blue,
-                  ),
-                );
+                return _buildMuscleItem(muscle);
               },
             ),
           ),

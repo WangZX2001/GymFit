@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:gymfit/components/quick_start_overlay.dart';
+import 'package:gymfit/pages/workout/quick_start_page.dart';
+import 'package:gymfit/models/custom_workout.dart';
+import 'package:gymfit/services/custom_workout_service.dart';
 
 class ExerciseDescriptionPage extends StatefulWidget {
   final String title;
@@ -67,8 +71,8 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> {
   }
 
   void _handlePop() {
-    // Don't restore the minibar when going back to exercise information page
-    // The minibar should only be restored when exiting the exercise browsing flow entirely
+    // Don't restore the minibar here - let the parent page handle it
+    // The Exercise Information page has its own _handlePop() that will restore when appropriate
   }
 
   // Helper to pick color based on experience level
@@ -82,6 +86,283 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> {
         return Colors.red;
       default:
         return Colors.grey;
+    }
+  }
+
+  void _showAddExerciseMenu(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Add Exercise to Workout',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 20),
+              ListTile(
+                leading: const FaIcon(FontAwesomeIcons.bolt, color: Colors.orange),
+                title: const Text('Add to Quick Start'),
+                subtitle: const Text('Start or add to current quick workout'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _addToQuickStart();
+                },
+              ),
+              const Divider(),
+              ListTile(
+                leading: const FaIcon(FontAwesomeIcons.dumbbell, color: Colors.blue),
+                title: const Text('Add to Custom Workouts'),
+                subtitle: const Text('Add to a saved workout plan'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showCustomWorkoutSelection(context);
+                },
+              ),
+              const SizedBox(height: 20),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _addToQuickStart() {
+    // Create a new QuickStartExercise with this exercise
+    final newExercise = QuickStartExercise(
+      title: widget.title,
+      sets: [ExerciseSet()], // Start with one empty set
+    );
+
+    // Check if there's an existing quick start
+    if (QuickStartOverlay.selectedExercises.isNotEmpty) {
+      // Add to existing quick start
+      QuickStartOverlay.selectedExercises.add(newExercise);
+    } else {
+      // Start a new quick start
+      QuickStartOverlay.selectedExercises = [newExercise];
+      QuickStartOverlay.startTimer();
+    }
+
+    // Hide the minibar to ensure it doesn't show when returning
+    QuickStartOverlay.hideMinibar();
+
+    // Navigate to the Quick Start page
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => QuickStartPage(
+          initialSelectedExercises: QuickStartOverlay.selectedExercises,
+          showMinibarOnMinimize: false, // Don't show minibar when minimizing from exercise description page
+        ),
+      ),
+    ).then((_) {
+      // When returning from QuickStart page, ensure minibar stays hidden
+      // since we're still in the exercise description page
+      QuickStartOverlay.hideMinibar();
+    });
+  }
+
+  void _showCustomWorkoutSelection(BuildContext context) {
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    
+    CustomWorkoutService.getSavedCustomWorkouts().then((customWorkouts) {
+      if (!mounted) return;
+
+      if (customWorkouts.isEmpty) {
+        scaffoldMessenger.showSnackBar(
+          const SnackBar(
+            content: Text('No saved custom workouts found. Create one first!'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+
+      showModalBottomSheet(
+        // ignore: use_build_context_synchronously
+        context: context,
+        backgroundColor: Colors.transparent,
+        isScrollControlled: true,
+        builder: (context) {
+          return Container(
+            decoration: BoxDecoration(
+              color: Colors.grey.shade200,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const FaIcon(FontAwesomeIcons.xmark, color: Colors.black),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                    Expanded(
+                      child: Text(
+                        'Select Custom Workout',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    const SizedBox(width: 40), // Balance the X button width
+                  ],
+                ),
+                const SizedBox(height: 20),
+                Flexible(
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    itemCount: customWorkouts.length,
+                    separatorBuilder: (context, index) => const Divider(
+                      height: 1,
+                      thickness: 1,
+                      color: Colors.grey,
+                    ),
+                    itemBuilder: (context, index) {
+                      final workout = customWorkouts[index];
+                      return ListTile(
+                        leading: const FaIcon(FontAwesomeIcons.dumbbell, color: Colors.black),
+                        title: Text(workout.name),
+                        subtitle: Text('${workout.exercises.length} exercises'),
+                        onTap: () {
+                          Navigator.pop(context);
+                          _addToCustomWorkout(workout);
+                        },
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(height: 20),
+              ],
+            ),
+          );
+        },
+      );
+    }).catchError((e) {
+      if (mounted) {
+        scaffoldMessenger.showSnackBar(
+          SnackBar(
+            content: Text('Error loading custom workouts: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    });
+  }
+
+  void _addToCustomWorkout(CustomWorkout workout) async {
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    
+    try {
+      // Create a new exercise to add
+      final newExercise = CustomWorkoutExercise(
+        name: widget.title,
+        sets: [CustomWorkoutSet(weight: 0, reps: 0)], // Default set
+      );
+
+      // Add the exercise to the workout
+      final updatedExercises = [...workout.exercises, newExercise];
+
+      // Save the updated workout
+      await CustomWorkoutService.deleteCustomWorkout(workout.id);
+      await CustomWorkoutService.saveCustomWorkout(
+        name: workout.name,
+        exercises: updatedExercises,
+        description: workout.description,
+      );
+
+      if (mounted) {
+        scaffoldMessenger.showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const FaIcon(
+                  FontAwesomeIcons.circleCheck,
+                  color: Colors.white,
+                  size: 20,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Exercise Added',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      Text(
+                        '${widget.title} → ${workout.name}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: const Color(0xFF4CAF50),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            margin: const EdgeInsets.all(16),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        scaffoldMessenger.showSnackBar(
+          SnackBar(
+            content: Text('Error adding exercise to workout: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -99,7 +380,7 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> {
           backgroundColor: Colors.grey.shade200,
           elevation: 0,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.black),
+            icon: const FaIcon(FontAwesomeIcons.arrowLeft, color: Colors.black),
             onPressed: () {
               _handlePop();
               Navigator.of(context).pop();
@@ -294,7 +575,7 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> {
                   // Safety and Precautions
                   Row(
                     children: const [
-                      Icon(Icons.lightbulb_outline, color: Colors.amber),
+                      FaIcon(FontAwesomeIcons.lightbulb, color: Colors.amber),
                       SizedBox(width: 8),
                       Text(
                         'Pro Tips',
@@ -336,7 +617,7 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: widget.onAdd,
+                      onPressed: () => _showAddExerciseMenu(context),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.black,
                         shape: RoundedRectangleBorder(
@@ -347,7 +628,7 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: const [
-                          Icon(Icons.add, color: Colors.white),
+                          FaIcon(FontAwesomeIcons.plus, color: Colors.white),
                           SizedBox(width: 8),
                           Text(
                             'Add This Exercise to Workout Plan',

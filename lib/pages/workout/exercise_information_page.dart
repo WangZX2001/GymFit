@@ -23,6 +23,7 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage> {
   late Future<List<ExerciseInformation>> _exerciseFuture;
   Map<String, dynamic> _currentFilters = {};
   final TextEditingController _searchController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
   String _searchQuery = '';
 
   @override
@@ -43,6 +44,7 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage> {
   @override
   void dispose() {
     _searchController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -90,8 +92,6 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage> {
 
     return filteredExercises.where((exercise) {
       final mainMuscles = _currentFilters['mainMuscles'] as List<String>? ?? [];
-      final secondaryMuscles =
-          _currentFilters['secondaryMuscles'] as List<String>? ?? [];
       final experienceLevels =
           _currentFilters['experienceLevels'] as List<String>? ?? [];
       final equipment = _currentFilters['equipment'] as List<String>? ?? [];
@@ -100,14 +100,6 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage> {
           mainMuscles.isEmpty ||
           mainMuscles.any(
             (muscle) => exercise.mainMuscle.toLowerCase().contains(
-              muscle.toLowerCase(),
-            ),
-          );
-
-      bool matchesSecondaryMuscle =
-          secondaryMuscles.isEmpty ||
-          secondaryMuscles.any(
-            (muscle) => exercise.secondaryMuscle.toLowerCase().contains(
               muscle.toLowerCase(),
             ),
           );
@@ -127,7 +119,6 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage> {
           );
 
       return matchesMainMuscle &&
-          matchesSecondaryMuscle &&
           matchesExperience &&
           matchesEquipment;
     }).toList();
@@ -137,7 +128,6 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage> {
     return _searchQuery.isNotEmpty ||
         (_currentFilters.isNotEmpty &&
         (_currentFilters['mainMuscles']?.isNotEmpty == true ||
-            _currentFilters['secondaryMuscles']?.isNotEmpty == true ||
             _currentFilters['experienceLevels']?.isNotEmpty == true ||
             _currentFilters['equipment']?.isNotEmpty == true));
   }
@@ -149,11 +139,14 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage> {
             icon.contains('.jpeg') ||
             icon.contains('.png') ||
             icon.contains('.gif'))) {
+      // Special handling for T Bar Row image to fill container width
+      bool isTBarRow = icon.contains('TBarRow');
+      
       return Image.asset(
         icon,
         height: 100,
-        width: 100,
-        fit: BoxFit.contain,
+        width: isTBarRow ? double.infinity : 100,
+        fit: isTBarRow ? BoxFit.cover : BoxFit.contain,
         errorBuilder: (context, error, stackTrace) {
           // Fallback to default icon if image fails to load
           return Icon(Icons.fitness_center, size: 100, color: Colors.black);
@@ -384,15 +377,21 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage> {
                       FocusScope.of(context).unfocus();
                     },
                     behavior: HitTestBehavior.translucent,
-                    child: GridView.count(
-                      crossAxisCount: 2,
-                      padding: EdgeInsets.all(
-                        16,
-                      ).copyWith(bottom: widget.isSelectionMode ? 0 : 16),
-                      mainAxisSpacing: 6,
-                      crossAxisSpacing: 6,
-                      childAspectRatio: 1,
-                      children:
+                    child: Scrollbar(
+                      controller: _scrollController,
+                      thumbVisibility: true,
+                      thickness: 6.0,
+                      radius: const Radius.circular(10),
+                      child: GridView.count(
+                        controller: _scrollController,
+                        crossAxisCount: 2,
+                        padding: EdgeInsets.all(
+                          16,
+                        ).copyWith(bottom: widget.isSelectionMode ? 0 : 16),
+                        mainAxisSpacing: 6,
+                        crossAxisSpacing: 6,
+                        childAspectRatio: 1,
+                        children:
                         sortedItems.map((e) {
                           final isSelected =
                               widget.isSelectionMode &&
@@ -458,6 +457,7 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage> {
                             ),
                           );
                         }).toList(),
+                      ),
                     ),
                   ),
                 ),
