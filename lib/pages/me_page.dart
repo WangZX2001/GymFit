@@ -11,7 +11,7 @@ class MePage extends StatefulWidget {
   State<MePage> createState() => _MePageState();
 }
 
-class _MePageState extends State<MePage> {
+class _MePageState extends State<MePage> with WidgetsBindingObserver, AutomaticKeepAliveClientMixin {
   List<Workout> workouts = [];
   Set<DateTime> workoutDays = {};
   int currentStreak = 0;
@@ -19,25 +19,65 @@ class _MePageState extends State<MePage> {
   bool isLoading = true;
 
   @override
+  bool get wantKeepAlive => true;
+
+  @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    WorkoutService.addWorkoutUpdateListener(_onWorkoutUpdate);
     _loadWorkouts();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    WorkoutService.removeWorkoutUpdateListener(_onWorkoutUpdate);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    // Refresh data when app comes back to foreground
+    if (state == AppLifecycleState.resumed) {
+      _loadWorkouts();
+    }
   }
 
   Future<void> _loadWorkouts() async {
     try {
       final fetchedWorkouts = await WorkoutService.getUserWorkouts();
-      setState(() {
-        workouts = fetchedWorkouts;
-        workoutDays = _getWorkoutDays(fetchedWorkouts);
-        _calculateStreaks();
-        isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          workouts = fetchedWorkouts;
+          workoutDays = _getWorkoutDays(fetchedWorkouts);
+          _calculateStreaks();
+          isLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
     }
+  }
+
+  // Method to manually refresh data (can be called from other parts of the app)
+  Future<void> refreshData() async {
+    if (mounted) {
+      setState(() {
+        isLoading = true;
+      });
+      await _loadWorkouts();
+    }
+  }
+
+  // Callback for workout updates
+  void _onWorkoutUpdate() {
+    _loadWorkouts();
   }
 
   Set<DateTime> _getWorkoutDays(List<Workout> workouts) {
@@ -95,6 +135,7 @@ class _MePageState extends State<MePage> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // Required for AutomaticKeepAliveClientMixin
     return Scaffold(
       backgroundColor: Colors.grey.shade200,
       appBar: AppBar(

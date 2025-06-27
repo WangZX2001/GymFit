@@ -7,6 +7,33 @@ import 'package:gymfit/pages/workout/quick_start_page.dart';
 class WorkoutService {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   static final FirebaseAuth _auth = FirebaseAuth.instance;
+  
+  // Notification system for workout updates
+  static final List<VoidCallback> _workoutUpdateListeners = [];
+  
+  // Add a listener for workout updates
+  static void addWorkoutUpdateListener(VoidCallback listener) {
+    _workoutUpdateListeners.add(listener);
+  }
+  
+  // Remove a listener for workout updates
+  static void removeWorkoutUpdateListener(VoidCallback listener) {
+    _workoutUpdateListeners.remove(listener);
+  }
+  
+  // Notify all listeners that workouts have been updated
+  static void _notifyWorkoutUpdate() {
+    for (final listener in _workoutUpdateListeners) {
+      try {
+        listener();
+      } catch (e) {
+        // Handle any errors in listeners gracefully
+        if (kDebugMode) {
+          print('Error in workout update listener: $e');
+        }
+      }
+    }
+  }
 
   static Future<String> saveWorkout({
     required List<QuickStartExercise> exercises,
@@ -67,6 +94,9 @@ class WorkoutService {
       final docRef = await _firestore
           .collection('workouts')
           .add(workout.toMap());
+      
+      // Notify listeners that a workout has been saved
+      _notifyWorkoutUpdate();
       
       return docRef.id;
     } catch (e) {
@@ -184,6 +214,9 @@ class WorkoutService {
         .doc(workoutId)
         .delete()
         .timeout(const Duration(seconds: 4));
+    
+    // Notify listeners that a workout has been deleted
+    _notifyWorkoutUpdate();
   }
 
   /// Test Firebase connectivity - useful for debugging

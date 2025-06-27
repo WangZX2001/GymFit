@@ -80,11 +80,16 @@ class _LoginPageState extends State<LoginPage> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
+        child: GestureDetector(
+          onTap: () {
+            // Dismiss keyboard when tapping outside text fields
+            FocusScope.of(context).unfocus();
+          },
+          child: Center(
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
                 const SizedBox(height: 100),
                 Text(
                   'Welcome To',
@@ -236,7 +241,8 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ],
                 ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

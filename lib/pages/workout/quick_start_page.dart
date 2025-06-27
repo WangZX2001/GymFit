@@ -1164,6 +1164,9 @@ class _QuickStartPageState extends State<QuickStartPage> {
                                           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                                           child: OutlinedButton.icon(
                                             onPressed: () {
+                                              // Add haptic feedback when finish button is pressed
+                                              HapticFeedback.heavyImpact();
+                                              
                                               // Navigate to workout summary page
                                               Navigator.of(context).push(
                                                 MaterialPageRoute(
