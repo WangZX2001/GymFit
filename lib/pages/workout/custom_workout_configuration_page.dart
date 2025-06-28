@@ -4,7 +4,6 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:gymfit/models/custom_workout.dart';
 import 'package:gymfit/pages/workout/exercise_information_page.dart';
 import 'package:gymfit/pages/workout/workout_name_description_page.dart';
-import 'package:gymfit/components/quick_start_overlay.dart';
 
 // Model to track individual set data for template
 class TemplateExerciseSet {
@@ -47,11 +46,6 @@ class _CustomWorkoutConfigurationPageState extends State<CustomWorkoutConfigurat
     super.initState();
     _exercises = widget.exerciseNames.map((name) => ConfigExercise(title: name)).toList();
     _setupFocusListeners();
-    
-    // Hide the quick start minibar when entering this page (with memory)
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      QuickStartOverlay.hideMinibarWithMemory();
-    });
   }
 
   void _updateFocusState() {

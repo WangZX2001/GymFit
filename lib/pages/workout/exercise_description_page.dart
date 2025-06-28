@@ -57,11 +57,6 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> {
         flags: const YoutubePlayerFlags(autoPlay: false),
       );
     }
-    
-    // Hide the quick start minibar when entering this page (with memory)
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      QuickStartOverlay.hideMinibarWithMemory();
-    });
   }
 
   @override
@@ -70,10 +65,7 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> {
     super.dispose();
   }
 
-  void _handlePop() {
-    // Don't restore the minibar here - let the parent page handle it
-    // The Exercise Information page has its own _handlePop() that will restore when appropriate
-  }
+
 
   // Helper to pick color based on experience level
   Color _getExperienceColor(String level) {
@@ -113,17 +105,9 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> {
                 ),
               ),
               const SizedBox(height: 20),
-              const Text(
-                'Add Exercise to Workout',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 20),
               ListTile(
                 leading: const FaIcon(FontAwesomeIcons.bolt, color: Colors.orange),
-                title: const Text('Add to Quick Start'),
+                title: const Text('Add to Quick Start', style: TextStyle(fontWeight: FontWeight.bold)),
                 subtitle: const Text('Start or add to current quick workout'),
                 onTap: () {
                   Navigator.pop(context);
@@ -133,7 +117,7 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> {
               const Divider(),
               ListTile(
                 leading: const FaIcon(FontAwesomeIcons.dumbbell, color: Colors.blue),
-                title: const Text('Add to Custom Workouts'),
+                title: const Text('Add to Custom Workouts', style: TextStyle(fontWeight: FontWeight.bold)),
                 subtitle: const Text('Add to a saved workout plan'),
                 onTap: () {
                   Navigator.pop(context);
@@ -165,23 +149,24 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> {
       QuickStartOverlay.startTimer();
     }
 
-    // Hide the minibar to ensure it doesn't show when returning
-    QuickStartOverlay.hideMinibar();
-
-    // Navigate to the Quick Start page
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => QuickStartPage(
+    // Navigate to the Quick Start page with sliding animation
+    Navigator.of(context, rootNavigator: true).push(
+      PageRouteBuilder(
+        pageBuilder: (ctx, animation, secondaryAnimation) => QuickStartPage(
           initialSelectedExercises: QuickStartOverlay.selectedExercises,
-          showMinibarOnMinimize: false, // Don't show minibar when minimizing from exercise description page
+          showMinibarOnMinimize: true, // Show integrated minibar when minimizing
         ),
+        transitionDuration: const Duration(milliseconds: 200),
+        reverseTransitionDuration: const Duration(milliseconds: 200),
+        transitionsBuilder: (ctx, animation, secAnim, child) {
+          final tween = Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero);
+          return SlideTransition(
+            position: tween.animate(animation),
+            child: child,
+          );
+        },
       ),
-    ).then((_) {
-      // When returning from QuickStart page, ensure minibar stays hidden
-      // since we're still in the exercise description page
-      QuickStartOverlay.hideMinibar();
-    });
+    );
   }
 
   void _showCustomWorkoutSelection(BuildContext context) {
@@ -223,7 +208,7 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> {
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 40),
                 Row(
                   children: [
                     IconButton(
@@ -245,7 +230,7 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> {
                     const SizedBox(width: 40), // Balance the X button width
                   ],
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 8),
                 Flexible(
                   child: ListView.separated(
                     shrinkWrap: true,
@@ -259,7 +244,10 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> {
                       final workout = customWorkouts[index];
                       return ListTile(
                         leading: const FaIcon(FontAwesomeIcons.dumbbell, color: Colors.black),
-                        title: Text(workout.name),
+                        title: Text(
+                          workout.name,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
                         subtitle: Text('${workout.exercises.length} exercises'),
                         onTap: () {
                           Navigator.pop(context);
@@ -368,13 +356,7 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> {
 
   @override
   Widget build(BuildContext context) {
-    return PopScope(
-      onPopInvokedWithResult: (didPop, result) {
-        if (didPop) {
-          _handlePop();
-        }
-      },
-      child: Scaffold(
+    return Scaffold(
         backgroundColor: Colors.grey.shade200,
         appBar: AppBar(
           backgroundColor: Colors.grey.shade200,
@@ -382,7 +364,6 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> {
           leading: IconButton(
             icon: const FaIcon(FontAwesomeIcons.arrowLeft, color: Colors.black),
             onPressed: () {
-              _handlePop();
               Navigator.of(context).pop();
             },
           ),
@@ -409,241 +390,246 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> {
             }
             return false;
           },
-          child: SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Title Card
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: Colors.grey.shade300),
-                    ),
-                    child: Text(
-                      widget.title,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+          child: Scrollbar(
+            thickness: 6,
+            radius: const Radius.circular(10),
+            thumbVisibility: true,
+            trackVisibility: true,
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Title Card
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.grey.shade300),
+                      ),
+                      child: Text(
+                        widget.title,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
-                  ),
-                  // Main Muscle and Experience Level
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          widget.mainMuscle,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.grey,
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-                          decoration: BoxDecoration(
-                            color: _getExperienceColor(widget.experienceLevel),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            widget.experienceLevel,
+                    // Main Muscle and Experience Level
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            widget.mainMuscle,
                             style: const TextStyle(
-                              fontSize: 12,
-                              color: Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.grey,
                             ),
                           ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                            decoration: BoxDecoration(
+                              color: _getExperienceColor(widget.experienceLevel),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              widget.experienceLevel,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Secondary Muscle Label
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4.0),
+                      child: Text(
+                        widget.secondaryMuscle,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Description Section
+                    const Text(
+                      'Description',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      widget.description,
+                      style: const TextStyle(fontSize: 14, height: 1.5),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Video Demonstration
+                    const Text(
+                      'Video Demonstration',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    // Video player or placeholder image
+                    if (_ytController != null)
+                      YoutubePlayerBuilder(
+                        player: YoutubePlayer(
+                          controller: _ytController!,
+                          showVideoProgressIndicator: true,
+                          bottomActions: [
+                            CurrentPosition(),
+                            ProgressBar(isExpanded: true),
+                            RemainingDuration(),
+                            IconButton(
+                              icon: const Icon(Icons.replay_10, color: Colors.white),
+                              onPressed: () => _ytController!.seekTo(_ytController!.value.position - const Duration(seconds: 10)),
+                            ),
+                            IconButton(
+                              icon: Icon(_ytController!.value.isPlaying ? Icons.pause : Icons.play_arrow, color: Colors.white),
+                              onPressed: () {
+                                if (_ytController!.value.isPlaying) {
+                                  _ytController!.pause();
+                                } else {
+                                  _ytController!.play();
+                                }
+                              },
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.forward_10, color: Colors.white),
+                              onPressed: () => _ytController!.seekTo(_ytController!.value.position + const Duration(seconds: 10)),
+                            ),
+                            FullScreenButton(),
+                          ],
+                        ),
+                        builder: (context, player) {
+                          return ClipRRect(
+                            borderRadius: BorderRadius.circular(10),
+                            child: player,
+                          );
+                        },
+                      )
+                    else
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: Image.asset(
+                          'lib/images/exerciseInformation.jpg',
+                          width: double.infinity,
+                          height: 200,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    const SizedBox(height: 16),
+                    // How to do it section
+                    const Text(
+                      'How to perform',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    // Numbered steps for howTo
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: widget.howTo.split('\n').asMap().entries.map((entry) {
+                        final idx = entry.key + 1;
+                        final text = entry.value.trim();
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 16.0),
+                          child: Text.rich(
+                            TextSpan(
+                              style: const TextStyle(fontSize: 14, height: 1.5),
+                              children: [
+                                TextSpan(text: '$idx. ', style: const TextStyle(fontWeight: FontWeight.bold)),
+                                TextSpan(text: text),
+                              ],
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Safety and Precautions
+                    Row(
+                      children: const [
+                        FaIcon(FontAwesomeIcons.lightbulb, color: Colors.amber),
+                        SizedBox(width: 8),
+                        Text(
+                          'Pro Tips',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),
-                  ),
-                  // Secondary Muscle Label
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4.0),
-                    child: Text(
-                      widget.secondaryMuscle,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.grey,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Description Section
-                  const Text(
-                    'Description',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    widget.description,
-                    style: const TextStyle(fontSize: 14, height: 1.5),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Video Demonstration
-                  const Text(
-                    'Video Demonstration',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  // Video player or placeholder image
-                  if (_ytController != null)
-                    YoutubePlayerBuilder(
-                      player: YoutubePlayer(
-                        controller: _ytController!,
-                        showVideoProgressIndicator: true,
-                        bottomActions: [
-                          CurrentPosition(),
-                          ProgressBar(isExpanded: true),
-                          RemainingDuration(),
-                          IconButton(
-                            icon: const Icon(Icons.replay_10, color: Colors.white),
-                            onPressed: () => _ytController!.seekTo(_ytController!.value.position - const Duration(seconds: 10)),
-                          ),
-                          IconButton(
-                            icon: Icon(_ytController!.value.isPlaying ? Icons.pause : Icons.play_arrow, color: Colors.white),
-                            onPressed: () {
-                              if (_ytController!.value.isPlaying) {
-                                _ytController!.pause();
-                              } else {
-                                _ytController!.play();
-                              }
-                            },
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.forward_10, color: Colors.white),
-                            onPressed: () => _ytController!.seekTo(_ytController!.value.position + const Duration(seconds: 10)),
-                          ),
-                          FullScreenButton(),
-                        ],
-                      ),
-                      builder: (context, player) {
-                        return ClipRRect(
-                          borderRadius: BorderRadius.circular(10),
-                          child: player,
-                        );
-                      },
-                    )
-                  else
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
-                      child: Image.asset(
-                        'lib/images/exerciseInformation.jpg',
-                        width: double.infinity,
-                        height: 200,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                  const SizedBox(height: 16),
-                  // How to do it section
-                  const Text(
-                    'How to perform',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  // Numbered steps for howTo
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: widget.howTo.split('\n').asMap().entries.map((entry) {
-                      final idx = entry.key + 1;
-                      final text = entry.value.trim();
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 16.0),
-                        child: Text.rich(
-                          TextSpan(
-                            style: const TextStyle(fontSize: 14, height: 1.5),
-                            children: [
-                              TextSpan(text: '$idx. ', style: const TextStyle(fontWeight: FontWeight.bold)),
-                              TextSpan(text: text),
-                            ],
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Safety and Precautions
-                  Row(
-                    children: const [
-                      FaIcon(FontAwesomeIcons.lightbulb, color: Colors.amber),
-                      SizedBox(width: 8),
-                      Text(
-                        'Pro Tips',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  // Pro Tips list with bolded numbered lines
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: widget.proTips
-                        .expand((tip) => tip.split('\n'))
-                        .map((line) => line.trim())
-                        .where((line) => line.isNotEmpty)
-                        .toList()
-                        .asMap()
-                        .entries
-                        .map((entry) {
-                          final idx = entry.key + 1;
-                          final text = entry.value;
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 16.0),
-                            child: Text.rich(
-                              TextSpan(
-                                style: const TextStyle(fontSize: 14, height: 1.5),
-                                children: [
-                                  TextSpan(text: '$idx. ', style: const TextStyle(fontWeight: FontWeight.bold)),
-                                  TextSpan(text: text),
-                                ],
+                    const SizedBox(height: 12),
+                    // Pro Tips list with bolded numbered lines
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: widget.proTips
+                          .expand((tip) => tip.split('\n'))
+                          .map((line) => line.trim())
+                          .where((line) => line.isNotEmpty)
+                          .toList()
+                          .asMap()
+                          .entries
+                          .map((entry) {
+                            final idx = entry.key + 1;
+                            final text = entry.value;
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 16.0),
+                              child: Text.rich(
+                                TextSpan(
+                                  style: const TextStyle(fontSize: 14, height: 1.5),
+                                  children: [
+                                    TextSpan(text: '$idx. ', style: const TextStyle(fontWeight: FontWeight.bold)),
+                                    TextSpan(text: text),
+                                  ],
+                                ),
                               ),
-                            ),
-                          );
-                        }).toList(),
-                  ),
-                  const SizedBox(height: 32),
+                            );
+                          }).toList(),
+                    ),
+                    const SizedBox(height: 32),
 
-                  // Add Button
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () => _showAddExerciseMenu(context),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.black,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: const [
-                          FaIcon(FontAwesomeIcons.plus, color: Colors.white),
-                          SizedBox(width: 8),
-                          Text(
-                            'Add This Exercise to Workout Plan',
-                            style: TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold),
+                    // Add Button
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () => _showAddExerciseMenu(context),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.black,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
                           ),
-                        ],
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: const [
+                            FaIcon(FontAwesomeIcons.plus, color: Colors.white),
+                            SizedBox(width: 8),
+                            Text(
+                              'Add This Exercise to Workout Plan',
+                              style: TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
         ),
-      ),
     );
   }
 } 

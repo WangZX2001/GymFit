@@ -23,11 +23,6 @@ class _CustomWorkoutPageState extends State<CustomWorkoutPage> {
   void initState() {
     super.initState();
     _loadSavedWorkouts();
-    
-    // Hide the quick start minibar when entering this page (with memory)
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      QuickStartOverlay.hideMinibarWithMemory();
-    });
   }
 
   Future<void> _loadSavedWorkouts() async {
@@ -69,7 +64,10 @@ class _CustomWorkoutPageState extends State<CustomWorkoutPage> {
             borderRadius: BorderRadius.circular(16),
           ),
           child: Container(
-            constraints: const BoxConstraints(maxHeight: 600),
+            constraints: const BoxConstraints(
+              maxHeight: 750,
+              maxWidth: 400,
+            ),
             decoration: BoxDecoration(
               color: Colors.grey.shade200,
               borderRadius: BorderRadius.circular(16),
@@ -127,13 +125,16 @@ class _CustomWorkoutPageState extends State<CustomWorkoutPage> {
                           decoration: BoxDecoration(
                             color: Colors.grey.shade100,
                             borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: Colors.black,
+                              width: 1,
+                            ),
                           ),
                           child: Text(
                             workout.description!,
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 14,
-                              color: Colors.grey.shade700,
-                              fontStyle: FontStyle.italic,
+                              color: Colors.black,
                             ),
                           ),
                         );
@@ -372,20 +373,11 @@ class _CustomWorkoutPageState extends State<CustomWorkoutPage> {
     }
   }
 
-  void _handlePop() {
-    // Restore the minibar when navigating back from custom workout page
-    QuickStartOverlay.restoreMinibarIfNeeded(context);
-  }
+
 
   @override
   Widget build(BuildContext context) {
-    return PopScope(
-      onPopInvokedWithResult: (didPop, result) {
-        if (didPop) {
-          _handlePop();
-        }
-      },
-      child: Scaffold(
+    return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
         title: const Text(
@@ -967,7 +959,6 @@ class _CustomWorkoutPageState extends State<CustomWorkoutPage> {
                 ),
               ),
             ),
-      ),
     );
   }
 }

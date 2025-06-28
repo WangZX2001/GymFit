@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:gymfit/packages/exercise_information_repository/exercise_information_repository.dart';
 import 'package:gymfit/pages/workout/exercise_description_page.dart';
 import 'package:gymfit/pages/workout/exercise_filter_page.dart';
-import 'package:gymfit/components/quick_start_overlay.dart';
 
 class ExerciseInformationPage extends StatefulWidget {
   final bool isSelectionMode;
@@ -34,11 +33,6 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage> {
     if (widget.isSelectionMode) {
       _selectedTitles.addAll(widget.initialSelectedExercises);
     }
-
-    // Hide the quick start minibar when entering this page (with memory)
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      QuickStartOverlay.hideMinibarWithMemory();
-    });
   }
 
   @override
@@ -48,15 +42,7 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage> {
     super.dispose();
   }
 
-  void _handlePop() {
-    // Restore the minibar when navigating back
-    // Use a post-frame callback to ensure we're in the right context after navigation
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Get the root navigator context
-      final rootContext = Navigator.of(context, rootNavigator: true).context;
-      QuickStartOverlay.restoreMinibarIfNeeded(rootContext);
-    });
-  }
+
 
   void _openFilterPage() async {
     final result = await Navigator.push<Map<String, dynamic>>(
@@ -266,13 +252,7 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage> {
 
   @override
   Widget build(BuildContext context) {
-    return PopScope(
-      onPopInvokedWithResult: (didPop, result) {
-        if (didPop) {
-          _handlePop();
-        }
-      },
-      child: Scaffold(
+    return Scaffold(
         backgroundColor: Colors.grey.shade200,
         appBar: AppBar(
           backgroundColor: Colors.grey.shade200,
@@ -280,7 +260,6 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage> {
           leading: IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.black),
             onPressed: () {
-              _handlePop();
               Navigator.pop(context);
             },
           ),
@@ -498,7 +477,6 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage> {
           },
         ),
         ),
-      ),
     );
   }
 }

@@ -471,6 +471,7 @@ class _QuickStartPageState extends State<QuickStartPage> {
 
                     if (mounted && confirmed == true) {
                       QuickStartOverlay.selectedExercises = [];
+                      QuickStartOverlay.resetTimer();
                       navigator.pop();
                     }
                   },

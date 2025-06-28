@@ -7,13 +7,15 @@ class QuickStartOverlay {
   static OverlayEntry? _minibarEntry;
   static List<QuickStartExercise> selectedExercises = [];
   static String? customWorkoutName;
-  static bool _wasMinibarVisible = false;
+
   static Timer? _timer;
   static Duration _elapsedTime = Duration.zero;
   static DateTime? _startTime;
   static VoidCallback? _pageUpdateCallback;
+  static VoidCallback? _stateUpdateCallback;
   static bool _isPaused = false;
   static Duration _pausedTime = Duration.zero;
+  static bool _shouldShowIntegratedMinibar = false; // Track integrated minibar state
 
   /// Get current elapsed time
   static Duration get elapsedTime => _elapsedTime;
@@ -24,13 +26,31 @@ class QuickStartOverlay {
   /// Get workout start time
   static DateTime? get startTime => _startTime;
 
+  /// Get whether integrated minibar should be shown
+  static bool get shouldShowIntegratedMinibar => _shouldShowIntegratedMinibar && _timer != null;
+
   /// Set callback for page updates
   static void setPageUpdateCallback(VoidCallback? callback) {
     _pageUpdateCallback = callback;
   }
 
+  /// Set callback for state updates (for navigation bar)
+  static void setStateUpdateCallback(VoidCallback? callback) {
+    _stateUpdateCallback = callback;
+  }
+
+
+
+  /// Update integrated minibar visibility
+  static void _updateIntegratedMinibarState(bool visible) {
+    if (_shouldShowIntegratedMinibar != visible) {
+      _shouldShowIntegratedMinibar = visible;
+      _stateUpdateCallback?.call();
+    }
+  }
+
   /// Checks if the minibar is currently visible
-  static bool get isMinibarVisible => _minibarEntry != null;
+  static bool get isMinibarVisible => _minibarEntry != null || _shouldShowIntegratedMinibar;
 
   /// Start the timer
   static void startTimer() {
@@ -110,6 +130,8 @@ class QuickStartOverlay {
     if (_minibarEntry != null) {
       _minibarEntry!.markNeedsBuild();
     }
+    // Also update integrated minibar
+    _stateUpdateCallback?.call();
   }
 
   /// Widget builder for the timer display
@@ -139,30 +161,107 @@ class QuickStartOverlay {
     );
   }
 
-  /// Hides the minibar and remembers if it was visible
-  static void hideMinibarWithMemory() {
-    // Only update the flag if we're not already tracking a hidden state
-    if (!_wasMinibarVisible) {
-      _wasMinibarVisible = _minibarEntry != null;
-    }
-    hideMinibar();
+  /// Build integrated minibar widget for navigation bar
+  static Widget buildIntegratedMinibar(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onTap: () {
+        _updateIntegratedMinibarState(false);
+        openQuickStart(context);
+      },
+      child: Container(
+        height: 44,
+        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+        child: Row(
+          children: [
+            // Up arrow on the far left
+            Container(
+              width: 32,
+              height: 44,
+              alignment: Alignment.center,
+              child: const Icon(
+                Icons.keyboard_arrow_up,
+                color: Colors.black,
+                size: 22,
+              ),
+            ),
+            // Main tap area for opening Quick Start
+            Expanded(
+              child: Container(
+                alignment: Alignment.center,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const FaIcon(
+                      FontAwesomeIcons.stopwatch,
+                      color: Colors.black,
+                      size: 18,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      _formatDuration(_elapsedTime),
+                      style: const TextStyle(
+                        color: Colors.black,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            // Pause/Resume button
+            Container(
+              width: 36,
+              height: 44,
+              alignment: Alignment.center,
+              child: Material(
+                color: Colors.transparent,
+                borderRadius: BorderRadius.circular(18),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(18),
+                  onTap: () => togglePause(),
+                  child: Container(
+                    padding: const EdgeInsets.all(6.0),
+                    child: FaIcon(
+                      _isPaused ? FontAwesomeIcons.play : FontAwesomeIcons.pause,
+                      color: Colors.black,
+                      size: 18,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            // Cancel button
+            Container(
+              width: 36,
+              height: 44,
+              alignment: Alignment.center,
+              child: Material(
+                color: Colors.transparent,
+                borderRadius: BorderRadius.circular(18),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(18),
+                  onTap: () => _showCancelConfirmation(context),
+                  child: Container(
+                    padding: const EdgeInsets.all(6.0),
+                    child: const Icon(
+                      Icons.close,
+                      color: Colors.black,
+                      size: 20,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
-  /// Shows the minibar only if it was previously visible
-  static void restoreMinibarIfNeeded(BuildContext context) {
-    if (_wasMinibarVisible) {
-      // Capture the context before the async operation
-      final rootContext = Navigator.of(context, rootNavigator: true).context;
-      
-      // Add a small delay to ensure we're in the right context
-      Future.delayed(const Duration(milliseconds: 100), () {
-        if (rootContext.mounted) {
-          _showMinibarWithStoredPosition(rootContext);
-          _wasMinibarVisible = false; // Reset the flag
-        }
-      });
-    }
-  }
+
 
   /// Shows minibar if there's an active Quick Start and no minibar is currently visible
   static void showMinibarIfNeeded(BuildContext context) {
@@ -171,99 +270,7 @@ class QuickStartOverlay {
     }
   }
 
-  /// Internal method to show minibar with consistent positioning
-  static void _showMinibarWithStoredPosition(BuildContext context) {
-    hideMinibar();
-    final overlayState = Navigator.of(context, rootNavigator: true).overlay!;
-    
-    // Calculate bottom offset using the root context
-    final mediaQuery = MediaQuery.of(context);
-    final bottomOffset = mediaQuery.padding.bottom + kBottomNavigationBarHeight;
-    
-    _minibarEntry = OverlayEntry(
-      builder: (context) => Positioned(
-        left: 16.0,
-        right: 16.0,
-        bottom: bottomOffset,
-        child: Material(
-          elevation: 4,
-          borderRadius: BorderRadius.circular(16),
-          child: Container(
-            height: 60,
-            decoration: BoxDecoration(
-              color: Colors.grey.shade300,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: GestureDetector(
-              behavior: HitTestBehavior.translucent,
-              onTap: () {
-                hideMinibar();
-                openQuickStart(context);
-              },
-              child: Row(
-                children: [
-                  // Up arrow on the far left
-                  Padding(
-                    padding: const EdgeInsets.only(left: 8.0),
-                    child: const Icon(
-                      Icons.keyboard_arrow_up,
-                      color: Colors.black,
-                      size: 26,
-                    ),
-                  ),
-                  // Main tap area for opening Quick Start
-                  Expanded(
-                    child: _buildTimerDisplay(),
-                  ),
-                  // Pause/Resume button
-                  Padding(
-                    padding: const EdgeInsets.only(right: 4.0),
-                    child: Material(
-                      color: Colors.transparent,
-                      borderRadius: BorderRadius.circular(20),
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(20),
-                        onTap: () => togglePause(),
-                        child: Container(
-                          padding: const EdgeInsets.all(8.0),
-                          child: FaIcon(
-                            _isPaused ? FontAwesomeIcons.play : FontAwesomeIcons.pause,
-                            color: Colors.black,
-                            size: 22,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  // Cancel button
-                  Padding(
-                    padding: const EdgeInsets.only(right: 8.0),
-                    child: Material(
-                      color: Colors.transparent,
-                      borderRadius: BorderRadius.circular(20),
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(20),
-                        onTap: () => _showCancelConfirmation(context),
-                        child: Container(
-                          padding: const EdgeInsets.all(8.0),
-                          child: const Icon(
-                            Icons.close,
-                            color: Colors.black,
-                            size: 26,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-    overlayState.insert(_minibarEntry!);
-  }
+
 
   /// Force show minibar for testing purposes
   static void forceShowMinibar(BuildContext context) {
@@ -296,8 +303,7 @@ class QuickStartOverlay {
   /// Minimizes the Quick Start page without showing the minibar
   static Future<void> minimizeWithoutMinibar(BuildContext context) async {
     hideMinibar();
-    // Set the memory flag to true so the minibar will be restored when leaving the current page
-    _wasMinibarVisible = true;
+
     
     // Capture navigator before async gap
     final navigator = Navigator.of(context, rootNavigator: true);
@@ -314,9 +320,8 @@ class QuickStartOverlay {
   /// Minimizes the Quick Start page and shows a non-blocking minibar above the bottom nav bar.
   static Future<void> minimize(BuildContext context) async {
     hideMinibar();
-    // Capture overlay and padding before async gap
-    final overlayState = Navigator.of(context, rootNavigator: true).overlay!;
-    final paddingBottom = MediaQuery.of(context).padding.bottom;
+    
+    // Capture navigator before async gap
     final navigator = Navigator.of(context, rootNavigator: true);
     
     // Pop the Quick Start page
@@ -325,91 +330,8 @@ class QuickStartOverlay {
     // Delay to allow slide-down animation to complete
     await Future.delayed(const Duration(milliseconds: 200));
     
-    // Build and insert the minibar entry using stored values
-    final bottomOffset = paddingBottom + kBottomNavigationBarHeight;
-    _minibarEntry = OverlayEntry(
-      builder: (ctx) => Positioned(
-        left: 16.0,
-        right: 16.0,
-        bottom: bottomOffset,
-        child: Material(
-          elevation: 4,
-          borderRadius: BorderRadius.circular(16),
-          child: Container(
-            height: 60,
-            decoration: BoxDecoration(
-              color: Colors.grey.shade300,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: GestureDetector(
-              behavior: HitTestBehavior.translucent,
-              onTap: () {
-                hideMinibar();
-                openQuickStart(ctx);
-              },
-              child: Row(
-                children: [
-                  // Up arrow on the far left
-                  Padding(
-                    padding: const EdgeInsets.only(left: 8.0),
-                    child: const Icon(
-                      Icons.keyboard_arrow_up,
-                      color: Colors.black,
-                      size: 26,
-                    ),
-                  ),
-                  // Main tap area for opening Quick Start
-                  Expanded(
-                    child: _buildTimerDisplay(),
-                  ),
-                  // Pause/Resume button
-                  Padding(
-                    padding: const EdgeInsets.only(right: 4.0),
-                    child: Material(
-                      color: Colors.transparent,
-                      borderRadius: BorderRadius.circular(20),
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(20),
-                        onTap: () => togglePause(),
-                        child: Container(
-                          padding: const EdgeInsets.all(8.0),
-                          child: FaIcon(
-                            _isPaused ? FontAwesomeIcons.play : FontAwesomeIcons.pause,
-                            color: Colors.black,
-                            size: 22,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  // Cancel button
-                  Padding(
-                    padding: const EdgeInsets.only(right: 8.0),
-                    child: Material(
-                      color: Colors.transparent,
-                      borderRadius: BorderRadius.circular(20),
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(20),
-                        onTap: () => _showCancelConfirmation(ctx),
-                        child: Container(
-                          padding: const EdgeInsets.all(8.0),
-                          child: const Icon(
-                            Icons.close,
-                            color: Colors.black,
-                            size: 26,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-    overlayState.insert(_minibarEntry!);
+    // Show integrated minibar in navigation bar
+    _updateIntegratedMinibarState(true);
   }
 
   /// Shows the minimized Quick Start bar above the bottom nav bar.
@@ -428,7 +350,7 @@ class QuickStartOverlay {
           child: Container(
             height: 60,
             decoration: BoxDecoration(
-              color: Colors.grey.shade300,
+              color: Colors.white,
               borderRadius: BorderRadius.circular(16),
             ),
             child: GestureDetector(
@@ -506,6 +428,7 @@ class QuickStartOverlay {
   static void hideMinibar() {
     _minibarEntry?.remove();
     _minibarEntry = null;
+    _updateIntegratedMinibarState(false);
   }
 
   /// Shows confirmation dialog before canceling Quick Start session
@@ -535,7 +458,8 @@ class QuickStartOverlay {
       selectedExercises.clear();
       resetTimer();
       hideMinibar();
-      _wasMinibarVisible = false; // Reset state
+
+      _updateIntegratedMinibarState(false); // Reset integrated minibar state
     }
   }
 
