@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:gymfit/components/chatbot.dart';
 import 'package:gymfit/pages/body_data/form_page3.dart';
 
@@ -26,7 +27,7 @@ class _FormPage2State extends State<FormPage2> {
       }, SetOptions(merge: true));
     }
 
-    Navigator.pushReplacement(
+    Navigator.push(
       // ignore: use_build_context_synchronously
       context,
       MaterialPageRoute(builder: (context) => const FormPage3()),
@@ -71,6 +72,7 @@ class _FormPage2State extends State<FormPage2> {
     return GestureDetector(
       onTap: () {
         if (canProceed) {
+          HapticFeedback.mediumImpact();
           saveGenderToFirestore();
         }
       },

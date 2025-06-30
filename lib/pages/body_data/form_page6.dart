@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:gymfit/components/chatbot.dart';
 import 'package:gymfit/pages/body_data/form_page7.dart';
 
 class FormPage6 extends StatefulWidget {
@@ -44,12 +46,24 @@ class _FormPage6State extends State<FormPage6> {
       int centerIndex = (centerOffset / itemWidth).round();
       final newSelected = weight[centerIndex];
       if (newSelected != selectedWeight) {
-        setState(() {
-          selectedWeight = newSelected;
-        });
+        _handleTargetWeightChange(newSelected);
       }
     });
   }
+
+  // Handle target weight change with haptic feedback
+  void _handleTargetWeightChange(double newWeight) {
+    // Haptic feedback for smooth scroll interaction
+    HapticFeedback.selectionClick();
+    
+    // Update selected target weight
+    setState(() {
+      selectedWeight = newWeight;
+    });
+  }
+
+
+
 
   Future<void> fetchUserWeight() async {
     final user = FirebaseAuth.instance.currentUser;
@@ -86,7 +100,7 @@ class _FormPage6State extends State<FormPage6> {
           .doc(user.uid)
           .set(data, SetOptions(merge: true));
 
-      Navigator.pushReplacement(
+      Navigator.push(
         // ignore: use_build_context_synchronously
         context,
         MaterialPageRoute(builder: (context) => const FormPage7()),
@@ -155,7 +169,10 @@ class _FormPage6State extends State<FormPage6> {
 
   Widget nextButton() {
     return GestureDetector(
-      onTap: saveTargetWeight,
+      onTap: () {
+        HapticFeedback.mediumImpact();
+        saveTargetWeight();
+      },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 100, vertical: 10),
         decoration: BoxDecoration(
@@ -237,6 +254,7 @@ class _FormPage6State extends State<FormPage6> {
                       child: ListView.builder(
                         controller: scrollController,
                         scrollDirection: Axis.horizontal,
+                        physics: const BouncingScrollPhysics(),
                         itemCount: weight.length,
                         itemBuilder: (context, index) {
                           final weightinkg = weight[index];

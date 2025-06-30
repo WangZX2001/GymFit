@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:gymfit/components/chatbot.dart';
 import 'package:gymfit/pages/body_data/form_page4.dart';
 
@@ -27,6 +28,19 @@ class _FormPage3State extends State<FormPage3> {
     scrollController = FixedExtentScrollController(initialItem: defaultIndex);
   }
 
+
+
+  // Handle scroll feedback (haptic only)
+  void _handleScrollFeedback(int index) {
+    // Haptic feedback for smooth scroll interaction
+    HapticFeedback.selectionClick();
+    
+    // Update selected year
+    setState(() {
+      selectedYear = years[index];
+    });
+  }
+
   void saveBirthYear() async {
     final user = FirebaseAuth.instance.currentUser;
 
@@ -36,7 +50,7 @@ class _FormPage3State extends State<FormPage3> {
       }, SetOptions(merge: true));
 
       // Navigate to the next screen
-      Navigator.pushReplacement(
+      Navigator.push(
         // ignore: use_build_context_synchronously
         context,
         MaterialPageRoute(builder: (context) => const FormPage4()),
@@ -46,7 +60,10 @@ class _FormPage3State extends State<FormPage3> {
 
   Widget nextButton() {
     return GestureDetector(
-      onTap: saveBirthYear,
+      onTap: () {
+        HapticFeedback.mediumImpact();
+        saveBirthYear();
+      },
 
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 100, vertical: 10),
@@ -104,9 +121,7 @@ class _FormPage3State extends State<FormPage3> {
                     diameterRatio: 0.7,
                     physics: const FixedExtentScrollPhysics(),
                     onSelectedItemChanged: (index) {
-                      setState(() {
-                        selectedYear = years[index];
-                      });
+                      _handleScrollFeedback(index);
                     },
                     childDelegate: ListWheelChildBuilderDelegate(
                       childCount: years.length,

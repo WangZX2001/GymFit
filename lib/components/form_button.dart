@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class Formbutton extends StatelessWidget {
   final String text;
@@ -11,6 +12,7 @@ class Formbutton extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     return GestureDetector(
       onTap: () {
+        HapticFeedback.mediumImpact();
         Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => destination),

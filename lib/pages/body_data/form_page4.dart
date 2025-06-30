@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:gymfit/components/chatbot.dart';
 import 'package:gymfit/pages/body_data/form_page5.dart';
 
@@ -27,6 +28,17 @@ class _FormPage4State extends State<FormPage4> {
     scrollController = FixedExtentScrollController(initialItem: defaultIndex);
   }
 
+  // Handle scroll feedback (haptic only)
+  void _handleScrollFeedback(int index) {
+    // Haptic feedback for smooth scroll interaction
+    HapticFeedback.selectionClick();
+    
+    // Update selected height
+    setState(() {
+      selectedHeight = height[index];
+    });
+  }
+
   void saveHeight() async {
     final user = FirebaseAuth.instance.currentUser;
 
@@ -36,7 +48,7 @@ class _FormPage4State extends State<FormPage4> {
       }, SetOptions(merge: true));
 
       // Navigate to the next screen
-      Navigator.pushReplacement(
+      Navigator.push(
         // ignore: use_build_context_synchronously
         context,
         MaterialPageRoute(builder: (context) => const FormPage5()),
@@ -45,8 +57,15 @@ class _FormPage4State extends State<FormPage4> {
   }
 
   Widget nextButton() {
+    bool canProceed = selectedHeight > 0;
+
     return GestureDetector(
-      onTap: saveHeight,
+      onTap: () {
+        if (canProceed) {
+          HapticFeedback.mediumImpact();
+          saveHeight();
+        }
+      },
 
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 100, vertical: 10),
@@ -123,9 +142,7 @@ class _FormPage4State extends State<FormPage4> {
                     diameterRatio: 0.7,
                     physics: const FixedExtentScrollPhysics(),
                     onSelectedItemChanged: (index) {
-                      setState(() {
-                        selectedHeight = height[index];
-                      });
+                      _handleScrollFeedback(index);
                     },
                     childDelegate: ListWheelChildBuilderDelegate(
                       childCount: height.length,

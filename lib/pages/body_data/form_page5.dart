@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:gymfit/components/chatbot.dart';
 import 'package:gymfit/pages/body_data/form_page6.dart';
 
 class FormPage5 extends StatefulWidget {
@@ -44,10 +46,19 @@ class _FormPage5State extends State<FormPage5> {
       int centerIndex = (centerOffset / itemWidth).round();
       final newSelected = weight[centerIndex];
       if (newSelected != selectedWeight) {
-        setState(() {
-          selectedWeight = newSelected;
-        });
+        _handleWeightChange(newSelected);
       }
+    });
+  }
+
+  // Handle weight change with haptic feedback
+  void _handleWeightChange(double newWeight) {
+    // Haptic feedback for smooth scroll interaction
+    HapticFeedback.selectionClick();
+    
+    // Update selected weight
+    setState(() {
+      selectedWeight = newWeight;
     });
   }
 
@@ -92,7 +103,7 @@ class _FormPage5State extends State<FormPage5> {
           .doc(user.uid)
           .set(data, SetOptions(merge: true));
 
-      Navigator.pushReplacement(
+      Navigator.push(
         // ignore: use_build_context_synchronously
         context,
         MaterialPageRoute(builder: (context) => const FormPage6()),
@@ -176,7 +187,10 @@ class _FormPage5State extends State<FormPage5> {
 
   Widget nextButton() {
     return GestureDetector(
-      onTap: saveWeight,
+      onTap: () {
+        HapticFeedback.mediumImpact();
+        saveWeight();
+      },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 100, vertical: 10),
         decoration: BoxDecoration(

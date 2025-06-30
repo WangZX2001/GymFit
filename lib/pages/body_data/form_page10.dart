@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:gymfit/components/form_button.dart';
 import 'package:gymfit/components/persistent_nav.dart';
 
@@ -38,9 +39,32 @@ class FormPage10 extends StatelessWidget {
                       ),
                     ),
                     const Spacer(),
-                    Formbutton(
-                      destination: PersistentNavBar(initialIndex: 0),
-                      text: "Go To Home",
+                    GestureDetector(
+                      onTap: () {
+                        HapticFeedback.mediumImpact();
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => PersistentNavBar(initialIndex: 0),
+                          ),
+                          (route) => false, // Remove all previous routes
+                        );
+                      },
+                      child: Container(
+                        padding: EdgeInsets.symmetric(horizontal: 60, vertical: 10),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(50),
+                          gradient: LinearGradient(
+                            colors: [Color(0xFF396599), Color(0xFF5EA9FF)],
+                            begin: Alignment.centerLeft,
+                            end: Alignment.centerRight,
+                          ),
+                        ),
+                        child: Text(
+                          "Go To Home",
+                          style: Theme.of(context).textTheme.labelLarge,
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 50),
                   ],

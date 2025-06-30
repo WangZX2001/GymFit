@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:gymfit/components/chatbot.dart';
 import 'package:gymfit/pages/body_data/form_page10.dart';
 
@@ -26,7 +27,7 @@ class _FormPage9State extends State<FormPage9> {
       }, SetOptions(merge: true));
     }
 
-    Navigator.pushReplacement(
+    Navigator.push(
       // ignore: use_build_context_synchronously
       context,
       MaterialPageRoute(builder: (context) => const FormPage10()),
@@ -71,6 +72,7 @@ class _FormPage9State extends State<FormPage9> {
     return GestureDetector(
       onTap: () {
         if (canProceed) {
+          HapticFeedback.mediumImpact();
           saveFitnessLevelToFirestore();
         }
       },
