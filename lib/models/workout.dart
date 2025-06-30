@@ -35,7 +35,7 @@ class WorkoutExercise {
 }
 
 class WorkoutSet {
-  final int weight;
+  final double weight;
   final int reps;
   final bool isCompleted;
 
@@ -55,7 +55,7 @@ class WorkoutSet {
 
   factory WorkoutSet.fromMap(Map<String, dynamic> map) {
     return WorkoutSet(
-      weight: map['weight'] ?? 0,
+      weight: (map['weight'] as num?)?.toDouble() ?? 0.0,
       reps: map['reps'] ?? 0,
       isCompleted: map['isCompleted'] ?? false,
     );

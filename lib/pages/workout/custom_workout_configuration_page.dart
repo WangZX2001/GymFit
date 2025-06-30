@@ -369,8 +369,8 @@ class _CustomWorkoutConfigurationPageState extends State<CustomWorkoutConfigurat
                                                             vertical: 4,
                                                           ),
                                                         ),
-                                                        keyboardType: TextInputType.number,
-                                                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                                                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                                        inputFormatters: [_DecimalTextInputFormatter(decimalRange: 2)],
                                                         onTap: () {
                                                           // Toggle selection state based on our tracking
                                                           if (set._weightSelected) {
@@ -389,7 +389,7 @@ class _CustomWorkoutConfigurationPageState extends State<CustomWorkoutConfigurat
                                                           }
                                                         },
                                                         onChanged: (value) {
-                                                          set.weight = int.tryParse(value) ?? 0;
+                                                          set.weight = double.tryParse(value) ?? 0.0;
                                                           set._weightSelected = false; // Reset selection state when typing
                                                         },
                                                       ),
@@ -602,7 +602,7 @@ class ConfigExercise {
 
 class ConfigSet {
   final String id;
-  int weight = 0;
+  double weight = 0.0;
   int reps = 0;
   late final TextEditingController weightController;
   late final TextEditingController repsController;
@@ -613,8 +613,11 @@ class ConfigSet {
   
   static int _counter = 0;
   
+  // Helper to format weight display (strip trailing .0)
+  static String _fmt(double v) => v % 1 == 0 ? v.toInt().toString() : v.toString();
+  
   ConfigSet() : id = '${DateTime.now().millisecondsSinceEpoch}_${++_counter}' {
-    weightController = TextEditingController(text: weight.toString());
+    weightController = TextEditingController(text: _fmt(weight));
     repsController = TextEditingController(text: reps.toString());
     weightFocusNode = FocusNode();
     repsFocusNode = FocusNode();
@@ -635,5 +638,24 @@ class ConfigSet {
     repsController.dispose();
     weightFocusNode.dispose();
     repsFocusNode.dispose();
+  }
+}
+
+// Formatter to limit decimal places (2 by default)
+class _DecimalTextInputFormatter extends TextInputFormatter {
+  _DecimalTextInputFormatter({this.decimalRange = 2}) : assert(decimalRange > 0);
+
+  final int decimalRange;
+
+  @override
+  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+    final txt = newValue.text;
+    if (txt == '.') {
+      return TextEditingValue(text: '0.', selection: const TextSelection.collapsed(offset: 2));
+    }
+    if (txt.isEmpty) return newValue;
+    final reg = RegExp(r'^\d*\.?\d{0,' + decimalRange.toString() + r'}$');
+    if (reg.hasMatch(txt)) return newValue;
+    return oldValue;
   }
 } 

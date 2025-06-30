@@ -53,7 +53,7 @@ class CustomWorkoutService {
     final exercises = exerciseNames.map((exerciseName) => 
       CustomWorkoutExercise(
         name: exerciseName,
-        sets: [CustomWorkoutSet(weight: 0, reps: 0)],
+        sets: [CustomWorkoutSet(weight: 0.0, reps: 0)],
       )
     ).toList();
 

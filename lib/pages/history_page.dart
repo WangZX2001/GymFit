@@ -538,7 +538,7 @@ class HistoryPage extends StatelessWidget {
                                         ),
                                       ),
                                       Text(
-                                        '${set.weight} kg × ${set.reps} reps',
+                                        '${(set.weight % 1 == 0 ? set.weight.toInt() : set.weight)} kg × ${set.reps} reps',
                                         style: TextStyle(
                                           fontSize: 12,
                                           fontWeight: FontWeight.w500,

@@ -193,7 +193,7 @@ class _CustomWorkoutPageState extends State<CustomWorkoutPage> {
                                       const SizedBox(width: 12),
                                       Expanded(
                                         child: Text(
-                                          '${set.weight} kg × ${set.reps} reps',
+                                          '${(set.weight % 1 == 0 ? set.weight.toInt() : set.weight)} kg × ${set.reps} reps',
                                           style: const TextStyle(
                                             fontSize: 14,
                                             fontWeight: FontWeight.w500,

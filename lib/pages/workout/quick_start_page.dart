@@ -10,10 +10,43 @@ import 'package:gymfit/models/workout.dart';
 import 'package:gymfit/models/custom_workout.dart';
 import 'package:gymfit/services/custom_workout_service.dart';
 
+// Input formatter to restrict decimals to a fixed number of places (default 2)
+class _DecimalTextInputFormatter extends TextInputFormatter {
+  _DecimalTextInputFormatter({this.decimalRange = 2}) : assert(decimalRange > 0);
+
+  final int decimalRange;
+
+  @override
+  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+    final text = newValue.text;
+
+    if (text == '.') {
+      // Prefix lone decimal with 0
+      return TextEditingValue(
+        text: '0.',
+        selection: const TextSelection.collapsed(offset: 2),
+      );
+    }
+
+    // Allow empty input
+    if (text.isEmpty) {
+      return newValue;
+    }
+
+    final regExp = RegExp(r'^\d*\.?\d{0,' + decimalRange.toString() + r'}$');
+    if (regExp.hasMatch(text)) {
+      return newValue;
+    }
+
+    // Reject invalid additions by returning old value
+    return oldValue;
+  }
+}
+
 // Model to track individual set data
 class ExerciseSet {
   final String id;
-  int weight;
+  double weight;
   int reps;
   bool isChecked;
   late final TextEditingController weightController;
@@ -23,11 +56,20 @@ class ExerciseSet {
   bool _weightSelected = false;
   bool _repsSelected = false;
   
+  // Helper to format weight: whole number if no decimal part
+  static String _formatWeight(double value) {
+    if (value % 1 == 0) {
+      // Whole number – show without decimal
+      return value.toInt().toString();
+    }
+    return value.toString();
+  }
+  
   static int _counter = 0;
   
-  ExerciseSet({this.weight = 0, this.reps = 0, this.isChecked = false}) 
+  ExerciseSet({this.weight = 0.0, this.reps = 0, this.isChecked = false}) 
     : id = '${DateTime.now().millisecondsSinceEpoch}_${++_counter}' {
-    weightController = TextEditingController(text: weight.toString());
+    weightController = TextEditingController(text: _formatWeight(weight));
     repsController = TextEditingController(text: reps.toString());
     weightFocusNode = FocusNode();
     repsFocusNode = FocusNode();
@@ -43,11 +85,12 @@ class ExerciseSet {
     repsFocusNode.removeListener(onFocusChange);
   }
   
-  void updateWeight(int newWeight) {
+  void updateWeight(double newWeight) {
     if (weight != newWeight) {
       weight = newWeight;
-      if (weightController.text != newWeight.toString()) {
-        weightController.text = newWeight.toString();
+      final formatted = _formatWeight(newWeight);
+      if (weightController.text != formatted) {
+        weightController.text = formatted;
       }
     }
   }
@@ -991,8 +1034,8 @@ class _QuickStartPageState extends State<QuickStartPage> {
                                                                                       vertical: 4,
                                                                                     ),
                                                                                   ),
-                                                                                  keyboardType: TextInputType.number,
-                                                                                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                                                                                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                                                                  inputFormatters: [_DecimalTextInputFormatter(decimalRange: 2)],
                                                                                   onTap: () {
                                                                                     // Toggle selection state based on our tracking
                                                                                     if (exerciseSet._weightSelected) {
@@ -1011,7 +1054,7 @@ class _QuickStartPageState extends State<QuickStartPage> {
                                                                                     }
                                                                                   },
                                                                                   onChanged: (val) {
-                                                                                    final newWeight = int.tryParse(val) ?? 0;
+                                                                                    final newWeight = double.tryParse(val) ?? 0.0;
                                                                                     setState(() {
                                                                                       exerciseSet.updateWeight(newWeight);
                                                                                       exerciseSet._weightSelected = false; // Reset selection state when typing

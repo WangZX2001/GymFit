@@ -293,7 +293,7 @@ class WorkoutDetailsPage extends StatelessWidget {
                             Expanded(
                               child: Text(
                                 set.isCompleted 
-                                    ? '${set.weight} kg × ${set.reps} reps'
+                                    ? '${(set.weight % 1 == 0 ? set.weight.toInt() : set.weight)} kg × ${set.reps} reps'
                                     : 'Not completed',
                                 style: TextStyle(
                                   fontSize: 16,

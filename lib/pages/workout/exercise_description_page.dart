@@ -282,7 +282,7 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> {
       // Create a new exercise to add
       final newExercise = CustomWorkoutExercise(
         name: widget.title,
-        sets: [CustomWorkoutSet(weight: 0, reps: 0)], // Default set
+        sets: [CustomWorkoutSet(weight: 0.0, reps: 0)], // Default set
       );
 
       // Add the exercise to the workout

@@ -21,13 +21,13 @@ class CustomWorkoutExercise {
       name: map['name'] ?? '',
       sets: (map['sets'] as List<dynamic>?)
           ?.map((set) => CustomWorkoutSet.fromMap(set as Map<String, dynamic>))
-          .toList() ?? [CustomWorkoutSet(weight: 0, reps: 0)],
+          .toList() ?? [CustomWorkoutSet(weight: 0.0, reps: 0)],
     );
   }
 }
 
 class CustomWorkoutSet {
-  final int weight;
+  final double weight;
   final int reps;
 
   CustomWorkoutSet({
@@ -44,7 +44,7 @@ class CustomWorkoutSet {
 
   factory CustomWorkoutSet.fromMap(Map<String, dynamic> map) {
     return CustomWorkoutSet(
-      weight: map['weight'] ?? 0,
+      weight: (map['weight'] as num?)?.toDouble() ?? 0.0,
       reps: map['reps'] ?? 0,
     );
   }
@@ -99,7 +99,7 @@ class CustomWorkout {
       final exerciseNames = List<String>.from(map['exerciseNames'] ?? []);
       exercises = exerciseNames.map((name) => CustomWorkoutExercise(
         name: name,
-        sets: [CustomWorkoutSet(weight: 0, reps: 0)],
+        sets: [CustomWorkoutSet(weight: 0.0, reps: 0)],
       )).toList();
     }
 
