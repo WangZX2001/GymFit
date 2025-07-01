@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:gymfit/models/workout.dart';
 import 'package:gymfit/services/workout_service.dart';
+import 'package:gymfit/pages/workout/workout_edit_page.dart';
 import 'package:intl/intl.dart';
 
 class WorkoutDetailsPage extends StatelessWidget {
@@ -44,7 +45,23 @@ class WorkoutDetailsPage extends StatelessWidget {
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.of(context).pop(),
         ),
-
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit, color: Colors.black),
+            onPressed: () async {
+              final result = await Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => WorkoutEditPage(workout: workout),
+                ),
+              );
+              
+              // If the workout was successfully edited, pop this page to refresh the parent
+              if (result == true) {
+                Navigator.of(context).pop(true);
+              }
+            },
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),

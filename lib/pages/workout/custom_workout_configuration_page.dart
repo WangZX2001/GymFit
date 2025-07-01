@@ -26,10 +26,12 @@ class TemplateExercise {
 
 class CustomWorkoutConfigurationPage extends StatefulWidget {
   final List<String> exerciseNames;
+  final CustomWorkout? existingWorkout; // For editing existing workouts
   
   const CustomWorkoutConfigurationPage({
     super.key,
     required this.exerciseNames,
+    this.existingWorkout,
   });
 
   @override
@@ -44,7 +46,28 @@ class _CustomWorkoutConfigurationPageState extends State<CustomWorkoutConfigurat
   @override
   void initState() {
     super.initState();
-    _exercises = widget.exerciseNames.map((name) => ConfigExercise(title: name)).toList();
+    
+    // If editing an existing workout, pre-populate with its data
+    if (widget.existingWorkout != null) {
+      _exercises = widget.existingWorkout!.exercises.map((exercise) {
+        final configExercise = ConfigExercise(title: exercise.name);
+        // Replace the default empty set with the actual sets from the workout
+        configExercise.sets.clear();
+        for (var set in exercise.sets) {
+          final configSet = ConfigSet();
+          configSet.weight = set.weight;
+          configSet.reps = set.reps;
+          configSet.weightController.text = ConfigSet._fmt(set.weight);
+          configSet.repsController.text = set.reps.toString();
+          configExercise.sets.add(configSet);
+        }
+        return configExercise;
+      }).toList();
+    } else {
+      // Creating new workout - use exercise names with empty sets
+      _exercises = widget.exerciseNames.map((name) => ConfigExercise(title: name)).toList();
+    }
+    
     _setupFocusListeners();
   }
 
@@ -114,6 +137,7 @@ class _CustomWorkoutConfigurationPageState extends State<CustomWorkoutConfigurat
       MaterialPageRoute(
         builder: (context) => WorkoutNameDescriptionPage(
           exercises: customExercises,
+          existingWorkout: widget.existingWorkout,
         ),
       ),
     );

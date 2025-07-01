@@ -5,10 +5,12 @@ import 'package:gymfit/services/custom_workout_service.dart';
 
 class WorkoutNameDescriptionPage extends StatefulWidget {
   final List<CustomWorkoutExercise> exercises;
+  final CustomWorkout? existingWorkout;
   
   const WorkoutNameDescriptionPage({
     super.key,
     required this.exercises,
+    this.existingWorkout,
   });
 
   @override
@@ -19,6 +21,16 @@ class _WorkoutNameDescriptionPageState extends State<WorkoutNameDescriptionPage>
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
   bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // If editing an existing workout, pre-populate the fields
+    if (widget.existingWorkout != null) {
+      _nameController.text = widget.existingWorkout!.name;
+      _descriptionController.text = widget.existingWorkout!.description ?? '';
+    }
+  }
 
   @override
   void dispose() {
@@ -67,13 +79,26 @@ class _WorkoutNameDescriptionPageState extends State<WorkoutNameDescriptionPage>
     });
 
     try {
-      await CustomWorkoutService.saveCustomWorkout(
-        name: _nameController.text.trim(),
-        exercises: widget.exercises,
-        description: _descriptionController.text.trim().isNotEmpty 
-            ? _descriptionController.text.trim() 
-            : null,
-      );
+      if (widget.existingWorkout != null) {
+        // Update existing workout
+        await CustomWorkoutService.updateCustomWorkout(
+          workoutId: widget.existingWorkout!.id,
+          name: _nameController.text.trim(),
+          exercises: widget.exercises,
+          description: _descriptionController.text.trim().isNotEmpty 
+              ? _descriptionController.text.trim() 
+              : null,
+        );
+      } else {
+        // Create new workout
+        await CustomWorkoutService.saveCustomWorkout(
+          name: _nameController.text.trim(),
+          exercises: widget.exercises,
+          description: _descriptionController.text.trim().isNotEmpty 
+              ? _descriptionController.text.trim() 
+              : null,
+        );
+      }
 
       if (mounted) {
         // Pop back to the custom workout page (2 levels up) with success result

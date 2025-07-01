@@ -212,6 +212,7 @@ class CustomWorkoutService {
     required String workoutId,
     required String name,
     required List<CustomWorkoutExercise> exercises,
+    String? description,
   }) async {
     final user = _auth.currentUser;
     if (user == null) {
@@ -250,6 +251,7 @@ class CustomWorkoutService {
         'name': name.trim(),
         'exercises': exercises.map((exercise) => exercise.toMap()).toList(),
         'exerciseNames': exercises.map((e) => e.name).toList(), // Backward compatibility
+        'description': description,
       });
     } catch (e) {
       throw Exception('Failed to update custom workout: $e');

@@ -104,6 +104,13 @@ class _CustomWorkoutPageState extends State<CustomWorkoutPage> {
                         ),
                       ),
                       IconButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          _editWorkout(workout);
+                        },
+                        icon: const Icon(Icons.edit, color: Colors.grey),
+                      ),
+                      IconButton(
                         onPressed: () => Navigator.of(context).pop(),
                         icon: const Icon(Icons.close, color: Colors.grey),
                       ),
@@ -373,7 +380,22 @@ class _CustomWorkoutPageState extends State<CustomWorkoutPage> {
     }
   }
 
+  Future<void> _editWorkout(CustomWorkout workout) async {
+    if (!mounted) return;
 
+    final result = await Navigator.of(context, rootNavigator: true).push(
+      MaterialPageRoute(
+        builder: (context) => CustomWorkoutConfigurationPage(
+          exerciseNames: workout.exerciseNames,
+          existingWorkout: workout,
+        ),
+      ),
+    );
+
+    if (mounted && result == true) {
+      _loadSavedWorkouts();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

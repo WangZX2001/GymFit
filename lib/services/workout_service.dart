@@ -219,6 +219,41 @@ class WorkoutService {
     _notifyWorkoutUpdate();
   }
 
+  static Future<void> updateWorkout(Workout workout) async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw Exception('User not authenticated');
+    }
+
+    try {
+      // First check if document exists and user owns it
+      final docSnapshot = await _firestore
+          .collection('workouts')
+          .doc(workout.id)
+          .get();
+
+      if (!docSnapshot.exists) {
+        throw Exception('Workout not found');
+      }
+
+      final data = docSnapshot.data();
+      if (data?['userId'] != user.uid) {
+        throw Exception('Unauthorized: You do not own this workout');
+      }
+
+      // Update the document
+      await _firestore
+          .collection('workouts')
+          .doc(workout.id)
+          .update(workout.toMap());
+      
+      // Notify listeners that a workout has been updated
+      _notifyWorkoutUpdate();
+    } catch (e) {
+      throw Exception('Failed to update workout: $e');
+    }
+  }
+
   /// Test Firebase connectivity - useful for debugging
   static Future<Map<String, bool>> testFirebaseConnectivity() async {
     final user = _auth.currentUser;
