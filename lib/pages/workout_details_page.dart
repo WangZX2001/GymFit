@@ -54,6 +54,7 @@ class WorkoutDetailsPage extends StatelessWidget {
                   builder: (context) => WorkoutEditPage(workout: workout),
                 ),
               );
+              if (!context.mounted) return;
               
               // If the workout was successfully edited, pop this page to refresh the parent
               if (result == true) {
