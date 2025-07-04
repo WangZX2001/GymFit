@@ -31,6 +31,7 @@ class _ExerciseFilterPageState extends State<ExerciseFilterPage> {
 
   final Map<String, List<String>> muscleSubGroups = {
     'Back': ['Upper Back', 'Lower Back', 'Traps', 'Neck', 'Lats'],
+    'Arms': ['Biceps', 'Triceps'],
   };
 
 

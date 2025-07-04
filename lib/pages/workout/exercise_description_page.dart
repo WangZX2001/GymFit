@@ -425,7 +425,7 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            widget.mainMuscle,
+                            'Primary: ${widget.mainMuscle}',
                             style: const TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
@@ -453,7 +453,7 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> {
                     Padding(
                       padding: const EdgeInsets.only(top: 4.0),
                       child: Text(
-                        widget.secondaryMuscle,
+                        'Secondary: ${widget.secondaryMuscle}',
                         style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,

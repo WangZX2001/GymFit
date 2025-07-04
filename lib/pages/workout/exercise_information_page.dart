@@ -17,13 +17,21 @@ class ExerciseInformationPage extends StatefulWidget {
       _ExerciseInformationPageState();
 }
 
-class _ExerciseInformationPageState extends State<ExerciseInformationPage> {
+class _ExerciseInformationPageState extends State<ExerciseInformationPage>
+    with TickerProviderStateMixin {
   final Set<String> _selectedTitles = {};
   late Future<List<ExerciseInformation>> _exerciseFuture;
   Map<String, dynamic> _currentFilters = {};
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  final FocusNode _searchFocusNode = FocusNode();
   String _searchQuery = '';
+
+  // Animation variables for search bar
+  late AnimationController _searchBarAnimationController;
+  late Animation<Offset> _searchBarSlideAnimation;
+  double _lastScrollOffset = 0;
+  bool _isSearchBarVisible = true;
 
   @override
   void initState() {
@@ -33,18 +41,88 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage> {
     if (widget.isSelectionMode) {
       _selectedTitles.addAll(widget.initialSelectedExercises);
     }
+
+    // Initialize animation controller
+    _searchBarAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 200),
+      vsync: this,
+    );
+
+    _searchBarSlideAnimation = Tween<Offset>(
+      begin: Offset.zero,
+      end: const Offset(0, -1),
+    ).animate(CurvedAnimation(
+      parent: _searchBarAnimationController,
+      curve: Curves.easeInOut,
+    ));
+
+    // Add scroll listener
+    _scrollController.addListener(_onScroll);
+  }
+
+  void _onScroll() {
+    final currentScrollOffset = _scrollController.offset;
+    final difference = currentScrollOffset - _lastScrollOffset;
+
+    // Always show search bar when at or near the top
+    if (currentScrollOffset <= 50) {
+      if (!_isSearchBarVisible) {
+        _showSearchBar();
+      }
+      _lastScrollOffset = currentScrollOffset;
+      return;
+    }
+
+    // Only react to significant scroll movements when not at the top
+    if (difference.abs() > 5) {
+      if (difference > 0 && _isSearchBarVisible) {
+        // Scrolling up - hide search bar
+        _hideSearchBar();
+      } else if (difference < 0 && !_isSearchBarVisible) {
+        // Scrolling down - show search bar
+        _showSearchBar();
+      }
+    }
+
+    _lastScrollOffset = currentScrollOffset;
+  }
+
+  void _hideSearchBar() {
+    if (_isSearchBarVisible) {
+      setState(() {
+        _isSearchBarVisible = false;
+      });
+      _searchBarAnimationController.forward();
+    }
+  }
+
+  void _showSearchBar() {
+    if (!_isSearchBarVisible) {
+      setState(() {
+        _isSearchBarVisible = true;
+      });
+      _searchBarAnimationController.reverse();
+    }
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _searchFocusNode.dispose();
+    _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
+    _searchBarAnimationController.dispose();
     super.dispose();
   }
 
-
-
   void _openFilterPage() async {
+    // Unfocus the search bar before navigating to prevent auto-focus on return
+    _searchFocusNode.unfocus();
+    FocusScope.of(context).unfocus();
+    
+    // Wait a frame to ensure unfocus takes effect
+    await Future.delayed(const Duration(milliseconds: 50));
+    
     final result = await Navigator.push<Map<String, dynamic>>(
       context,
       MaterialPageRoute(
@@ -66,10 +144,7 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage> {
     // Apply search filter
     if (_searchQuery.isNotEmpty) {
       filteredExercises = filteredExercises.where((exercise) {
-        return exercise.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-               exercise.mainMuscle.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-               exercise.secondaryMuscle.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-               exercise.equipment.toLowerCase().contains(_searchQuery.toLowerCase());
+        return exercise.title.toLowerCase().contains(_searchQuery.toLowerCase());
       }).toList();
     }
 
@@ -151,56 +226,77 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage> {
 
   Widget _buildFloatingSearchBar() {
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(25),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+      color: Colors.grey.shade200, // Grey background that matches the scaffold
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Search bar
+          Container(
+            margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(25),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.1),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: TextField(
+              controller: _searchController,
+              focusNode: _searchFocusNode,
+              autofocus: false,
+              onChanged: (value) {
+                setState(() {
+                  _searchQuery = value;
+                });
+              },
+              decoration: InputDecoration(
+                hintText: 'Search exercises...',
+                hintStyle: TextStyle(
+                  color: Colors.grey[500],
+                  fontSize: 16,
+                ),
+                prefixIcon: Icon(
+                  Icons.search,
+                  color: Colors.grey[500],
+                ),
+                suffixIcon: _searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: Icon(
+                          Icons.clear,
+                          color: Colors.grey[500],
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _searchController.clear();
+                            _searchQuery = '';
+                          });
+                        },
+                      )
+                    : null,
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 15,
+                ),
+              ),
+              style: const TextStyle(fontSize: 16),
+            ),
           ),
+          // Instruction text
+          if (!widget.isSelectionMode)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 0),
+              child: Text(
+                'Click on any exercise icon to view specific instructions.',
+                style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                textAlign: TextAlign.center,
+              ),
+            ),
         ],
-      ),
-      child: TextField(
-        controller: _searchController,
-        onChanged: (value) {
-          setState(() {
-            _searchQuery = value;
-          });
-        },
-        decoration: InputDecoration(
-          hintText: 'Search exercises...',
-          hintStyle: TextStyle(
-            color: Colors.grey[500],
-            fontSize: 16,
-          ),
-          prefixIcon: Icon(
-            Icons.search,
-            color: Colors.grey[500],
-          ),
-          suffixIcon: _searchQuery.isNotEmpty
-              ? IconButton(
-                  icon: Icon(
-                    Icons.clear,
-                    color: Colors.grey[500],
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      _searchController.clear();
-                      _searchQuery = '';
-                    });
-                  },
-                )
-              : null,
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 20,
-            vertical: 15,
-          ),
-        ),
-        style: const TextStyle(fontSize: 16),
       ),
     );
   }
@@ -300,7 +396,8 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage> {
         ),
         body: GestureDetector(
           onTap: () {
-            // Dismiss keyboard when tapping outside text fields
+            // Dismiss keyboard and unfocus search field when tapping outside
+            _searchFocusNode.unfocus();
             FocusScope.of(context).unfocus();
           },
           behavior: HitTestBehavior.translucent,
@@ -320,162 +417,175 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage> {
               )..sort(
                 (a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()),
               );
-              return Column(
-              children: [
-                // Floating Search Bar
-                _buildFloatingSearchBar(),
-                // Instruction text
-                if (!widget.isSelectionMode)
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 8.0),
-                    child: Text(
-                      'Click on any exercise icon to view specific instructions.',
-                      style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                if (_hasActiveFilters)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    child: Text(
-                      'Showing ${sortedItems.length} of ${items.length} exercises',
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () {
-                      // Dismiss keyboard when tapping in grid area
-                      FocusScope.of(context).unfocus();
-                    },
-                    behavior: HitTestBehavior.translucent,
-                    child: Scrollbar(
-                      controller: _scrollController,
-                      thumbVisibility: true,
-                      thickness: 6.0,
-                      radius: const Radius.circular(10),
-                      child: GridView.count(
-                        controller: _scrollController,
-                        crossAxisCount: 2,
-                        padding: EdgeInsets.all(
-                          16,
-                        ).copyWith(bottom: widget.isSelectionMode ? 0 : 16),
-                        mainAxisSpacing: 6,
-                        crossAxisSpacing: 6,
-                        childAspectRatio: 1,
-                        children:
-                        sortedItems.map((e) {
-                          final isSelected =
-                              widget.isSelectionMode &&
-                              _selectedTitles.contains(e.title);
-                          return GestureDetector(
-                            onTap: () {
-                              if (widget.isSelectionMode) {
-                                setState(() {
-                                  if (isSelected) {
-                                    _selectedTitles.remove(e.title);
-                                  } else {
-                                    _selectedTitles.add(e.title);
-                                  }
-                                });
-                              } else {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder:
-                                        (ctx) => ExerciseDescriptionPage(
-                                          title: e.title,
-                                          description: e.description,
-                                          videoUrl: e.videoUrl,
-                                          mainMuscle: e.mainMuscle,
-                                          secondaryMuscle: e.secondaryMuscle,
-                                          experienceLevel: e.experienceLevel,
-                                          howTo: e.howTo,
-                                          proTips: e.proTips,
-                                          onAdd: () {
-                                            ScaffoldMessenger.of(
-                                              ctx,
-                                            ).showSnackBar(
-                                              SnackBar(
-                                                content: Text(
-                                                  '\${e.title} added to your plan',
-                                                ),
-                                              ),
-                                            );
-                                          },
-                                        ),
-                                  ),
-                                );
-                              }
-                            },
-                            child: Stack(
-                              children: [
-                                _buildExerciseCard(
-                                  e.title,
-                                  e.icon,
-                                  mainMuscle: e.mainMuscle,
-                                  isSelected: isSelected,
-                                ),
-                                if (isSelected)
-                                  const Positioned(
-                                    top: 8,
-                                    right: 8,
-                                    child: Icon(
-                                      Icons.check_circle,
-                                      color: Colors.blue,
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                    ),
-                  ),
-                ),
-                if (widget.isSelectionMode)
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 32.0),
-                    child: ElevatedButton(
-                      onPressed:
-                          () =>
-                              Navigator.pop(context, _selectedTitles.toList()),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.black,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+              return Stack(
+                children: [
+                  // Main content with dynamic top padding based on search bar visibility
+                  AnimatedPadding(
+                    duration: const Duration(milliseconds: 200),
+                    padding: EdgeInsets.only(top: _isSearchBarVisible ? 100 : 0), // Space for search bar + instruction text when visible
+                    child: Container(
+                      color: Colors.grey.shade200, // Ensure background matches when search bar is hidden
+                      child: Column(
                         children: [
-                          const Icon(Icons.check),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Done (${_selectedTitles.length})',
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
+                          if (_hasActiveFilters)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                              child: Text(
+                                'Showing ${sortedItems.length} of ${items.length} exercises',
+                                style: TextStyle(
+                                  color: Colors.grey[600],
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () {
+                                // Dismiss keyboard and unfocus search field when tapping in grid area
+                                _searchFocusNode.unfocus();
+                                FocusScope.of(context).unfocus();
+                              },
+                              behavior: HitTestBehavior.translucent,
+                              child: Scrollbar(
+                                controller: _scrollController,
+                                thumbVisibility: true,
+                                thickness: 6.0,
+                                radius: const Radius.circular(10),
+                                child: GridView.count(
+                                  controller: _scrollController,
+                                  crossAxisCount: 2,
+                                  padding: EdgeInsets.all(
+                                    16,
+                                  ).copyWith(bottom: widget.isSelectionMode ? 0 : 16),
+                                  mainAxisSpacing: 6,
+                                  crossAxisSpacing: 6,
+                                  childAspectRatio: 1,
+                                  children:
+                                  sortedItems.map((e) {
+                                    final isSelected =
+                                        widget.isSelectionMode &&
+                                        _selectedTitles.contains(e.title);
+                                    return GestureDetector(
+                                      onTap: () {
+                                        if (widget.isSelectionMode) {
+                                          setState(() {
+                                            if (isSelected) {
+                                              _selectedTitles.remove(e.title);
+                                            } else {
+                                              _selectedTitles.add(e.title);
+                                            }
+                                          });
+                                        } else {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder:
+                                                  (ctx) => ExerciseDescriptionPage(
+                                                    title: e.title,
+                                                    description: e.description,
+                                                    videoUrl: e.videoUrl,
+                                                    mainMuscle: e.mainMuscle,
+                                                    secondaryMuscle: e.secondaryMuscle,
+                                                    experienceLevel: e.experienceLevel,
+                                                    howTo: e.howTo,
+                                                    proTips: e.proTips,
+                                                    onAdd: () {
+                                                      ScaffoldMessenger.of(
+                                                        ctx,
+                                                      ).showSnackBar(
+                                                        SnackBar(
+                                                          content: Text(
+                                                            '\${e.title} added to your plan',
+                                                          ),
+                                                        ),
+                                                      );
+                                                    },
+                                                  ),
+                                            ),
+                                          );
+                                        }
+                                      },
+                                      child: Stack(
+                                        children: [
+                                          _buildExerciseCard(
+                                            e.title,
+                                            e.icon,
+                                            mainMuscle: e.mainMuscle,
+                                            isSelected: isSelected,
+                                          ),
+                                          if (isSelected)
+                                            const Positioned(
+                                              top: 8,
+                                              right: 8,
+                                              child: Icon(
+                                                Icons.check_circle,
+                                                color: Colors.blue,
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                    );
+                                  }).toList(),
+                                ),
+                              ),
                             ),
                           ),
+                          if (widget.isSelectionMode)
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 32.0),
+                              child: ElevatedButton(
+                                onPressed:
+                                    () =>
+                                        Navigator.pop(context, _selectedTitles.toList()),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.black,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Icon(Icons.check),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'Done (${_selectedTitles.length})',
+                                      style: const TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
                         ],
                       ),
                     ),
                   ),
-              ],
-            );
-          },
-        ),
+                  // Animated Search Bar positioned at the top
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    child: ClipRect(
+                      child: SlideTransition(
+                        position: _searchBarSlideAnimation,
+                        child: _buildFloatingSearchBar(),
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
         ),
     );
   }
