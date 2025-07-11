@@ -123,6 +123,8 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage>
     // Wait a frame to ensure unfocus takes effect
     await Future.delayed(const Duration(milliseconds: 50));
     
+    if (!mounted) return;
+    
     final result = await Navigator.push<Map<String, dynamic>>(
       context,
       MaterialPageRoute(
@@ -131,7 +133,7 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage>
       ),
     );
 
-    if (result != null) {
+    if (result != null && mounted) {
       setState(() {
         _currentFilters = result;
       });

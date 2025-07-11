@@ -312,7 +312,7 @@ class _MuscleDistributionPageState extends State<MuscleDistributionPage> {
       {'name': 'Core', 'icon': FontAwesomeIcons.circle, 'color': Colors.orange},
       {'name': 'Shoulders', 'icon': FontAwesomeIcons.mountain, 'color': Colors.green},
       {'name': 'Arms', 'icon': FontAwesomeIcons.dumbbell, 'color': Colors.purple},
-      {'name': 'Legs', 'icon': FontAwesomeIcons.walking, 'color': Colors.teal},
+      {'name': 'Legs', 'icon': FontAwesomeIcons.personWalking, 'color': Colors.teal},
     ];
 
     return GridView.builder(

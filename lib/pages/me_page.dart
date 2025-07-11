@@ -5,6 +5,7 @@ import 'package:gymfit/pages/auth_page.dart';
 import 'package:gymfit/models/workout.dart';
 import 'package:gymfit/services/workout_service.dart';
 import 'package:gymfit/pages/statistics_page.dart';
+import 'package:gymfit/pages/friends_page.dart';
 
 class MePage extends StatefulWidget {
   const MePage({super.key});
@@ -211,11 +212,12 @@ class _MePageState extends State<MePage> with WidgetsBindingObserver, AutomaticK
         ],
       ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
               // User Profile Section
               Container(
                 width: double.infinity,
@@ -358,6 +360,46 @@ class _MePageState extends State<MePage> with WidgetsBindingObserver, AutomaticK
                       ),
                     ),
                   ),
+                  
+                  const SizedBox(height: 12),
+                  
+                  // Friends Button
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(4.0),
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.of(context, rootNavigator: true).push(
+                          MaterialPageRoute(
+                            builder: (context) => const FriendsPage(),
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green.shade600,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 2,
+                      ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.group, size: 20),
+                          SizedBox(width: 8),
+                          Text(
+                            'Friends',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ] else ...[
                   const SizedBox(height: 40),
                   const Center(child: CircularProgressIndicator()),
@@ -366,6 +408,7 @@ class _MePageState extends State<MePage> with WidgetsBindingObserver, AutomaticK
             ),
           ),
         ),
+      ),
     );
   }
 
