@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gymfit/packages/exercise_information_repository/exercise_information_repository.dart';
 import 'package:gymfit/pages/workout/exercise_description_page.dart';
-import 'package:gymfit/pages/workout/exercise_filter_page.dart';
+import 'package:gymfit/pages/workout/filter/exercise_filter_page.dart';
 
 class ExerciseInformationPage extends StatefulWidget {
   final bool isSelectionMode;

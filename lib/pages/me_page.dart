@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:gymfit/pages/auth_page.dart';
 import 'package:gymfit/models/workout.dart';
 import 'package:gymfit/services/workout_service.dart';
+import 'package:gymfit/pages/statistics_page.dart';
 
 class MePage extends StatefulWidget {
   const MePage({super.key});
@@ -258,6 +259,46 @@ class _MePageState extends State<MePage> with WidgetsBindingObserver, AutomaticK
                         ),
                       ),
                     ],
+                  ),
+                  
+                  const SizedBox(height: 24),
+                  
+                  // Statistics Button
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(4.0),
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.of(context, rootNavigator: true).push(
+                          MaterialPageRoute(
+                            builder: (context) => const StatisticsPage(),
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue.shade600,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 2,
+                      ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.analytics, size: 20),
+                          SizedBox(width: 8),
+                          Text(
+                            'Statistics',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ] else ...[
                   const SizedBox(height: 40),

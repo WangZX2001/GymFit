@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:gymfit/models/workout.dart';
 import 'package:gymfit/services/workout_service.dart';
-import 'package:gymfit/pages/workout/workout_edit_page.dart';
+import 'package:gymfit/pages/history/workout_edit_page.dart';
 import 'package:intl/intl.dart';
 
 class WorkoutDetailsPage extends StatelessWidget {

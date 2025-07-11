@@ -3,8 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:gymfit/models/workout.dart';
 import 'package:gymfit/services/workout_service.dart';
-import 'package:gymfit/pages/workout_details_page.dart';
-import 'package:gymfit/pages/workout_calendar_page.dart';
+import 'package:gymfit/pages/history/workout_details_page.dart';
+import 'package:gymfit/pages/history/workout_calendar_page.dart';
 import 'package:intl/intl.dart';
 
 class HistoryPage extends StatelessWidget {
