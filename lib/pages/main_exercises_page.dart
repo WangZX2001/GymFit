@@ -78,7 +78,7 @@ class _MainExercisesPageState extends State<MainExercisesPage> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        title: const Text('Main Exercises', style: TextStyle(color: Colors.black)),
+        title: const Text('Main Exercises', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
         leading: IconButton(
           icon: const FaIcon(FontAwesomeIcons.arrowLeft, color: Colors.black),
           onPressed: () {

@@ -32,6 +32,8 @@ class AuthPage extends StatelessWidget {
 
                 final hasAllFields =
                     userData != null &&
+                    userData.containsKey('name') &&
+                    userData.containsKey('username') &&
                     userData.containsKey('height') &&
                     userData.containsKey('starting weight') &&
                     userData.containsKey('bmi') &&

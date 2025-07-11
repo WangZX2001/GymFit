@@ -130,7 +130,7 @@ class _MuscleDistributionPageState extends State<MuscleDistributionPage> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        title: const Text('Muscle Distribution', style: TextStyle(color: Colors.black)),
+        title: const Text('Muscle Distribution', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
         leading: IconButton(
           icon: const FaIcon(FontAwesomeIcons.arrowLeft, color: Colors.black),
           onPressed: () {

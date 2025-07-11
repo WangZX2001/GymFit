@@ -106,40 +106,46 @@ class _FormPage2State extends State<FormPage2> {
     return Scaffold(
       appBar: AppBar(backgroundColor: Colors.white),
       backgroundColor: Colors.white,
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 30),
-        child: SafeArea(
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    Text(
-                      "What is your Gender?",
-                      style: textTheme.headlineMedium,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                Chatbot(
-                  text:
-                      "“Gender influences key health metrics like BMR, calorie needs, body fat percentage, enabling more accurate fitness planning.”",
-                ),
-                const SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    genderCard('Male', 'lib/images/man.png'),
-                    genderCard('Female', 'lib/images/woman.png'),
-                  ],
-                ),
-                const Spacer(),
-                nextButton(),
-                const SizedBox(height: 50),
-              ],
+      body: SafeArea(
+        child: GestureDetector(
+          onTap: () {
+            // Dismiss keyboard when tapping outside
+            FocusScope.of(context).unfocus();
+          },
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 30),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  SizedBox(height: MediaQuery.of(context).size.height * 0.05),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      Text(
+                        "What is your Gender?",
+                        style: textTheme.headlineMedium,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  Chatbot(
+                    text:
+                        "“Gender influences key health metrics like BMR, calorie needs, body fat percentage, enabling more accurate fitness planning.”",
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      genderCard('Male', 'lib/images/man.png'),
+                      genderCard('Female', 'lib/images/woman.png'),
+                    ],
+                  ),
+                  SizedBox(height: MediaQuery.of(context).size.height * 0.1),
+                  nextButton(),
+                  const SizedBox(height: 50),
+                ],
+              ),
             ),
           ),
         ),

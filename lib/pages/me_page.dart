@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:gymfit/pages/auth_page.dart';
 import 'package:gymfit/models/workout.dart';
 import 'package:gymfit/services/workout_service.dart';
@@ -18,6 +19,11 @@ class _MePageState extends State<MePage> with WidgetsBindingObserver, AutomaticK
   int currentStreak = 0;
   int longestStreak = 0;
   bool isLoading = true;
+  
+  // User profile data
+  String? userName;
+  String? userUsername;
+  bool isLoadingProfile = true;
 
   @override
   bool get wantKeepAlive => true;
@@ -28,6 +34,7 @@ class _MePageState extends State<MePage> with WidgetsBindingObserver, AutomaticK
     WidgetsBinding.instance.addObserver(this);
     WorkoutService.addWorkoutUpdateListener(_onWorkoutUpdate);
     _loadWorkouts();
+    _loadUserProfile();
   }
 
   @override
@@ -43,6 +50,7 @@ class _MePageState extends State<MePage> with WidgetsBindingObserver, AutomaticK
     // Refresh data when app comes back to foreground
     if (state == AppLifecycleState.resumed) {
       _loadWorkouts();
+      _loadUserProfile();
     }
   }
 
@@ -66,19 +74,63 @@ class _MePageState extends State<MePage> with WidgetsBindingObserver, AutomaticK
     }
   }
 
+  Future<void> _loadUserProfile() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        final doc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
+        
+        if (doc.exists && doc.data() != null) {
+          final data = doc.data()!;
+          if (mounted) {
+            setState(() {
+              userName = data['name'] as String?;
+              userUsername = data['username'] as String?;
+              isLoadingProfile = false;
+            });
+          }
+        } else {
+          if (mounted) {
+            setState(() {
+              isLoadingProfile = false;
+            });
+          }
+        }
+      } else {
+        if (mounted) {
+          setState(() {
+            isLoadingProfile = false;
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          isLoadingProfile = false;
+        });
+      }
+    }
+  }
+
   // Method to manually refresh data (can be called from other parts of the app)
   Future<void> refreshData() async {
     if (mounted) {
       setState(() {
         isLoading = true;
+        isLoadingProfile = true;
       });
       await _loadWorkouts();
+      await _loadUserProfile();
     }
   }
 
   // Callback for workout updates
   void _onWorkoutUpdate() {
     _loadWorkouts();
+    _loadUserProfile();
   }
 
   Set<DateTime> _getWorkoutDays(List<Workout> workouts) {
@@ -142,7 +194,7 @@ class _MePageState extends State<MePage> with WidgetsBindingObserver, AutomaticK
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        title: const Text('Me', style: TextStyle(color: Colors.black)),
+        title: const Text('Me', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout, color: Colors.black),
@@ -189,7 +241,9 @@ class _MePageState extends State<MePage> with WidgetsBindingObserver, AutomaticK
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      FirebaseAuth.instance.currentUser?.email ?? 'No user',
+                      isLoadingProfile 
+                          ? 'Loading...'
+                          : userName ?? 'No Name',
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -198,7 +252,11 @@ class _MePageState extends State<MePage> with WidgetsBindingObserver, AutomaticK
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'User ID: ${FirebaseAuth.instance.currentUser?.uid.substring(0, 8) ?? 'N/A'}...',
+                      isLoadingProfile
+                          ? 'Loading username...'
+                          : userUsername != null 
+                              ? '@$userUsername'
+                              : 'No Username',
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.grey.shade600,

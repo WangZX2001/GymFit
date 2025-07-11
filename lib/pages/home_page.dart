@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:gymfit/home_page_tabs/calories_tab.dart';
 import 'package:gymfit/home_page_tabs/water_tab.dart';
 import 'package:gymfit/home_page_tabs/weight_tab.dart';
@@ -13,6 +15,54 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int selectedTabIndex = 0;
+  String? userName;
+  bool isLoadingName = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUserName();
+  }
+
+  Future<void> _fetchUserName() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        final doc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
+        
+        if (doc.exists && doc.data() != null) {
+          final data = doc.data()!;
+          if (mounted) {
+            setState(() {
+              userName = data['name'] as String?;
+              isLoadingName = false;
+            });
+          }
+        } else {
+          if (mounted) {
+            setState(() {
+              isLoadingName = false;
+            });
+          }
+        }
+      } else {
+        if (mounted) {
+          setState(() {
+            isLoadingName = false;
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          isLoadingName = false;
+        });
+      }
+    }
+  }
 
   String _getGreeting() {
     final hour = DateTime.now().hour;
@@ -47,9 +97,13 @@ class _HomePageState extends State<HomePage> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Welcome Back',
-                          style: TextStyle(
+                        Text(
+                          isLoadingName 
+                              ? 'Welcome Back'
+                              : userName != null 
+                                  ? 'Welcome Back, $userName!'
+                                  : 'Welcome Back',
+                          style: const TextStyle(
                             fontSize: 26,
                             fontWeight: FontWeight.bold,
                             color: Colors.black,
