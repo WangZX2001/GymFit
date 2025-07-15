@@ -5,6 +5,7 @@ import 'package:gymfit/components/quick_start_overlay.dart';
 import 'package:gymfit/pages/workout/quick_start_page.dart';
 import 'package:gymfit/models/custom_workout.dart';
 import 'package:gymfit/services/custom_workout_service.dart';
+import 'package:gymfit/pages/workout/custom_workout_configuration_page.dart';
 
 class ExerciseDescriptionPage extends StatefulWidget {
   final String title;
@@ -37,6 +38,7 @@ class ExerciseDescriptionPage extends StatefulWidget {
 class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> {
   YoutubePlayerController? _ytController;
   bool _showTitle = false;
+  final ScrollController _customWorkoutScrollController = ScrollController();
 
   @override
   void initState() {
@@ -62,6 +64,7 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> {
   @override
   void dispose() {
     _ytController?.dispose();
+    _customWorkoutScrollController.dispose();
     super.dispose();
   }
 
@@ -175,16 +178,6 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> {
     CustomWorkoutService.getSavedCustomWorkouts().then((customWorkouts) {
       if (!mounted) return;
 
-      if (customWorkouts.isEmpty) {
-        scaffoldMessenger.showSnackBar(
-          const SnackBar(
-            content: Text('No saved custom workouts found. Create one first!'),
-            backgroundColor: Colors.orange,
-          ),
-        );
-        return;
-      }
-
       showModalBottomSheet(
         // ignore: use_build_context_synchronously
         context: context,
@@ -219,7 +212,7 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> {
                     ),
                     Expanded(
                       child: Text(
-                        'Select Custom Workout',
+                        customWorkouts.isEmpty ? 'Create Custom Workout' : 'Select Custom Workout',
                         style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -231,32 +224,53 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> {
                   ],
                 ),
                 const SizedBox(height: 8),
-                Flexible(
-                  child: ListView.separated(
-                    shrinkWrap: true,
-                    itemCount: customWorkouts.length,
-                    separatorBuilder: (context, index) => const Divider(
-                      height: 1,
-                      thickness: 1,
-                      color: Colors.grey,
-                    ),
-                    itemBuilder: (context, index) {
-                      final workout = customWorkouts[index];
-                      return ListTile(
-                        leading: const FaIcon(FontAwesomeIcons.dumbbell, color: Colors.black),
-                        title: Text(
-                          workout.name,
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        subtitle: Text('${workout.exercises.length} exercises'),
-                        onTap: () {
-                          Navigator.pop(context);
-                          _addToCustomWorkout(workout);
-                        },
-                      );
-                    },
+                // Create New option - always shown first
+                ListTile(
+                  leading: const FaIcon(FontAwesomeIcons.plus, color: Colors.green),
+                  title: const Text(
+                    'Create New',
+                    style: TextStyle(fontWeight: FontWeight.bold),
                   ),
+                  subtitle: const Text('Start a new custom workout with this exercise'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _createNewCustomWorkout();
+                  },
                 ),
+                if (customWorkouts.isNotEmpty) ...[
+                  const Divider(
+                    height: 1,
+                    thickness: 1,
+                    color: Colors.grey,
+                  ),
+                                     Flexible(
+                     child: ListView.separated(
+                       controller: _customWorkoutScrollController,
+                       shrinkWrap: true,
+                       itemCount: customWorkouts.length,
+                       separatorBuilder: (context, index) => const Divider(
+                         height: 1,
+                         thickness: 1,
+                         color: Colors.grey,
+                       ),
+                       itemBuilder: (context, index) {
+                         final workout = customWorkouts[index];
+                         return ListTile(
+                           leading: const FaIcon(FontAwesomeIcons.dumbbell, color: Colors.black),
+                           title: Text(
+                             workout.name,
+                             style: const TextStyle(fontWeight: FontWeight.bold),
+                           ),
+                           subtitle: Text('${workout.exercises.length} exercises'),
+                           onTap: () {
+                             Navigator.pop(context);
+                             _addToCustomWorkout(workout);
+                           },
+                         );
+                       },
+                     ),
+                   ),
+                ],
                 const SizedBox(height: 20),
               ],
             ),
@@ -352,6 +366,17 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> {
         );
       }
     }
+  }
+
+  void _createNewCustomWorkout() async {
+    // Navigate to custom workout configuration page with this exercise pre-loaded
+    await Navigator.of(context, rootNavigator: true).push(
+      MaterialPageRoute(
+        builder: (context) => CustomWorkoutConfigurationPage(
+          exerciseNames: [widget.title], // Pass current exercise as a list
+        ),
+      ),
+    );
   }
 
   @override

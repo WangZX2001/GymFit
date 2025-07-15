@@ -7,6 +7,53 @@ import 'package:gymfit/components/quick_start_overlay.dart';
 class WorkoutPage extends StatelessWidget {
   const WorkoutPage({super.key});
 
+  /// Check if there's a quick start workout currently in progress
+  bool _isQuickStartInProgress() {
+    return QuickStartOverlay.selectedExercises.isNotEmpty;
+  }
+
+  /// Show confirmation dialog for starting a new quick start when one is already in progress
+  Future<bool> _showQuickStartConfirmationDialog(BuildContext context) async {
+    return await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Quick Start in Progress'),
+          content: const Text('Are you sure you want to delete the current quick start and start a new one?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Start New'),
+            ),
+          ],
+        );
+      },
+    ) ?? false; // Return false if dialog is dismissed
+  }
+
+  /// Handle quick start button press with confirmation dialog if needed
+  Future<void> _handleQuickStart(BuildContext context) async {
+    if (_isQuickStartInProgress()) {
+      // Show confirmation dialog
+      final shouldStartNew = await _showQuickStartConfirmationDialog(context);
+      if (!shouldStartNew) {
+        return; // User cancelled, don't start new workout
+      }
+      
+      // Clear existing workout
+      QuickStartOverlay.selectedExercises.clear();
+      QuickStartOverlay.resetTimer();
+    }
+    
+    // Clear any existing custom workout name for fresh start
+    QuickStartOverlay.customWorkoutName = null;
+    QuickStartOverlay.openQuickStart(context);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -18,11 +65,7 @@ class WorkoutPage extends StatelessWidget {
               _buildWorkoutCard(
                 'Quick Start',
                 'lib/images/quickStart.jpg',
-                () {
-                  // Clear any existing custom workout name for fresh start
-                  QuickStartOverlay.customWorkoutName = null;
-                  QuickStartOverlay.openQuickStart(context);
-                },
+                () => _handleQuickStart(context),
                 alignment: Alignment.bottomCenter,
               ),
               _buildWorkoutCard(
