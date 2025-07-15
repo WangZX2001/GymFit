@@ -27,9 +27,11 @@ class WorkoutExercise {
       title: map['title'] ?? '',
       totalSets: map['totalSets'] ?? 0,
       completedSets: map['completedSets'] ?? 0,
-      sets: (map['sets'] as List<dynamic>?)
-          ?.map((set) => WorkoutSet.fromMap(set as Map<String, dynamic>))
-          .toList() ?? [],
+      sets:
+          (map['sets'] as List<dynamic>?)
+              ?.map((set) => WorkoutSet.fromMap(set as Map<String, dynamic>))
+              .toList() ??
+          [],
     );
   }
 }
@@ -46,11 +48,7 @@ class WorkoutSet {
   });
 
   Map<String, dynamic> toMap() {
-    return {
-      'weight': weight,
-      'reps': reps,
-      'isCompleted': isCompleted,
-    };
+    return {'weight': weight, 'reps': reps, 'isCompleted': isCompleted};
   }
 
   factory WorkoutSet.fromMap(Map<String, dynamic> map) {
@@ -71,6 +69,7 @@ class Workout {
   final int totalSets;
   final int completedSets;
   final String userId;
+  final double calories;
 
   Workout({
     required this.id,
@@ -81,6 +80,7 @@ class Workout {
     required this.totalSets,
     required this.completedSets,
     required this.userId,
+    this.calories = 0.0,
   });
 
   Map<String, dynamic> toMap() {
@@ -93,6 +93,7 @@ class Workout {
       'totalSets': totalSets,
       'completedSets': completedSets,
       'userId': userId,
+      'calories': calories,
     };
   }
 
@@ -102,12 +103,18 @@ class Workout {
       name: map['name'] ?? '',
       date: (map['date'] as Timestamp).toDate(),
       duration: Duration(seconds: map['durationSeconds'] ?? 0),
-      exercises: (map['exercises'] as List<dynamic>?)
-          ?.map((exercise) => WorkoutExercise.fromMap(exercise as Map<String, dynamic>))
-          .toList() ?? [],
+      exercises:
+          (map['exercises'] as List<dynamic>?)
+              ?.map(
+                (exercise) =>
+                    WorkoutExercise.fromMap(exercise as Map<String, dynamic>),
+              )
+              .toList() ??
+          [],
       totalSets: map['totalSets'] ?? 0,
       completedSets: map['completedSets'] ?? 0,
       userId: map['userId'] ?? '',
+      calories: (map['calories'] as num?)?.toDouble() ?? 0.0,
     );
   }
 
@@ -124,7 +131,7 @@ class Workout {
   }) {
     final hour = startTime.hour;
     String timeOfDay;
-    
+
     // Determine time of day
     if (hour >= 5 && hour < 12) {
       timeOfDay = 'Morning';
@@ -139,7 +146,7 @@ class Workout {
     // Determine workout type based on duration and exercises
     String workoutType;
     final durationMinutes = workoutDuration.inMinutes;
-    
+
     if (durationMinutes < 20) {
       workoutType = 'Quick';
     } else if (durationMinutes < 45) {
@@ -153,17 +160,29 @@ class Workout {
     // Check for specific exercise types to add descriptors
     String descriptor = '';
     final lowerExercises = exerciseNames.map((e) => e.toLowerCase()).toList();
-    
-    if (lowerExercises.any((e) => e.contains('chest') || e.contains('bench') || e.contains('push'))) {
+
+    if (lowerExercises.any(
+      (e) => e.contains('chest') || e.contains('bench') || e.contains('push'),
+    )) {
       descriptor = ' Push';
-    } else if (lowerExercises.any((e) => e.contains('pull') || e.contains('row') || e.contains('lat'))) {
+    } else if (lowerExercises.any(
+      (e) => e.contains('pull') || e.contains('row') || e.contains('lat'),
+    )) {
       descriptor = ' Pull';
-    } else if (lowerExercises.any((e) => e.contains('squat') || e.contains('leg') || e.contains('deadlift'))) {
+    } else if (lowerExercises.any(
+      (e) => e.contains('squat') || e.contains('leg') || e.contains('deadlift'),
+    )) {
       descriptor = ' Lower';
-    } else if (lowerExercises.any((e) => e.contains('shoulder') || e.contains('arm') || e.contains('bicep') || e.contains('tricep'))) {
+    } else if (lowerExercises.any(
+      (e) =>
+          e.contains('shoulder') ||
+          e.contains('arm') ||
+          e.contains('bicep') ||
+          e.contains('tricep'),
+    )) {
       descriptor = ' Upper';
     }
 
     return '$timeOfDay $workoutType$descriptor';
   }
-} 
+}

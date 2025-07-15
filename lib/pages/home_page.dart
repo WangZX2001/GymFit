@@ -28,11 +28,12 @@ class _HomePageState extends State<HomePage> {
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
-        final doc = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(user.uid)
-            .get();
-        
+        final doc =
+            await FirebaseFirestore.instance
+                .collection('users')
+                .doc(user.uid)
+                .get();
+
         if (doc.exists && doc.data() != null) {
           final data = doc.data()!;
           if (mounted) {
@@ -98,11 +99,11 @@ class _HomePageState extends State<HomePage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          isLoadingName 
+                          isLoadingName
                               ? 'Welcome Back'
-                              : userName != null 
-                                  ? 'Welcome Back, $userName!'
-                                  : 'Welcome Back',
+                              : userName != null
+                              ? 'Welcome Back, $userName!'
+                              : 'Welcome Back',
                           style: const TextStyle(
                             fontSize: 26,
                             fontWeight: FontWeight.bold,
@@ -133,8 +134,6 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ],
                 ),
-
-                const SizedBox(height: 20),
 
                 // Tabs
                 SingleChildScrollView(

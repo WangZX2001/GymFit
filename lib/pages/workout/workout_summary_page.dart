@@ -3,6 +3,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:gymfit/components/quick_start_overlay.dart';
 import 'package:gymfit/pages/workout/quick_start_page.dart';
 import 'package:gymfit/services/workout_service.dart';
+import 'package:gymfit/services/calorie_calculation_service.dart';
 import 'package:gymfit/models/workout.dart';
 
 class WorkoutSummaryPage extends StatefulWidget {
@@ -24,13 +25,15 @@ class WorkoutSummaryPage extends StatefulWidget {
 class _WorkoutSummaryPageState extends State<WorkoutSummaryPage> {
   bool _isSaving = false;
   bool _workoutSaved = false;
+  double _totalCalories = 0.0;
+  bool _isCalculatingCalories = true;
 
   String _formatDuration(Duration duration) {
     String twoDigits(int n) => n.toString().padLeft(2, '0');
     String hours = twoDigits(duration.inHours);
     String minutes = twoDigits(duration.inMinutes.remainder(60));
     String seconds = twoDigits(duration.inSeconds.remainder(60));
-    
+
     if (duration.inHours > 0) {
       return '$hours:$minutes:$seconds';
     } else {
@@ -46,11 +49,14 @@ class _WorkoutSummaryPageState extends State<WorkoutSummaryPage> {
 
   String _getWorkoutName() {
     // Return custom name if provided
-    if (widget.customWorkoutName != null && widget.customWorkoutName!.isNotEmpty) {
+    if (widget.customWorkoutName != null &&
+        widget.customWorkoutName!.isNotEmpty) {
       return widget.customWorkoutName!;
     }
-    
-    final startTime = QuickStartOverlay.startTime ?? DateTime.now().subtract(widget.workoutDuration);
+
+    final startTime =
+        QuickStartOverlay.startTime ??
+        DateTime.now().subtract(widget.workoutDuration);
     return Workout.generateDefaultName(
       startTime: startTime,
       workoutDuration: widget.workoutDuration,
@@ -71,6 +77,7 @@ class _WorkoutSummaryPageState extends State<WorkoutSummaryPage> {
         duration: widget.workoutDuration,
         startTime: QuickStartOverlay.startTime,
         customWorkoutName: widget.customWorkoutName,
+        calories: _totalCalories,
       );
 
       setState(() {
@@ -97,9 +104,51 @@ class _WorkoutSummaryPageState extends State<WorkoutSummaryPage> {
   void initState() {
     super.initState();
     // Auto-save the workout when the page loads
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      // Calculate calories first, then save workout
+      await _calculateCalories();
       _saveWorkout();
     });
+  }
+
+  Future<void> _calculateCalories() async {
+    try {
+      // Convert exercises to the format expected by the calorie service
+      final exercises =
+          widget.completedExercises.map((exercise) {
+            return {
+              'title': exercise.title,
+              'sets':
+                  exercise.sets
+                      .map(
+                        (set) => {
+                          'weight': set.weight,
+                          'reps': set.reps,
+                          'isChecked': set.isChecked,
+                        },
+                      )
+                      .toList(),
+            };
+          }).toList();
+
+      final calories = await CalorieCalculationService.calculateTotalCalories(
+        exercises: exercises,
+        totalDurationMinutes: widget.workoutDuration.inMinutes,
+      );
+
+      if (mounted) {
+        setState(() {
+          _totalCalories = calories;
+          _isCalculatingCalories = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isCalculatingCalories = false;
+        });
+      }
+    }
   }
 
   @override
@@ -115,10 +164,7 @@ class _WorkoutSummaryPageState extends State<WorkoutSummaryPage> {
         leading: const SizedBox(), // Remove back button
         title: const Text(
           'Workout Complete!',
-          style: TextStyle(
-            color: Colors.black,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
       ),
@@ -175,9 +221,9 @@ class _WorkoutSummaryPageState extends State<WorkoutSummaryPage> {
                           ],
                         ),
                       ),
-                      
+
                       const SizedBox(height: 20),
-                      
+
                       // Workout Name Section
                       Container(
                         width: double.infinity,
@@ -228,9 +274,9 @@ class _WorkoutSummaryPageState extends State<WorkoutSummaryPage> {
                           ],
                         ),
                       ),
-                      
+
                       const SizedBox(height: 20),
-                      
+
                       // Workout Stats Section
                       Container(
                         width: double.infinity,
@@ -258,7 +304,7 @@ class _WorkoutSummaryPageState extends State<WorkoutSummaryPage> {
                               ),
                             ),
                             const SizedBox(height: 16),
-                            
+
                             // Time Elapsed
                             Row(
                               children: [
@@ -276,8 +322,8 @@ class _WorkoutSummaryPageState extends State<WorkoutSummaryPage> {
                                   ),
                                 ),
                                 const Spacer(),
-                                                                 Text(
-                                   _formatDuration(widget.workoutDuration),
+                                Text(
+                                  _formatDuration(widget.workoutDuration),
                                   style: const TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
@@ -286,9 +332,9 @@ class _WorkoutSummaryPageState extends State<WorkoutSummaryPage> {
                                 ),
                               ],
                             ),
-                            
+
                             const SizedBox(height: 12),
-                            
+
                             // Total Exercises
                             Row(
                               children: [
@@ -316,9 +362,9 @@ class _WorkoutSummaryPageState extends State<WorkoutSummaryPage> {
                                 ),
                               ],
                             ),
-                            
+
                             const SizedBox(height: 12),
-                            
+
                             // Total Sets
                             Row(
                               children: [
@@ -346,12 +392,62 @@ class _WorkoutSummaryPageState extends State<WorkoutSummaryPage> {
                                 ),
                               ],
                             ),
+
+                            const SizedBox(height: 12),
+
+                            // Total Calories
+                            Row(
+                              children: [
+                                const FaIcon(
+                                  FontAwesomeIcons.fire,
+                                  size: 20,
+                                  color: Colors.red,
+                                ),
+                                const SizedBox(width: 12),
+                                const Text(
+                                  'Calories Burnt:',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                const Spacer(),
+                                _isCalculatingCalories
+                                    ? const SizedBox(
+                                      width: 16,
+                                      height: 16,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.red,
+                                      ),
+                                    )
+                                    : _totalCalories > 0
+                                    ? Text(
+                                      CalorieCalculationService.formatCalories(
+                                        _totalCalories,
+                                      ),
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.red,
+                                      ),
+                                    )
+                                    : const Text(
+                                      '0 cal',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                              ],
+                            ),
                           ],
                         ),
                       ),
-                      
+
                       const SizedBox(height: 20),
-                      
+
                       // Exercise Breakdown
                       if (widget.completedExercises.isNotEmpty)
                         Container(
@@ -380,11 +476,14 @@ class _WorkoutSummaryPageState extends State<WorkoutSummaryPage> {
                                 ),
                               ),
                               const SizedBox(height: 16),
-                              
+
                               ...widget.completedExercises.map((exercise) {
-                                final completedSets = exercise.sets.where((set) => set.isChecked).length;
+                                final completedSets =
+                                    exercise.sets
+                                        .where((set) => set.isChecked)
+                                        .length;
                                 final totalSets = exercise.sets.length;
-                                
+
                                 return Padding(
                                   padding: const EdgeInsets.only(bottom: 12.0),
                                   child: Row(
@@ -404,19 +503,23 @@ class _WorkoutSummaryPageState extends State<WorkoutSummaryPage> {
                                           vertical: 4,
                                         ),
                                         decoration: BoxDecoration(
-                                          color: completedSets > 0 
-                                              ? Colors.green.shade100
-                                              : Colors.grey.shade100,
-                                          borderRadius: BorderRadius.circular(12),
+                                          color:
+                                              completedSets > 0
+                                                  ? Colors.green.shade100
+                                                  : Colors.grey.shade100,
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
                                         ),
                                         child: Text(
                                           '$completedSets/$totalSets sets',
                                           style: TextStyle(
                                             fontSize: 14,
                                             fontWeight: FontWeight.bold,
-                                            color: completedSets > 0 
-                                                ? Colors.green.shade700
-                                                : Colors.grey.shade600,
+                                            color:
+                                                completedSets > 0
+                                                    ? Colors.green.shade700
+                                                    : Colors.grey.shade600,
                                           ),
                                         ),
                                       ),
@@ -427,13 +530,13 @@ class _WorkoutSummaryPageState extends State<WorkoutSummaryPage> {
                             ],
                           ),
                         ),
-                      
-                      const SizedBox(height: 100), // Extra space for button
+
+                      const SizedBox(height: 20),
                     ],
                   ),
                 ),
               ),
-              
+
               // Done Button
               SizedBox(
                 width: double.infinity,
@@ -443,7 +546,7 @@ class _WorkoutSummaryPageState extends State<WorkoutSummaryPage> {
                     QuickStartOverlay.selectedExercises.clear();
                     QuickStartOverlay.resetTimer();
                     QuickStartOverlay.hideMinibar();
-                    
+
                     // Navigate back to home screen
                     Navigator.of(context).popUntil((route) => route.isFirst);
                   },
@@ -457,10 +560,7 @@ class _WorkoutSummaryPageState extends State<WorkoutSummaryPage> {
                   ),
                   child: const Text(
                     'Done',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
@@ -470,4 +570,4 @@ class _WorkoutSummaryPageState extends State<WorkoutSummaryPage> {
       ),
     );
   }
-} 
+}

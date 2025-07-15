@@ -15,7 +15,7 @@ class HistoryPage extends StatelessWidget {
     String hours = twoDigits(duration.inHours);
     String minutes = twoDigits(duration.inMinutes.remainder(60));
     String seconds = twoDigits(duration.inSeconds.remainder(60));
-    
+
     if (duration.inHours > 0) {
       return '$hours:$minutes:$seconds';
     } else {
@@ -32,10 +32,7 @@ class HistoryPage extends StatelessWidget {
         elevation: 0,
         title: const Text(
           'Workout History',
-          style: TextStyle(
-            color: Colors.black,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
         actions: [
@@ -43,9 +40,7 @@ class HistoryPage extends StatelessWidget {
             icon: const FaIcon(FontAwesomeIcons.calendar, color: Colors.black),
             onPressed: () {
               Navigator.of(context, rootNavigator: true).push(
-                MaterialPageRoute(
-                  builder: (context) => WorkoutCalendarPage(),
-                ),
+                MaterialPageRoute(builder: (context) => WorkoutCalendarPage()),
               );
             },
           ),
@@ -72,7 +67,10 @@ class HistoryPage extends StatelessWidget {
                     const SizedBox(height: 16),
                     const Text(
                       'Error loading workouts',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Text(
@@ -100,15 +98,15 @@ class HistoryPage extends StatelessWidget {
                     const SizedBox(height: 20),
                     const Text(
                       'No Workouts Yet',
-                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       'Complete your first workout to see it here!',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.grey[600],
-                      ),
+                      style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                       textAlign: TextAlign.center,
                     ),
                   ],
@@ -159,7 +157,7 @@ class HistoryPage extends StatelessWidget {
                                   ),
                                 ),
                               ),
-                            
+
                             // Date and Time
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -168,8 +166,14 @@ class HistoryPage extends StatelessWidget {
                                   dateFormat.format(workout.date),
                                   style: TextStyle(
                                     fontSize: workout.name.isNotEmpty ? 16 : 18,
-                                    fontWeight: workout.name.isNotEmpty ? FontWeight.w600 : FontWeight.bold,
-                                    color: workout.name.isNotEmpty ? Colors.grey[700] : Colors.black,
+                                    fontWeight:
+                                        workout.name.isNotEmpty
+                                            ? FontWeight.w600
+                                            : FontWeight.bold,
+                                    color:
+                                        workout.name.isNotEmpty
+                                            ? Colors.grey[700]
+                                            : Colors.black,
                                   ),
                                 ),
                                 Text(
@@ -181,9 +185,9 @@ class HistoryPage extends StatelessWidget {
                                 ),
                               ],
                             ),
-                            
+
                             const SizedBox(height: 12),
-                            
+
                             // Workout Stats
                             Row(
                               children: [
@@ -208,7 +212,7 @@ class HistoryPage extends StatelessWidget {
                                     ],
                                   ),
                                 ),
-                                
+
                                 // Exercises
                                 Expanded(
                                   child: Row(
@@ -230,7 +234,7 @@ class HistoryPage extends StatelessWidget {
                                     ],
                                   ),
                                 ),
-                                
+
                                 // Sets
                                 Expanded(
                                   child: Row(
@@ -254,27 +258,62 @@ class HistoryPage extends StatelessWidget {
                                 ),
                               ],
                             ),
-                            
+
+                            // Calories Row
+                            Padding(
+                              padding: const EdgeInsets.only(top: 8.0),
+                              child: Row(
+                                children: [
+                                  const FaIcon(
+                                    FontAwesomeIcons.fire,
+                                    size: 16,
+                                    color: Colors.red,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    workout.calories > 0
+                                        ? '${workout.calories.round()} cal'
+                                        : 'Not calculated',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color:
+                                          workout.calories > 0
+                                              ? Colors.red
+                                              : Colors.grey,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+
                             const SizedBox(height: 12),
-                            
+
                             // Exercise List Preview
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
-                              children: workout.exercises.map((exercise) => Padding(
-                                padding: const EdgeInsets.only(bottom: 2.0),
-                                child: Text(
-                                  '${exercise.completedSets} x ${exercise.title}',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: Colors.grey[800],
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              )).toList(),
+                              children:
+                                  workout.exercises
+                                      .map(
+                                        (exercise) => Padding(
+                                          padding: const EdgeInsets.only(
+                                            bottom: 2.0,
+                                          ),
+                                          child: Text(
+                                            '${exercise.completedSets} x ${exercise.title}',
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              color: Colors.grey[800],
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                      )
+                                      .toList(),
                             ),
-                            
+
                             const SizedBox(height: 8),
-                            
+
                             // Tap hint
                             Row(
                               mainAxisAlignment: MainAxisAlignment.end,
@@ -324,307 +363,316 @@ class HistoryPage extends StatelessWidget {
     showDialog(
       context: context,
       barrierDismissible: true,
-      builder: (context) => Dialog(
-        backgroundColor: Colors.grey.shade200,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        elevation: 8,
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 800, maxHeight: 1200),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Header with close button
-              Container(
-                padding: const EdgeInsets.fromLTRB(20, 16, 8, 0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (workout.name.isNotEmpty) ...[
-                            Text(
-                              workout.name,
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.purple,
-                              ),
-                            ),
-                            const Text(
-                              'Workout Preview',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ] else
-                            const Text(
-                              'Workout Preview',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                    IconButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      icon: const Icon(Icons.close, size: 20),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                    ),
-                  ],
-                ),
-              ),
-              
-              // Content
-              Flexible(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Date and Time
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.blue.shade50,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          children: [
-                            const FaIcon(
-                              FontAwesomeIcons.calendar,
-                              color: Colors.blue,
-                              size: 16,
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                '${dateFormat.format(workout.date)} at ${timeFormat.format(workout.date)}',
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      
-                      const SizedBox(height: 16),
-                      
-                      // Quick Stats
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          _buildPreviewStat(
-                            FontAwesomeIcons.stopwatch,
-                            Colors.blue,
-                            _formatDuration(workout.duration),
-                            'Duration',
-                          ),
-                          _buildPreviewStat(
-                            FontAwesomeIcons.dumbbell,
-                            Colors.green,
-                            '${workout.exercises.length}',
-                            'Exercises',
-                          ),
-                          _buildPreviewStat(
-                            FontAwesomeIcons.check,
-                            Colors.orange,
-                            '${workout.completedSets}',
-                            'Sets',
-                          ),
-                        ],
-                      ),
-                      
-                      const SizedBox(height: 16),
-                      
-                      // Exercise Summary
-                      const Text(
-                        'Exercises',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      
-                      const SizedBox(height: 8),
-                      
-                      ...workout.exercises.map((exercise) {
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.grey.shade50,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.grey.shade200),
-                          ),
+      builder:
+          (context) => Dialog(
+            backgroundColor: Colors.grey.shade200,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            elevation: 8,
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 800, maxHeight: 1200),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Header with close button
+                  Container(
+                    padding: const EdgeInsets.fromLTRB(20, 16, 8, 0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // Exercise Title and Summary
-                              Row(
-                                children: [
-                                  Container(
-                                    width: 8,
-                                    height: 8,
-                                    decoration: BoxDecoration(
-                                      color: exercise.completedSets > 0 
-                                          ? Colors.green 
-                                          : Colors.grey.shade400,
-                                      shape: BoxShape.circle,
-                                    ),
+                              if (workout.name.isNotEmpty) ...[
+                                Text(
+                                  workout.name,
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.purple,
                                   ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Text(
-                                      exercise.title,
-                                      style: const TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
+                                ),
+                                const Text(
+                                  'Workout Preview',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey,
+                                    fontWeight: FontWeight.w500,
                                   ),
-                                  Text(
-                                    '${exercise.completedSets}/${exercise.totalSets}',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.grey.shade600,
+                                ),
+                              ] else
+                                const Text(
+                                  'Workout Preview',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          icon: const Icon(Icons.close, size: 20),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Content
+                  Flexible(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Date and Time
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.blue.shade50,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              children: [
+                                const FaIcon(
+                                  FontAwesomeIcons.calendar,
+                                  color: Colors.blue,
+                                  size: 16,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    '${dateFormat.format(workout.date)} at ${timeFormat.format(workout.date)}',
+                                    style: const TextStyle(
+                                      fontSize: 14,
                                       fontWeight: FontWeight.w500,
                                     ),
                                   ),
-                                ],
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          // Quick Stats
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            children: [
+                              _buildPreviewStat(
+                                FontAwesomeIcons.stopwatch,
+                                Colors.blue,
+                                _formatDuration(workout.duration),
+                                'Duration',
                               ),
-                              
-                              const SizedBox(height: 8),
-                              
-                              // All Sets Details
-                              ...exercise.sets.asMap().entries.map((entry) {
-                                final int setIndex = entry.key;
-                                final set = entry.value;
-                                
-                                return Container(
-                                  margin: const EdgeInsets.only(top: 4),
-                                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-                                  decoration: BoxDecoration(
-                                    color: set.isCompleted 
-                                        ? Colors.green.shade50 
-                                        : Colors.grey.shade100,
-                                    borderRadius: BorderRadius.circular(6),
-                                    border: Border.all(
-                                      color: set.isCompleted 
-                                          ? Colors.green.shade200 
-                                          : Colors.grey.shade300,
-                                      width: 1,
-                                    ),
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              _buildPreviewStat(
+                                FontAwesomeIcons.dumbbell,
+                                Colors.green,
+                                '${workout.exercises.length}',
+                                'Exercises',
+                              ),
+                              _buildPreviewStat(
+                                FontAwesomeIcons.check,
+                                Colors.orange,
+                                '${workout.completedSets}',
+                                'Sets',
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          // Exercise Summary
+                          const Text(
+                            'Exercises',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+
+                          const SizedBox(height: 8),
+
+                          ...workout.exercises.map((exercise) {
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: 12),
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade50,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.grey.shade200),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // Exercise Title and Summary
+                                  Row(
                                     children: [
-                                      Text(
-                                        'Set ${setIndex + 1}',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w500,
-                                          color: set.isCompleted 
-                                              ? Colors.green.shade700 
-                                              : Colors.grey.shade600,
+                                      Container(
+                                        width: 8,
+                                        height: 8,
+                                        decoration: BoxDecoration(
+                                          color:
+                                              exercise.completedSets > 0
+                                                  ? Colors.green
+                                                  : Colors.grey.shade400,
+                                          shape: BoxShape.circle,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Text(
+                                          exercise.title,
+                                          style: const TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w600,
+                                          ),
                                         ),
                                       ),
                                       Text(
-                                        '${(set.weight % 1 == 0 ? set.weight.toInt() : set.weight)} kg × ${set.reps} reps',
+                                        '${exercise.completedSets}/${exercise.totalSets}',
                                         style: TextStyle(
                                           fontSize: 12,
+                                          color: Colors.grey.shade600,
                                           fontWeight: FontWeight.w500,
-                                          color: set.isCompleted 
-                                              ? Colors.green.shade700 
-                                              : Colors.grey.shade500,
                                         ),
-                                      ),
-                                      Icon(
-                                        set.isCompleted 
-                                            ? Icons.check_circle 
-                                            : Icons.radio_button_unchecked,
-                                        size: 16,
-                                        color: set.isCompleted 
-                                            ? Colors.green 
-                                            : Colors.grey.shade400,
                                       ),
                                     ],
                                   ),
-                                );
-                              }),
-                            ],
-                          ),
-                        );
-                      }),
-                      
-                      const SizedBox(height: 16),
-                      
-                      // View Details Button
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                            _showWorkoutDetails(context, workout);
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.black,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
+
+                                  const SizedBox(height: 8),
+
+                                  // All Sets Details
+                                  ...exercise.sets.asMap().entries.map((entry) {
+                                    final int setIndex = entry.key;
+                                    final set = entry.value;
+
+                                    return Container(
+                                      margin: const EdgeInsets.only(top: 4),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 20,
+                                        vertical: 6,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color:
+                                            set.isCompleted
+                                                ? Colors.green.shade50
+                                                : Colors.grey.shade100,
+                                        borderRadius: BorderRadius.circular(6),
+                                        border: Border.all(
+                                          color:
+                                              set.isCompleted
+                                                  ? Colors.green.shade200
+                                                  : Colors.grey.shade300,
+                                          width: 1,
+                                        ),
+                                      ),
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text(
+                                            'Set ${setIndex + 1}',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w500,
+                                              color:
+                                                  set.isCompleted
+                                                      ? Colors.green.shade700
+                                                      : Colors.grey.shade600,
+                                            ),
+                                          ),
+                                          Text(
+                                            '${(set.weight % 1 == 0 ? set.weight.toInt() : set.weight)} kg × ${set.reps} reps',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w500,
+                                              color:
+                                                  set.isCompleted
+                                                      ? Colors.green.shade700
+                                                      : Colors.grey.shade500,
+                                            ),
+                                          ),
+                                          Icon(
+                                            set.isCompleted
+                                                ? Icons.check_circle
+                                                : Icons.radio_button_unchecked,
+                                            size: 16,
+                                            color:
+                                                set.isCompleted
+                                                    ? Colors.green
+                                                    : Colors.grey.shade400,
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  }),
+                                ],
+                              ),
+                            );
+                          }),
+
+                          const SizedBox(height: 16),
+
+                          // View Details Button
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                                _showWorkoutDetails(context, workout);
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.black,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              child: const Text(
+                                'View Full Details',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                             ),
                           ),
-                          child: const Text(
-                            'View Full Details',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
     );
   }
 
-  Widget _buildPreviewStat(IconData icon, Color color, String value, String label) {
+  Widget _buildPreviewStat(
+    IconData icon,
+    Color color,
+    String value,
+    String label,
+  ) {
     return Column(
       children: [
         FaIcon(icon, color: color, size: 18),
         const SizedBox(height: 4),
         Text(
           value,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 14,
-          ),
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
         ),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 11,
-            color: Colors.grey,
-          ),
-        ),
+        Text(label, style: const TextStyle(fontSize: 11, color: Colors.grey)),
       ],
     );
   }
-
-
-} 
+}

@@ -4,6 +4,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:gymfit/models/workout.dart';
 import 'package:gymfit/services/workout_service.dart';
 import 'package:gymfit/pages/history/workout_edit_page.dart';
+
 import 'package:intl/intl.dart';
 
 class WorkoutDetailsPage extends StatelessWidget {
@@ -16,7 +17,7 @@ class WorkoutDetailsPage extends StatelessWidget {
     String hours = twoDigits(duration.inHours);
     String minutes = twoDigits(duration.inMinutes.remainder(60));
     String seconds = twoDigits(duration.inSeconds.remainder(60));
-    
+
     if (duration.inHours > 0) {
       return '$hours:$minutes:$seconds';
     } else {
@@ -36,10 +37,7 @@ class WorkoutDetailsPage extends StatelessWidget {
         elevation: 0,
         title: const Text(
           'Workout Details',
-          style: TextStyle(
-            color: Colors.black,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
@@ -55,7 +53,7 @@ class WorkoutDetailsPage extends StatelessWidget {
                 ),
               );
               if (!context.mounted) return;
-              
+
               // If the workout was successfully edited, pop this page to refresh the parent
               if (result == true) {
                 Navigator.of(context).pop(true);
@@ -101,9 +99,9 @@ class WorkoutDetailsPage extends StatelessWidget {
                   ),
                 ),
               ),
-            
+
             if (workout.name.isNotEmpty) const SizedBox(height: 16),
-            
+
             // Date and Time Card
             Card(
               color: Colors.white,
@@ -134,9 +132,9 @@ class WorkoutDetailsPage extends StatelessWidget {
                 ),
               ),
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // Summary Stats Card
             Card(
               color: Colors.white,
@@ -151,7 +149,11 @@ class WorkoutDetailsPage extends StatelessWidget {
                   children: [
                     Column(
                       children: [
-                        const FaIcon(FontAwesomeIcons.stopwatch, color: Colors.blue, size: 24),
+                        const FaIcon(
+                          FontAwesomeIcons.stopwatch,
+                          color: Colors.blue,
+                          size: 24,
+                        ),
                         const SizedBox(height: 8),
                         Text(
                           _formatDuration(workout.duration),
@@ -162,16 +164,17 @@ class WorkoutDetailsPage extends StatelessWidget {
                         ),
                         const Text(
                           'Duration',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey,
-                          ),
+                          style: TextStyle(fontSize: 12, color: Colors.grey),
                         ),
                       ],
                     ),
                     Column(
                       children: [
-                        const FaIcon(FontAwesomeIcons.dumbbell, color: Colors.green, size: 24),
+                        const FaIcon(
+                          FontAwesomeIcons.dumbbell,
+                          color: Colors.green,
+                          size: 24,
+                        ),
                         const SizedBox(height: 8),
                         Text(
                           '${workout.exercises.length}',
@@ -182,16 +185,17 @@ class WorkoutDetailsPage extends StatelessWidget {
                         ),
                         const Text(
                           'Exercises',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey,
-                          ),
+                          style: TextStyle(fontSize: 12, color: Colors.grey),
                         ),
                       ],
                     ),
                     Column(
                       children: [
-                        const FaIcon(FontAwesomeIcons.check, color: Colors.orange, size: 24),
+                        const FaIcon(
+                          FontAwesomeIcons.check,
+                          color: Colors.orange,
+                          size: 24,
+                        ),
                         const SizedBox(height: 8),
                         Text(
                           '${workout.completedSets}',
@@ -202,10 +206,30 @@ class WorkoutDetailsPage extends StatelessWidget {
                         ),
                         const Text(
                           'Sets',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey,
+                          style: TextStyle(fontSize: 12, color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                    Column(
+                      children: [
+                        const FaIcon(
+                          FontAwesomeIcons.fire,
+                          color: Colors.red,
+                          size: 24,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          workout.calories > 0
+                              ? '${workout.calories.round()}'
+                              : 'N/A',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
                           ),
+                        ),
+                        const Text(
+                          'Calories',
+                          style: TextStyle(fontSize: 12, color: Colors.grey),
                         ),
                       ],
                     ),
@@ -213,9 +237,9 @@ class WorkoutDetailsPage extends StatelessWidget {
                 ),
               ),
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // Exercise Breakdown Section
             const Text(
               'Exercise Breakdown',
@@ -225,116 +249,127 @@ class WorkoutDetailsPage extends StatelessWidget {
                 color: Colors.black,
               ),
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // Exercise List
-            ...workout.exercises.map((exercise) => Card(
-              color: Colors.white,
-              elevation: 2,
-              margin: const EdgeInsets.only(bottom: 12.0),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Exercise Title and Summary
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            exercise.title,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 18,
-                            ),
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: exercise.completedSets > 0 
-                                ? Colors.green.shade100
-                                : Colors.grey.shade100,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            '${exercise.completedSets}/${exercise.totalSets} sets',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: exercise.completedSets > 0 
-                                  ? Colors.green.shade700
-                                  : Colors.grey.shade600,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    
-                    const SizedBox(height: 12),
-                    
-                    // Individual Sets Details
-                    ...exercise.sets.asMap().entries.map((entry) {
-                      final index = entry.key;
-                      final set = entry.value;
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 8.0),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 32,
-                              height: 32,
-                              decoration: BoxDecoration(
-                                color: set.isCompleted 
-                                    ? Colors.green
-                                    : Colors.grey.shade300,
-                                shape: BoxShape.circle,
+            ...workout.exercises.map(
+              (exercise) => Card(
+                color: Colors.white,
+                elevation: 2,
+                margin: const EdgeInsets.only(bottom: 12.0),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Exercise Title and Summary
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              exercise.title,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
                               ),
-                              child: Center(
-                                child: Text(
-                                  '${index + 1}',
-                                  style: TextStyle(
-                                    color: set.isCompleted 
-                                        ? Colors.white
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color:
+                                  exercise.completedSets > 0
+                                      ? Colors.green.shade100
+                                      : Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              '${exercise.completedSets}/${exercise.totalSets} sets',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color:
+                                    exercise.completedSets > 0
+                                        ? Colors.green.shade700
                                         : Colors.grey.shade600,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      // Individual Sets Details
+                      ...exercise.sets.asMap().entries.map((entry) {
+                        final index = entry.key;
+                        final set = entry.value;
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 8.0),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 32,
+                                height: 32,
+                                decoration: BoxDecoration(
+                                  color:
+                                      set.isCompleted
+                                          ? Colors.green
+                                          : Colors.grey.shade300,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    '${index + 1}',
+                                    style: TextStyle(
+                                      color:
+                                          set.isCompleted
+                                              ? Colors.white
+                                              : Colors.grey.shade600,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Text(
-                                set.isCompleted 
-                                    ? '${(set.weight % 1 == 0 ? set.weight.toInt() : set.weight)} kg × ${set.reps} reps'
-                                    : 'Not completed',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: set.isCompleted 
-                                      ? Colors.black87
-                                      : Colors.grey.shade500,
-                                  fontWeight: set.isCompleted 
-                                      ? FontWeight.w500
-                                      : FontWeight.normal,
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Text(
+                                  set.isCompleted
+                                      ? '${(set.weight % 1 == 0 ? set.weight.toInt() : set.weight)} kg × ${set.reps} reps'
+                                      : 'Not completed',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color:
+                                        set.isCompleted
+                                            ? Colors.black87
+                                            : Colors.grey.shade500,
+                                    fontWeight:
+                                        set.isCompleted
+                                            ? FontWeight.w500
+                                            : FontWeight.normal,
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }),
-                  ],
+                            ],
+                          ),
+                        );
+                      }),
+                    ],
+                  ),
                 ),
               ),
-            )),
-            
+            ),
+
             const SizedBox(height: 24),
-            
+
             // Delete Button at Bottom
             SizedBox(
               width: double.infinity,
@@ -358,12 +393,17 @@ class WorkoutDetailsPage extends StatelessWidget {
                       ),
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red.shade50.withValues(alpha: 0.4),
+                      backgroundColor: Colors.red.shade50.withValues(
+                        alpha: 0.4,
+                      ),
                       foregroundColor: Colors.red,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
-                        side: BorderSide(color: Colors.red.shade100.withValues(alpha: 0.6), width: 1.5),
+                        side: BorderSide(
+                          color: Colors.red.shade100.withValues(alpha: 0.6),
+                          width: 1.5,
+                        ),
                       ),
                       elevation: 0,
                     ),
@@ -371,7 +411,7 @@ class WorkoutDetailsPage extends StatelessWidget {
                 ),
               ),
             ),
-            
+
             const SizedBox(height: 24),
           ],
         ),
@@ -381,84 +421,84 @@ class WorkoutDetailsPage extends StatelessWidget {
 
   Future<void> _deleteWorkoutConfirmation(BuildContext context) async {
     final dateFormat = DateFormat('MMM dd, yyyy');
-    
+
     final bool? confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
-          children: [
-            const FaIcon(
-              FontAwesomeIcons.trash,
-              color: Colors.red,
-              size: 20,
+      builder:
+          (context) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
             ),
-            const SizedBox(width: 8),
-            const Text('Delete Workout'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Are you sure you want to delete this workout?',
-              style: TextStyle(fontSize: 16),
+            title: Row(
+              children: [
+                const FaIcon(
+                  FontAwesomeIcons.trash,
+                  color: Colors.red,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                const Text('Delete Workout'),
+              ],
             ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    dateFormat.format(workout.date),
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Are you sure you want to delete this workout?',
+                  style: TextStyle(fontSize: 16),
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${workout.exercises.length} exercises • ${workout.completedSets} sets • ${_formatDuration(workout.duration)}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        dateFormat.format(workout.date),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${workout.exercises.length} exercises • ${workout.completedSets} sets • ${_formatDuration(workout.duration)}',
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      ),
+                    ],
                   ),
-                ],
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'This action cannot be undone.',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.red,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('Cancel'),
               ),
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              'This action cannot be undone.',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.red,
-                fontWeight: FontWeight.w500,
+              ElevatedButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Delete'),
               ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
+            ],
           ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
     );
 
     if (confirmed == true && context.mounted) {
@@ -468,53 +508,53 @@ class WorkoutDetailsPage extends StatelessWidget {
 
   Future<void> _deleteWorkout(BuildContext context) async {
     bool isLoadingDialogOpen = false;
-    
+
     try {
       // Show loading indicator with cancel option
       showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (context) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const CircularProgressIndicator(),
-              const SizedBox(height: 16),
-              const Text(
-                'Deleting workout...',
-                style: TextStyle(fontSize: 16),
+        builder:
+            (context) => AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
               ),
-              const SizedBox(height: 8),
-              Text(
-                'This may take a few seconds',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey.shade600,
-                ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const CircularProgressIndicator(),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Deleting workout...',
+                    style: TextStyle(fontSize: 16),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'This may take a few seconds',
+                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ),
+            ),
       );
       isLoadingDialogOpen = true;
 
       // Delete workout with service-level timeout protection
       await WorkoutService.deleteWorkout(workout.id);
-      
+
       // Close loading dialog first
       if (context.mounted && isLoadingDialogOpen) {
         Navigator.of(context).pop(); // Close loading dialog
         isLoadingDialogOpen = false;
       }
-      
+
       // Small delay to ensure dialog is closed
       await Future.delayed(const Duration(milliseconds: 100));
-      
+
       // Navigate back and show success message
       if (context.mounted) {
         Navigator.of(context).pop(); // Close details page
-        
+
         // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -536,25 +576,25 @@ class WorkoutDetailsPage extends StatelessWidget {
       }
     } catch (e) {
       // Always ensure loading dialog is closed
-              if (context.mounted && isLoadingDialogOpen) {
-          try {
-            Navigator.of(context).pop(); // Close loading dialog
-          } catch (navError) {
-            // Ignore navigation errors during cleanup
-          }
-          isLoadingDialogOpen = false;
+      if (context.mounted && isLoadingDialogOpen) {
+        try {
+          Navigator.of(context).pop(); // Close loading dialog
+        } catch (navError) {
+          // Ignore navigation errors during cleanup
         }
-      
+        isLoadingDialogOpen = false;
+      }
+
       // Small delay to ensure dialog is closed
       await Future.delayed(const Duration(milliseconds: 100));
-      
+
       if (context.mounted) {
         // Clean up error message
         String errorMsg = e.toString();
         if (errorMsg.startsWith('Exception: ')) {
           errorMsg = errorMsg.substring(11);
         }
-        
+
         // Show error message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -562,9 +602,7 @@ class WorkoutDetailsPage extends StatelessWidget {
               children: [
                 const Icon(Icons.error, color: Colors.white),
                 const SizedBox(width: 8),
-                Expanded(
-                  child: Text('Failed to delete workout: $errorMsg'),
-                ),
+                Expanded(child: Text('Failed to delete workout: $errorMsg')),
               ],
             ),
             backgroundColor: Colors.red,
@@ -583,4 +621,4 @@ class WorkoutDetailsPage extends StatelessWidget {
       }
     }
   }
-} 
+}

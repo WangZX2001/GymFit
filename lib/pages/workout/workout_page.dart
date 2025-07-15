@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gymfit/pages/workout/exercise_information_page.dart';
 import 'package:gymfit/pages/workout/custom_workout_page.dart';
+import 'package:gymfit/pages/workout/recommended_training_page.dart';
 import 'package:gymfit/components/quick_start_overlay.dart';
 
 class WorkoutPage extends StatelessWidget {
@@ -40,17 +41,20 @@ class WorkoutPage extends StatelessWidget {
                   _buildWorkoutCard(
                     'Recommended Training',
                     'lib/images/reccomendedTraining.jpg',
-                    () {},
+                    () {
+                      Navigator.of(context, rootNavigator: true).push(
+                        MaterialPageRoute(
+                          builder: (context) => const RecommendedTrainingPage(),
+                        ),
+                      );
+                    },
                     alignment: Alignment.bottomCenter,
                   ),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16.0),
                     child: Text(
                       'For recommended training, a personalized workout plan automatically generated based on your body info, fitness goals, and experience level.',
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 14,
-                      ),
+                      style: TextStyle(color: Colors.grey[600], fontSize: 14),
                     ),
                   ),
                 ],
@@ -74,7 +78,12 @@ class WorkoutPage extends StatelessWidget {
     );
   }
 
-  Widget _buildWorkoutCard(String title, String imagePath, VoidCallback onTap, {Alignment alignment = Alignment.center}) {
+  Widget _buildWorkoutCard(
+    String title,
+    String imagePath,
+    VoidCallback onTap, {
+    Alignment alignment = Alignment.center,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       child: GestureDetector(
@@ -116,4 +125,4 @@ class WorkoutPage extends StatelessWidget {
       ),
     );
   }
-} 
+}
