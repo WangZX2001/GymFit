@@ -355,4 +355,101 @@ class WorkoutService {
       throw Exception('Failed to fetch workout: $e');
     }
   }
+
+  /// Get friends' workouts for the friends feed
+  static Future<List<Workout>> getFriendsWorkouts({int? limit}) async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw Exception('User not authenticated');
+    }
+
+    try {
+      // First get the user's friends list
+      final userDoc = await _firestore.collection('users').doc(user.uid).get();
+      if (!userDoc.exists || userDoc.data() == null) {
+        return [];
+      }
+
+      final friendIds = List<String>.from(userDoc.data()!['friends'] ?? []);
+      if (friendIds.isEmpty) {
+        return [];
+      }
+
+      // Query workouts from friends
+      Query query = _firestore
+          .collection('workouts')
+          .where('userId', whereIn: friendIds);
+
+      final querySnapshot = await query.get();
+
+      // Sort by date in memory instead of in query
+      final workouts =
+          querySnapshot.docs.map((doc) => Workout.fromSnapshot(doc)).toList();
+
+      // Sort by date descending
+      workouts.sort((a, b) => b.date.compareTo(a.date));
+
+      // Apply limit if specified
+      if (limit != null && workouts.length > limit) {
+        return workouts.take(limit).toList();
+      }
+
+      return workouts;
+    } catch (e) {
+      throw Exception('Failed to fetch friends workouts: $e');
+    }
+  }
+
+  /// Get a stream of friends' workouts for real-time updates
+  static Stream<List<Workout>> getFriendsWorkoutsStream({int? limit}) {
+    final user = _auth.currentUser;
+    if (user == null) {
+      return Stream.error('User not authenticated');
+    }
+
+    return _firestore.collection('users').doc(user.uid).snapshots().asyncMap((userDoc) async {
+      if (!userDoc.exists || userDoc.data() == null) {
+        return <Workout>[];
+      }
+
+      final friendIds = List<String>.from(userDoc.data()!['friends'] ?? []);
+      if (friendIds.isEmpty) {
+        return <Workout>[];
+      }
+
+      // Query workouts from friends
+      final querySnapshot = await _firestore
+          .collection('workouts')
+          .where('userId', whereIn: friendIds)
+          .get();
+
+      // Sort by date in memory instead of in query
+      final workouts =
+          querySnapshot.docs.map((doc) => Workout.fromSnapshot(doc)).toList();
+
+      // Sort by date descending
+      workouts.sort((a, b) => b.date.compareTo(a.date));
+
+      // Apply limit if specified
+      if (limit != null && workouts.length > limit) {
+        return workouts.take(limit).toList();
+      }
+
+      return workouts;
+    });
+  }
+
+  /// Get user info by user ID (for displaying friend info in workout cards)
+  static Future<Map<String, dynamic>?> getUserInfo(String userId) async {
+    try {
+      final doc = await _firestore.collection('users').doc(userId).get();
+      if (doc.exists) {
+        return doc.data();
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Error fetching user info: $e');
+      return null;
+    }
+  }
 }

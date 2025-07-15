@@ -9,8 +9,13 @@ import 'package:intl/intl.dart';
 
 class WorkoutDetailsPage extends StatelessWidget {
   final Workout workout;
+  final bool isOwnWorkout;
 
-  const WorkoutDetailsPage({super.key, required this.workout});
+  const WorkoutDetailsPage({
+    super.key, 
+    required this.workout,
+    this.isOwnWorkout = true,
+  });
 
   String _formatDuration(Duration duration) {
     String twoDigits(int n) => n.toString().padLeft(2, '0');
@@ -44,22 +49,23 @@ class WorkoutDetailsPage extends StatelessWidget {
           onPressed: () => Navigator.of(context).pop(),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.edit, color: Colors.black),
-            onPressed: () async {
-              final result = await Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => WorkoutEditPage(workout: workout),
-                ),
-              );
-              if (!context.mounted) return;
+          if (isOwnWorkout)
+            IconButton(
+              icon: const Icon(Icons.edit, color: Colors.black),
+              onPressed: () async {
+                final result = await Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => WorkoutEditPage(workout: workout),
+                  ),
+                );
+                if (!context.mounted) return;
 
-              // If the workout was successfully edited, pop this page to refresh the parent
-              if (result == true) {
-                Navigator.of(context).pop(true);
-              }
-            },
-          ),
+                // If the workout was successfully edited, pop this page to refresh the parent
+                if (result == true) {
+                  Navigator.of(context).pop(true);
+                }
+              },
+            ),
         ],
       ),
       body: SingleChildScrollView(
@@ -370,47 +376,48 @@ class WorkoutDetailsPage extends StatelessWidget {
 
             const SizedBox(height: 24),
 
-            // Delete Button at Bottom
-            SizedBox(
-              width: double.infinity,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                  child: ElevatedButton.icon(
-                    onPressed: () => _deleteWorkoutConfirmation(context),
-                    icon: const FaIcon(
-                      FontAwesomeIcons.trash,
-                      size: 16,
-                      color: Colors.red,
-                    ),
-                    label: const Text(
-                      'Delete Workout',
-                      style: TextStyle(
+            // Delete Button at Bottom (only for own workouts)
+            if (isOwnWorkout)
+              SizedBox(
+                width: double.infinity,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                    child: ElevatedButton.icon(
+                      onPressed: () => _deleteWorkoutConfirmation(context),
+                      icon: const FaIcon(
+                        FontAwesomeIcons.trash,
+                        size: 16,
                         color: Colors.red,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
                       ),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red.shade50.withValues(
-                        alpha: 0.4,
-                      ),
-                      foregroundColor: Colors.red,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        side: BorderSide(
-                          color: Colors.red.shade100.withValues(alpha: 0.6),
-                          width: 1.5,
+                      label: const Text(
+                        'Delete Workout',
+                        style: TextStyle(
+                          color: Colors.red,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                      elevation: 0,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red.shade50.withValues(
+                          alpha: 0.4,
+                        ),
+                        foregroundColor: Colors.red,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          side: BorderSide(
+                            color: Colors.red.shade100.withValues(alpha: 0.6),
+                            width: 1.5,
+                          ),
+                        ),
+                        elevation: 0,
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
 
             const SizedBox(height: 24),
           ],

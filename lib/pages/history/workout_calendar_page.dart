@@ -350,8 +350,10 @@ class _WorkoutCalendarPageState extends State<WorkoutCalendarPage> {
                     onTap: () {
                       Navigator.of(context, rootNavigator: true).push(
                         MaterialPageRoute(
-                          builder:
-                              (context) => WorkoutDetailsPage(workout: workout),
+                          builder: (context) => WorkoutDetailsPage(
+                            workout: workout,
+                            isOwnWorkout: true,
+                          ),
                         ),
                       );
                     },
@@ -760,10 +762,10 @@ class _WorkoutCalendarPageState extends State<WorkoutCalendarPage> {
                                 Navigator.of(context).pop();
                                 Navigator.of(context, rootNavigator: true).push(
                                   MaterialPageRoute(
-                                    builder:
-                                        (context) => WorkoutDetailsPage(
-                                          workout: workout,
-                                        ),
+                                    builder: (context) => WorkoutDetailsPage(
+                                      workout: workout,
+                                      isOwnWorkout: true,
+                                    ),
                                   ),
                                 );
                               },
