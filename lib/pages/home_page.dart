@@ -93,33 +93,39 @@ class _HomePageState extends State<HomePage> {
 
                 // Welcome section
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          isLoadingName
-                              ? 'Welcome Back'
-                              : userName != null
-                              ? 'Welcome Back, $userName!'
-                              : 'Welcome Back',
-                          style: const TextStyle(
-                            fontSize: 26,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            isLoadingName
+                                ? 'Welcome Back'
+                                : userName != null
+                                ? 'Welcome Back, $userName!'
+                                : 'Welcome Back',
+                            style: const TextStyle(
+                              fontSize: 26,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
+                            ),
+                            overflow: TextOverflow.visible,
+                            softWrap: true,
                           ),
-                        ),
-                        Text(
-                          '${_getGreeting()} Remember \nto Stay Hydrated',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            color: Colors.black,
-                            fontWeight: FontWeight.w300,
+                          const SizedBox(height: 10),
+                          Text(
+                            '${_getGreeting()} Remember \nto Stay Hydrated',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              color: Colors.black,
+                              fontWeight: FontWeight.w300,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
+                    const SizedBox(width: 16),
                     ClipRRect(
                       borderRadius: BorderRadius.circular(50),
                       child: Container(
@@ -134,6 +140,7 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ],
                 ),
+                const SizedBox(height: 20),
 
                 // Tabs
                 SingleChildScrollView(
