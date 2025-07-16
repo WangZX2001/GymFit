@@ -25,6 +25,8 @@ class CalorieCalculationService {
 
   /// Calculate MET (Metabolic Equivalent of Task) for different exercise types
   static double _getMETForExercise(String exerciseName) {
+    if (exerciseName.isEmpty) return 3.5;
+
     final name = exerciseName.toLowerCase();
 
     // Strength training exercises
@@ -100,24 +102,47 @@ class CalorieCalculationService {
     return 3.5;
   }
 
+  /// Safely parse numeric values
+  static double _safeParseDouble(dynamic value) {
+    if (value == null) return 0.0;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) {
+      return double.tryParse(value) ?? 0.0;
+    }
+    return 0.0;
+  }
+
+  static int _safeParseInt(dynamic value) {
+    if (value == null) return 0;
+    if (value is int) return value;
+    if (value is double) return value.round();
+    if (value is String) {
+      return int.tryParse(value) ?? 0;
+    }
+    return 0;
+  }
+
   /// Calculate calories burnt for a single exercise
   static double _calculateExerciseCalories({
     required String exerciseName,
     required int sets,
-    required num reps,
+    required int reps,
     required double weight,
     required double userWeight,
     required int age,
     required String gender,
     required int durationMinutes,
   }) {
+    if (sets <= 0 || durationMinutes <= 0) return 0.0;
+
     final met = _getMETForExercise(exerciseName);
 
     // Calculate calories using the formula: Calories = MET × Weight (kg) × Duration (hours)
     // For strength training, we also factor in the intensity based on weight and reps
     double intensityMultiplier = 1.0;
 
-    if (weight > 0) {
+    if (weight > 0 && userWeight > 0) {
       // Adjust intensity based on weight relative to body weight
       final weightRatio = weight / userWeight;
       if (weightRatio > 0.5) {
@@ -154,26 +179,37 @@ class CalorieCalculationService {
     required List<Map<String, dynamic>> exercises,
     required int totalDurationMinutes,
   }) async {
+    if (exercises.isEmpty || totalDurationMinutes <= 0) {
+      return _calculateEstimatedCalories(exercises, totalDurationMinutes);
+    }
+
     // First, try to calculate with user data
     try {
       final userData = await getUserBodyData();
 
-      // Extract user data
-      final double userWeight =
-          (userData['starting weight'] ?? 70.0).toDouble();
-      final int age = userData['age'] ?? 25;
-      final String gender = userData['gender'] ?? 'Male';
+      // Extract user data with safe defaults
+      final double userWeight = _safeParseDouble(
+        userData['starting weight'] ?? 70.0,
+      );
+      final int age = _safeParseInt(userData['age'] ?? 25);
+      final String gender = (userData['gender'] as String?) ?? 'Male';
 
       double totalCalories = 0.0;
 
       // Calculate calories for each exercise
       for (final exercise in exercises) {
-        final exerciseName = exercise['title'] as String;
-        final sets = exercise['sets'] as List<dynamic>;
+        final exerciseName =
+            (exercise['title'] as String?) ?? 'Unknown Exercise';
+        final sets = exercise['sets'] as List<dynamic>? ?? [];
 
         // Count completed sets
         final completedSets =
-            sets.where((set) => set['isChecked'] == true).length;
+            sets.where((set) {
+              if (set is Map<String, dynamic>) {
+                return set['isChecked'] == true;
+              }
+              return false;
+            }).length;
 
         if (completedSets > 0) {
           // Get average weight and reps from completed sets
@@ -182,9 +218,9 @@ class CalorieCalculationService {
           int validSets = 0;
 
           for (final set in sets) {
-            if (set['isChecked'] == true) {
-              totalWeight += (set['weight'] ?? 0.0).toDouble();
-              totalReps += int.parse((set['reps'] ?? 0).toString());
+            if (set is Map<String, dynamic> && set['isChecked'] == true) {
+              totalWeight += _safeParseDouble(set['weight']);
+              totalReps += _safeParseInt(set['reps']);
               validSets++;
             }
           }
@@ -201,9 +237,7 @@ class CalorieCalculationService {
             userWeight: userWeight,
             age: age,
             gender: gender,
-            durationMinutes:
-                totalDurationMinutes ~/
-                exercises.length, // Distribute time evenly
+            durationMinutes: totalDurationMinutes ~/ exercises.length,
           );
 
           totalCalories += exerciseCalories;
@@ -226,11 +260,7 @@ class CalorieCalculationService {
       return totalCalories;
     } catch (e) {
       // Return estimated calories if user data is not available
-      final estimatedCalories = _calculateEstimatedCalories(
-        exercises,
-        totalDurationMinutes,
-      );
-      return estimatedCalories;
+      return _calculateEstimatedCalories(exercises, totalDurationMinutes);
     }
   }
 
@@ -241,6 +271,8 @@ class CalorieCalculationService {
     String gender,
     int durationMinutes,
   ) {
+    if (weight <= 0 || age <= 0 || durationMinutes <= 0) return 0.0;
+
     // Calculate BMR using Mifflin-St Jeor Equation
     double bmr;
     if (gender.toLowerCase() == 'male') {
@@ -267,14 +299,21 @@ class CalorieCalculationService {
     List<Map<String, dynamic>> exercises,
     int totalDurationMinutes,
   ) {
+    if (exercises.isEmpty) return 50.0;
+
     double totalCalories = 0.0;
     const double estimatedWeight = 70.0; // Default weight
     const double defaultMET = 4.0; // Average MET for strength training
 
     for (final exercise in exercises) {
-      final sets = exercise['sets'] as List<dynamic>;
+      final sets = exercise['sets'] as List<dynamic>? ?? [];
       final completedSets =
-          sets.where((set) => set['isChecked'] == true).length;
+          sets.where((set) {
+            if (set is Map<String, dynamic>) {
+              return set['isChecked'] == true;
+            }
+            return false;
+          }).length;
 
       if (completedSets > 0) {
         // Simple estimation: 5 calories per set for strength training
@@ -284,9 +323,11 @@ class CalorieCalculationService {
     }
 
     // Add time-based estimation
-    final durationHours = totalDurationMinutes / 60.0;
-    final timeCalories = defaultMET * estimatedWeight * durationHours * 0.3;
-    totalCalories += timeCalories;
+    if (totalDurationMinutes > 0) {
+      final durationHours = totalDurationMinutes / 60.0;
+      final timeCalories = defaultMET * estimatedWeight * durationHours * 0.3;
+      totalCalories += timeCalories;
+    }
 
     // Ensure we always return a reasonable value
     if (totalCalories <= 0) {
@@ -297,6 +338,10 @@ class CalorieCalculationService {
 
   /// Format calories for display
   static String formatCalories(double calories) {
+    if (calories.isNaN || calories.isInfinite || calories < 0) {
+      return '0 cal';
+    }
+
     if (calories < 100) {
       return '${calories.round()} cal';
     } else {

@@ -399,20 +399,20 @@ class _RecommendedTrainingPageState extends State<RecommendedTrainingPage> {
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: Colors.blueGrey[100]!),
       ),
-      child: Row(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(
-            Icons.check_circle_outline,
-            color: Colors.blueAccent,
-            size: 20,
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(
+                Icons.check_circle_outline,
+                color: Colors.blueAccent,
+                size: 20,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
                   exercise.name,
                   style: const TextStyle(
                     fontFamily: 'DMSans',
@@ -421,20 +421,107 @@ class _RecommendedTrainingPageState extends State<RecommendedTrainingPage> {
                     color: Colors.black,
                   ),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  '${exercise.sets.length} sets × ${exercise.sets.first.reps} reps',
-                  style: const TextStyle(
-                    fontFamily: 'DMSans',
-                    fontSize: 13,
-                    color: Colors.black54,
-                  ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+
+          // Show set details
+          Row(
+            children: [
+              const SizedBox(width: 30), // Align with exercise name
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${exercise.sets.length} sets',
+                      style: const TextStyle(
+                        fontFamily: 'DMSans',
+                        fontWeight: FontWeight.w500,
+                        fontSize: 13,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+
+                    // Show progressive rep scheme
+                    if (_hasProgressiveReps(exercise.sets))
+                      _buildProgressiveRepsDisplay(exercise.sets)
+                    else
+                      Text(
+                        '${exercise.sets.first.weight > 0 ? '${exercise.sets.first.weight.toStringAsFixed(1)}kg' : 'Bodyweight'} × ${exercise.sets.first.reps} reps each set',
+                        style: const TextStyle(
+                          fontFamily: 'DMSans',
+                          fontSize: 12,
+                          color: Colors.black54,
+                        ),
+                      ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ],
       ),
+    );
+  }
+
+  /// Check if the exercise has progressive reps or weights (different reps/weights per set)
+  bool _hasProgressiveReps(List<CustomWorkoutSet> sets) {
+    if (sets.length <= 1) return false;
+    final firstReps = sets.first.reps;
+    final firstWeight = sets.first.weight;
+    return sets.any(
+      (set) => set.reps != firstReps || set.weight != firstWeight,
+    );
+  }
+
+  /// Build progressive reps display
+  Widget _buildProgressiveRepsDisplay(List<CustomWorkoutSet> sets) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Progressive scheme:',
+          style: TextStyle(
+            fontFamily: 'DMSans',
+            fontSize: 11,
+            color: Colors.grey[600],
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Wrap(
+          spacing: 8,
+          runSpacing: 2,
+          children:
+              sets.asMap().entries.map((entry) {
+                final index = entry.key;
+                final set = entry.value;
+                return Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.blue[50],
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(color: Colors.blue),
+                  ),
+                  child: Text(
+                    'Set ${index + 1}: ${set.weight > 0 ? '${set.weight.toStringAsFixed(1)}kg' : 'BW'} × ${set.reps} reps',
+                    style: const TextStyle(
+                      fontFamily: 'DMSans',
+                      fontSize: 10,
+                      color: Colors.blue,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                );
+              }).toList(),
+        ),
+      ],
     );
   }
 
@@ -528,7 +615,7 @@ class _RecommendedTrainingPageState extends State<RecommendedTrainingPage> {
                       ),
                       child: Chatbot(
                         text:
-                            "I've analyzed your body data and created a personalized workout plan just for you! This workout is designed to help you achieve your fitness goals safely and effectively.",
+                            "I've analyzed your body data and created a personalized workout plan with intelligent weight and rep suggestions! Each exercise has optimized sets, weights, and reps based on your fitness level, goals, and exercise type.",
                       ),
                     ),
                     _buildUserInfoCard(),
