@@ -18,8 +18,8 @@ class WorkoutPage extends StatelessWidget {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Quick Start in Progress'),
-          content: const Text('Are you sure you want to delete the current quick start and start a new one?'),
+          title: const Text('Workout in Progress'),
+          content: const Text('Are you sure you want to delete the current workout and start a new one?'),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),

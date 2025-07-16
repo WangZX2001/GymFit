@@ -26,6 +26,7 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage>
   final ScrollController _scrollController = ScrollController();
   final FocusNode _searchFocusNode = FocusNode();
   String _searchQuery = '';
+  bool _isSearchFocused = false;
 
   // Animation variables for search bar
   late AnimationController _searchBarAnimationController;
@@ -58,6 +59,9 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage>
 
     // Add scroll listener
     _scrollController.addListener(_onScroll);
+    
+    // Add search focus listener
+    _searchFocusNode.addListener(_onSearchFocusChanged);
   }
 
   void _onScroll() {
@@ -105,9 +109,18 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage>
     }
   }
 
+  void _onSearchFocusChanged() {
+    if (widget.isSelectionMode) {
+      setState(() {
+        _isSearchFocused = _searchFocusNode.hasFocus;
+      });
+    }
+  }
+
   @override
   void dispose() {
     _searchController.dispose();
+    _searchFocusNode.removeListener(_onSearchFocusChanged);
     _searchFocusNode.dispose();
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
@@ -234,7 +247,7 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage>
         children: [
           // Search bar
           Container(
-            margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+            margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(25),
@@ -250,6 +263,7 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage>
               controller: _searchController,
               focusNode: _searchFocusNode,
               autofocus: false,
+              textInputAction: widget.isSelectionMode ? TextInputAction.search : TextInputAction.done,
               onChanged: (value) {
                 setState(() {
                   _searchQuery = value;
@@ -291,7 +305,7 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage>
           // Instruction text
           if (!widget.isSelectionMode)
             Padding(
-              padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 0),
+              padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 4),
               child: Text(
                 'Click on any exercise icon to view specific instructions.',
                 style: TextStyle(color: Colors.grey[600], fontSize: 12),
@@ -424,7 +438,7 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage>
                   // Main content with dynamic top padding based on search bar visibility
                   AnimatedPadding(
                     duration: const Duration(milliseconds: 200),
-                    padding: EdgeInsets.only(top: _isSearchBarVisible ? 100 : 0), // Space for search bar + instruction text when visible
+                    padding: EdgeInsets.only(top: _isSearchBarVisible ? (widget.isSelectionMode ? 60 : 80) : 0), // Less space needed in selection mode (no instruction text)
                     child: Container(
                       color: Colors.grey.shade200, // Ensure background matches when search bar is hidden
                       child: Column(
@@ -537,35 +551,46 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage>
                             ),
                           ),
                           if (widget.isSelectionMode)
-                            Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 32.0),
-                              child: ElevatedButton(
-                                onPressed:
-                                    () =>
-                                        Navigator.pop(context, _selectedTitles.toList()),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.black,
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(vertical: 16),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    const Icon(Icons.check),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      'Done (${_selectedTitles.length})',
-                                      style: const TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
+                            AnimatedOpacity(
+                              duration: const Duration(milliseconds: 200),
+                              curve: Curves.easeInOut,
+                              opacity: _isSearchFocused ? 0.0 : 1.0,
+                              child: AnimatedSize(
+                                duration: const Duration(milliseconds: 400),
+                                curve: Curves.easeInOutQuart,
+                                child: _isSearchFocused
+                                    ? const SizedBox.shrink()
+                                    : Container(
+                                        width: double.infinity,
+                                        padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 32.0),
+                                        child: ElevatedButton(
+                                          onPressed:
+                                              () =>
+                                                  Navigator.pop(context, _selectedTitles.toList()),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.black,
+                                            foregroundColor: Colors.white,
+                                            padding: const EdgeInsets.symmetric(vertical: 16),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.circular(12),
+                                            ),
+                                          ),
+                                          child: Row(
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              const Icon(Icons.check),
+                                              const SizedBox(width: 8),
+                                              Text(
+                                                'Done (${_selectedTitles.length})',
+                                                style: const TextStyle(
+                                                  fontSize: 18,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
                                       ),
-                                    ),
-                                  ],
-                                ),
                               ),
                             ),
                         ],

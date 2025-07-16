@@ -161,6 +161,7 @@ class _QuickStartPageState extends State<QuickStartPage> {
   bool _loadingCustomWorkouts = false;
   bool _isEditingWorkoutName = false;
   late TextEditingController _workoutNameController;
+  late FocusNode _workoutNameFocusNode;
   bool _isAnyFieldFocused = false;
   bool _preventAutoFocus = false;
 
@@ -170,8 +171,9 @@ class _QuickStartPageState extends State<QuickStartPage> {
     _selectedExercises = widget.initialSelectedExercises.map((e) => QuickStartExercise(title: e.title, sets: e.sets)).toList();
     _customWorkoutName = widget.initialWorkoutName; // Set the initial workout name
     
-    // Initialize text controller
+    // Initialize text controller and focus node
     _workoutNameController = TextEditingController(text: _customWorkoutName ?? '');
+    _workoutNameFocusNode = FocusNode();
     
     // Initialize scroll controller
     _scrollController = ScrollController();
@@ -260,30 +262,135 @@ class _QuickStartPageState extends State<QuickStartPage> {
     bool shouldShow = _scrollController.offset > threshold;
     
     if (shouldShow != _showWorkoutNameInAppBar) {
+      // Auto-save workout name when it slides into the app bar during editing
+      if (shouldShow && _isEditingWorkoutName) {
+        // Save the current workout name and exit editing mode
+        _customWorkoutName = _workoutNameController.text.trim();
+        _isEditingWorkoutName = false;
+        
+        // Clear focus and prevent auto-focus to other fields
+        _clearFocusAggressively();
+        _preventAutoFocus = true;
+        _isAnyFieldFocused = false;
+        
+        // Re-enable interaction after a short delay
+        Future.delayed(const Duration(milliseconds: 300), () {
+          if (mounted) {
+            setState(() {
+              _preventAutoFocus = false;
+            });
+          }
+        });
+      }
+      
       setState(() {
         _showWorkoutNameInAppBar = shouldShow;
       });
     }
   }
 
+  void _clearFocusAggressively() {
+    // Check if widget is still mounted and context is active
+    if (!mounted) return;
+    
+    try {
+      // Multiple approaches to ensure focus is completely cleared
+      FocusScope.of(context).unfocus();
+      FocusManager.instance.primaryFocus?.unfocus();
+      
+      // Clear focus from all exercise focus nodes
+      for (var exercise in _selectedExercises) {
+        for (var set in exercise.sets) {
+          if (set.weightFocusNode.hasFocus) {
+            set.weightFocusNode.unfocus();
+          }
+          if (set.repsFocusNode.hasFocus) {
+            set.repsFocusNode.unfocus();
+          }
+        }
+      }
+      
+      // Also clear workout name focus if needed
+      if (_workoutNameFocusNode.hasFocus) {
+        _workoutNameFocusNode.unfocus();
+      }
+    } catch (e) {
+      // Safely handle cases where context is no longer valid
+      FocusManager.instance.primaryFocus?.unfocus();
+    }
+  }
+
   void _toggleWorkoutNameEditing() {
-    setState(() {
-      if (_isEditingWorkoutName) {
-        // Save the workout name
+    if (_isEditingWorkoutName) {
+      // Save the workout name and exit editing mode
+      setState(() {
         _customWorkoutName = _workoutNameController.text.trim();
         _isEditingWorkoutName = false;
-      } else {
-        // Start editing
+        
+        // Prevent auto-focus to kg/reps fields after editing workout name
+        _preventAutoFocus = true;
+        _isAnyFieldFocused = false;
+      });
+      
+      _clearFocusAggressively();
+      
+      // Clear focus again after state changes
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _clearFocusAggressively();
+        }
+      });
+      
+      // Re-enable interaction after a shorter delay
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (mounted) {
+          setState(() {
+            _preventAutoFocus = false;
+          });
+        }
+      });
+    } else {
+      // Start editing mode
+      setState(() {
         _workoutNameController.text = _customWorkoutName ?? _getWorkoutName();
         _isEditingWorkoutName = true;
-      }
-    });
+      });
+      
+      // Request focus after setState to ensure TextField is built
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _workoutNameFocusNode.canRequestFocus) {
+          _workoutNameFocusNode.requestFocus();
+        }
+      });
+    }
   }
 
   void _onWorkoutNameSubmitted() {
     setState(() {
       _customWorkoutName = _workoutNameController.text.trim();
       _isEditingWorkoutName = false;
+      
+      // Prevent auto-focus to kg/reps fields after editing workout name
+      _preventAutoFocus = true;
+      _isAnyFieldFocused = false;
+    });
+    
+    _clearFocusAggressively();
+    
+    // Clear focus again after state changes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _clearFocusAggressively();
+      }
+    });
+    
+    // Re-enable interaction after a shorter delay
+    Future.delayed(const Duration(milliseconds: 300), () {
+      if (mounted) {
+        setState(() {
+          _preventAutoFocus = false;
+        });
+      }
     });
   }
 
@@ -313,6 +420,7 @@ class _QuickStartPageState extends State<QuickStartPage> {
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     _workoutNameController.dispose();
+    _workoutNameFocusNode.dispose();
     _removeFocusListeners();
     super.dispose();
   }
@@ -413,30 +521,14 @@ class _QuickStartPageState extends State<QuickStartPage> {
                     ),
                     const SizedBox(width: 8),
                     Flexible(
-                      child: GestureDetector(
-                        onTap: _toggleWorkoutNameEditing,
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Flexible(
-                              child: Text(
-                                _getWorkoutName(),
-                                style: const TextStyle(
-                                  color: Colors.purple,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            const SizedBox(width: 4),
-                            const FaIcon(
-                              FontAwesomeIcons.pen,
-                              color: Colors.purple,
-                              size: 12,
-                            ),
-                          ],
+                      child: Text(
+                        _getWorkoutName(),
+                        style: const TextStyle(
+                          color: Colors.purple,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
                         ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],
@@ -553,7 +645,33 @@ class _QuickStartPageState extends State<QuickStartPage> {
         child: GestureDetector(
           onTap: () {
             // Dismiss keyboard when tapping outside of input fields
-            FocusScope.of(context).unfocus();
+            _clearFocusAggressively();
+            
+            // If workout name is being edited, save and exit editing mode
+            if (_isEditingWorkoutName) {
+              setState(() {
+                _customWorkoutName = _workoutNameController.text.trim();
+                _isEditingWorkoutName = false;
+                _preventAutoFocus = true;
+                _isAnyFieldFocused = false;
+              });
+              
+              // Clear focus again after state changes
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) {
+                  _clearFocusAggressively();
+                }
+              });
+              
+              // Re-enable interaction after a delay
+              Future.delayed(const Duration(milliseconds: 300), () {
+                if (mounted) {
+                  setState(() {
+                    _preventAutoFocus = false;
+                  });
+                }
+              });
+            }
           },
           child: LayoutBuilder(
             builder: (context, constraints) {
@@ -600,6 +718,7 @@ class _QuickStartPageState extends State<QuickStartPage> {
                                         _isEditingWorkoutName
                                             ? TextField(
                                                 controller: _workoutNameController,
+                                                focusNode: _workoutNameFocusNode,
                                                 decoration: InputDecoration(
                                                   border: OutlineInputBorder(
                                                     borderRadius: BorderRadius.circular(8),
@@ -619,8 +738,32 @@ class _QuickStartPageState extends State<QuickStartPage> {
                                                   color: Colors.purple,
                                                 ),
                                                 maxLength: 50,
-                                                autofocus: true,
                                                 onSubmitted: (_) => _onWorkoutNameSubmitted(),
+                                                onEditingComplete: () {
+                                                  // Handle when keyboard is dismissed without submitting
+                                                  _clearFocusAggressively();
+                                                  setState(() {
+                                                    _preventAutoFocus = true;
+                                                    _isAnyFieldFocused = false;
+                                                  });
+                                                  
+                                                  // Clear focus again after state changes
+                                                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                                                    if (mounted) {
+                                                      _clearFocusAggressively();
+                                                    }
+                                                  });
+                                                  
+                                                  // Re-enable interaction after a delay
+                                                  Future.delayed(const Duration(milliseconds: 300), () {
+                                                    if (mounted) {
+                                                      setState(() {
+                                                        _preventAutoFocus = false;
+                                                      });
+                                                    }
+                                                  });
+                                                },
+
                                                 textInputAction: TextInputAction.done,
                                               )
                                             : GestureDetector(
@@ -841,6 +984,21 @@ class _QuickStartPageState extends State<QuickStartPage> {
                                               ),
                                             ),
                                             onDismissed: (direction) {
+                                              // Immediately clear focus to prevent errors
+                                              if (mounted) {
+                                                try {
+                                                  FocusScope.of(context).unfocus();
+                                                } catch (e) {
+                                                  // Context might be invalid, use fallback
+                                                }
+                                              }
+                                              
+                                              // Dispose focus listeners before removing
+                                              for (var set in e.sets) {
+                                                set.removeFocusListeners(_updateFocusState);
+                                                set.dispose();
+                                              }
+                                              
                                               setState(() {
                                                 _selectedExercises.remove(e);
                                                 QuickStartOverlay.selectedExercises = _selectedExercises;
@@ -1015,6 +1173,19 @@ class _QuickStartPageState extends State<QuickStartPage> {
                                                                   ),
                                                                 ),
                                                                 onDismissed: (direction) {
+                                                                  // Immediately clear focus to prevent errors
+                                                                  if (mounted) {
+                                                                    try {
+                                                                      FocusScope.of(context).unfocus();
+                                                                    } catch (e) {
+                                                                      // Context might be invalid, use fallback
+                                                                    }
+                                                                  }
+                                                                  
+                                                                  // Dispose focus listeners before removing
+                                                                  exerciseSet.removeFocusListeners(_updateFocusState);
+                                                                  exerciseSet.dispose();
+                                                                  
                                                                   setState(() {
                                                                     e.sets.remove(exerciseSet);
                                                                     QuickStartOverlay.selectedExercises = _selectedExercises;
@@ -1079,6 +1250,7 @@ class _QuickStartPageState extends State<QuickStartPage> {
                                                                                   controller: exerciseSet.weightController,
                                                                                   focusNode: exerciseSet.weightFocusNode,
                                                                                   autofocus: false,
+                                                                                  canRequestFocus: !_preventAutoFocus,
                                                                                   readOnly: _preventAutoFocus,
                                                                                   style: TextStyle(
                                                                                     fontWeight: FontWeight.bold,
@@ -1170,6 +1342,7 @@ class _QuickStartPageState extends State<QuickStartPage> {
                                                                                   controller: exerciseSet.repsController,
                                                                                   focusNode: exerciseSet.repsFocusNode,
                                                                                   autofocus: false,
+                                                                                  canRequestFocus: !_preventAutoFocus,
                                                                                   enableInteractiveSelection: true,
                                                                                   readOnly: _preventAutoFocus,
                                                                                   style: TextStyle(
@@ -1287,6 +1460,7 @@ class _QuickStartPageState extends State<QuickStartPage> {
                                                     width: double.infinity,
                                                     child: ElevatedButton(
                                                       onPressed: () async {
+                                                        
                                                         // Try to get data from the last set in the current exercise
                                                         ExerciseSet newSet;
                                                         if (e.sets.isNotEmpty) {
@@ -1429,12 +1603,16 @@ class _QuickStartPageState extends State<QuickStartPage> {
                           ),
                   ),
                   // Add Exercises button with keyboard-aware visibility
-                  AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    height: _isAnyFieldFocused ? 0 : null,
-                    child: _isAnyFieldFocused 
-                        ? const SizedBox.shrink()
-                        : Column(
+                  AnimatedSize(
+                    duration: const Duration(milliseconds: 400),
+                    curve: Curves.easeInOutQuart,
+                    child: AnimatedOpacity(
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                      opacity: (_isAnyFieldFocused || _isEditingWorkoutName) ? 0.0 : 1.0,
+                      child: (_isAnyFieldFocused || _isEditingWorkoutName)
+                          ? const SizedBox.shrink()
+                          : Column(
                             children: [
                               const SizedBox(height: 16),
                               LayoutBuilder(
@@ -1459,8 +1637,12 @@ class _QuickStartPageState extends State<QuickStartPage> {
                                         );
                                         
                                         if (result != null && mounted) {
+                                          // Clear focus from any currently focused input fields
+                                          _clearFocusAggressively();
+                                          
                                           setState(() {
                                             _preventAutoFocus = true; // Temporarily disable interaction
+                                            _isAnyFieldFocused = false; // Ensure button stays visible
                                           });
                                           
                                           // Create new exercises with prefilled data
@@ -1513,8 +1695,15 @@ class _QuickStartPageState extends State<QuickStartPage> {
                                             });
                                           }
                                           
-                                          // Re-enable interaction after build is complete
-                                          Future.microtask(() {
+                                          // Clear focus again after state changes
+                                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                                            if (mounted) {
+                                              _clearFocusAggressively();
+                                            }
+                                          });
+                                          
+                                          // Re-enable interaction after ensuring new fields are built
+                                          Future.delayed(const Duration(milliseconds: 300), () {
                                             if (mounted) {
                                               setState(() {
                                                 _preventAutoFocus = false;
@@ -1522,12 +1711,23 @@ class _QuickStartPageState extends State<QuickStartPage> {
                                             }
                                           });
                                         } else if (mounted) {
+                                          // Clear focus even when no exercises are selected
+                                          _clearFocusAggressively();
+                                          
                                           // Apply auto-focus prevention even when no exercises are selected
                                           setState(() {
                                             _preventAutoFocus = true;
+                                            _isAnyFieldFocused = false; // Ensure button stays visible
                                           });
                                           
-                                          Future.microtask(() {
+                                          // Clear focus again after state changes
+                                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                                            if (mounted) {
+                                              _clearFocusAggressively();
+                                            }
+                                          });
+                                          
+                                          Future.delayed(const Duration(milliseconds: 300), () {
                                             if (mounted) {
                                               setState(() {
                                                 _preventAutoFocus = false;
@@ -1556,6 +1756,7 @@ class _QuickStartPageState extends State<QuickStartPage> {
                               ),
                             ],
                           ),
+                    ),
                   ),
                 ],
               ),
