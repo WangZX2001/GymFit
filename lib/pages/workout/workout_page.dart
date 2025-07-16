@@ -36,22 +36,27 @@ class WorkoutPage extends StatelessWidget {
   }
 
   /// Handle quick start button press with confirmation dialog if needed
-  Future<void> _handleQuickStart(BuildContext context) async {
+  void _handleQuickStart(BuildContext context) {
     if (_isQuickStartInProgress()) {
-      // Show confirmation dialog
-      final shouldStartNew = await _showQuickStartConfirmationDialog(context);
-      if (!shouldStartNew) {
-        return; // User cancelled, don't start new workout
-      }
-      
-      // Clear existing workout
-      QuickStartOverlay.selectedExercises.clear();
-      QuickStartOverlay.resetTimer();
+      // Show confirmation dialog and handle result in callback
+      _showQuickStartConfirmationDialog(context).then((shouldStartNew) {
+        if (shouldStartNew) {
+          // Clear existing workout
+          QuickStartOverlay.selectedExercises.clear();
+          QuickStartOverlay.resetTimer();
+          
+          // Clear any existing custom workout name for fresh start
+          QuickStartOverlay.customWorkoutName = null;
+          // Open quick start after confirmation
+          // ignore: use_build_context_synchronously
+          QuickStartOverlay.openQuickStart(context);
+        }
+      });
+    } else {
+      // No confirmation needed, start directly
+      QuickStartOverlay.customWorkoutName = null;
+      QuickStartOverlay.openQuickStart(context);
     }
-    
-    // Clear any existing custom workout name for fresh start
-    QuickStartOverlay.customWorkoutName = null;
-    QuickStartOverlay.openQuickStart(context);
   }
 
   @override

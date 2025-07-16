@@ -4,8 +4,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:gymfit/pages/auth_page.dart';
 import 'package:gymfit/models/workout.dart';
 import 'package:gymfit/services/workout_service.dart';
-import 'package:gymfit/pages/statistics_page.dart';
-import 'package:gymfit/pages/friends_page.dart';
+import 'package:gymfit/pages/me/statistics_page.dart';
+import 'package:gymfit/pages/me/friends_page.dart';
 
 class MePage extends StatefulWidget {
   const MePage({super.key});

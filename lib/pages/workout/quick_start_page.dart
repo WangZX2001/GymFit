@@ -9,6 +9,7 @@ import 'package:gymfit/pages/workout/workout_summary_page.dart';
 import 'package:gymfit/models/workout.dart';
 import 'package:gymfit/models/custom_workout.dart';
 import 'package:gymfit/services/custom_workout_service.dart';
+import 'package:gymfit/services/workout_service.dart';
 
 // Input formatter to restrict decimals to a fixed number of places (default 2)
 class _DecimalTextInputFormatter extends TextInputFormatter {
@@ -55,6 +56,10 @@ class ExerciseSet {
   late final FocusNode repsFocusNode;
   bool _weightSelected = false;
   bool _repsSelected = false;
+  bool isWeightPrefilled = false; // Track if weight was prefilled from previous data
+  bool isRepsPrefilled = false; // Track if reps was prefilled from previous data
+  double? previousWeight; // Previous workout weight for reference
+  int? previousReps; // Previous workout reps for reference
   
   // Helper to format weight: whole number if no decimal part
   static String _formatWeight(double value) {
@@ -65,9 +70,17 @@ class ExerciseSet {
     return value.toString();
   }
   
+  // Helper to format previous data as "20kg x 5"
+  String get previousDataFormatted {
+    if (previousWeight != null && previousReps != null) {
+      return '${_formatWeight(previousWeight!)}kg x $previousReps';
+    }
+    return '-';
+  }
+  
   static int _counter = 0;
   
-  ExerciseSet({this.weight = 0.0, this.reps = 0, this.isChecked = false}) 
+  ExerciseSet({this.weight = 0.0, this.reps = 0, this.isChecked = false, this.isWeightPrefilled = false, this.isRepsPrefilled = false, this.previousWeight, this.previousReps}) 
     : id = '${DateTime.now().millisecondsSinceEpoch}_${++_counter}' {
     weightController = TextEditingController(text: _formatWeight(weight));
     repsController = TextEditingController(text: reps.toString());
@@ -86,6 +99,8 @@ class ExerciseSet {
   }
   
   void updateWeight(double newWeight) {
+    // Always mark as manually edited when user types, even if same value
+    isWeightPrefilled = false;
     if (weight != newWeight) {
       weight = newWeight;
       final formatted = _formatWeight(newWeight);
@@ -96,6 +111,8 @@ class ExerciseSet {
   }
   
   void updateReps(int newReps) {
+    // Always mark as manually edited when user types, even if same value
+    isRepsPrefilled = false;
     if (reps != newReps) {
       reps = newReps;
       if (repsController.text != newReps.toString()) {
@@ -217,7 +234,7 @@ class _QuickStartPageState extends State<QuickStartPage> {
     // Convert custom workout exercises to QuickStartExercise objects with configured sets
     final exercises = workout.exercises.map((customExercise) {
       final sets = customExercise.sets.map((customSet) => 
-        ExerciseSet(weight: customSet.weight, reps: customSet.reps)
+        ExerciseSet(weight: customSet.weight, reps: customSet.reps, isWeightPrefilled: false, isRepsPrefilled: false, previousWeight: null, previousReps: null)
       ).toList();
       
       return QuickStartExercise(title: customExercise.name, sets: sets);
@@ -856,14 +873,9 @@ class _QuickStartPageState extends State<QuickStartPage> {
                                                                 ),
                                                               ],
                                                             ),
-                                                            const SizedBox(height: 8),
-                                                            Container(
-                                                              padding: const EdgeInsets.symmetric(vertical: 4),
-                                                              decoration: BoxDecoration(
-                                                                color: Colors.grey.shade100,
-                                                                borderRadius: BorderRadius.circular(12),
-                                                              ),
-                                                              child: LayoutBuilder(
+                                                            Column(
+                                                              children: [
+                                                                LayoutBuilder(
                                                                 builder: (context, constraints) {
                                                                   final availableWidth = constraints.maxWidth;
                                                                   final isSmallScreen = availableWidth < 350;
@@ -888,12 +900,12 @@ class _QuickStartPageState extends State<QuickStartPage> {
                                                                         ),
                                                                       ),
                                                                       SizedBox(width: spacing),
-                                                                      // Weight - flexible
+                                                                      // Previous - flexible
                                                                       Expanded(
                                                                         flex: 2,
                                                                         child: Center(
                                                                           child: Text(
-                                                                            'Weight (kg)',
+                                                                            'Previous',
                                                                             style: TextStyle(
                                                                               fontWeight: FontWeight.bold,
                                                                               fontSize: isSmallScreen ? 14 : 16,
@@ -904,18 +916,46 @@ class _QuickStartPageState extends State<QuickStartPage> {
                                                                         ),
                                                                       ),
                                                                       SizedBox(width: spacing),
+                                                                      // Weight - flexible
+                                                                      Expanded(
+                                                                        flex: 2,
+                                                                        child: Center(
+                                                                          child: ConstrainedBox(
+                                                                            constraints: BoxConstraints(
+                                                                              maxWidth: isSmallScreen ? 45 : 60,
+                                                                              minWidth: 40,
+                                                                            ),
+                                                                            child: Text(
+                                                                              'Kg',
+                                                                              style: TextStyle(
+                                                                                fontWeight: FontWeight.bold,
+                                                                                fontSize: isSmallScreen ? 14 : 16,
+                                                                              ),
+                                                                              textAlign: TextAlign.center,
+                                                                              overflow: TextOverflow.ellipsis,
+                                                                            ),
+                                                                          ),
+                                                                        ),
+                                                                      ),
+                                                                      SizedBox(width: spacing),
                                                                       // Reps - flexible
                                                                       Expanded(
                                                                         flex: 2,
                                                                         child: Center(
-                                                                          child: Text(
-                                                                            'Reps',
-                                                                            style: TextStyle(
-                                                                              fontWeight: FontWeight.bold,
-                                                                              fontSize: isSmallScreen ? 14 : 16,
+                                                                          child: ConstrainedBox(
+                                                                            constraints: BoxConstraints(
+                                                                              maxWidth: isSmallScreen ? 45 : 60,
+                                                                              minWidth: 40,
                                                                             ),
-                                                                            textAlign: TextAlign.center,
-                                                                            overflow: TextOverflow.ellipsis,
+                                                                            child: Text(
+                                                                              'Reps',
+                                                                              style: TextStyle(
+                                                                                fontWeight: FontWeight.bold,
+                                                                                fontSize: isSmallScreen ? 14 : 16,
+                                                                              ),
+                                                                              textAlign: TextAlign.center,
+                                                                              overflow: TextOverflow.ellipsis,
+                                                                            ),
                                                                           ),
                                                                         ),
                                                                       ),
@@ -951,8 +991,13 @@ class _QuickStartPageState extends State<QuickStartPage> {
                                                                   );
                                                                 },
                                                               ),
+                                                            Divider(
+                                                              height: 1,
+                                                              thickness: 1,
+                                                              color: Colors.grey.shade300,
                                                             ),
-                                                            const SizedBox(height: 8),
+                                                          ],
+                                                        ),
                                                             ...e.sets.asMap().entries.map((entry) {
                                                               int setIndex = entry.key;
                                                               ExerciseSet exerciseSet = entry.value;
@@ -978,8 +1023,8 @@ class _QuickStartPageState extends State<QuickStartPage> {
                                                                 child: Container(
                                                                   width: double.infinity,
                                                                   color: exerciseSet.isChecked ? Colors.green.shade100 : Colors.transparent,
-                                                                  padding: const EdgeInsets.all(4),
-                                                                  margin: const EdgeInsets.symmetric(vertical: 2),
+                                                                  padding: const EdgeInsets.all(1),
+                                                                  margin: const EdgeInsets.symmetric(vertical: 0),
                                                                   child: LayoutBuilder(
                                                                     builder: (context, constraints) {
                                                                       final availableWidth = constraints.maxWidth;
@@ -1003,14 +1048,32 @@ class _QuickStartPageState extends State<QuickStartPage> {
                                                                             ),
                                                                           ),
                                                                           SizedBox(width: spacing),
+                                                                          // Previous data - flexible
+                                                                          Expanded(
+                                                                            flex: 2,
+                                                                            child: Center(
+                                                                                                                                            child: Text(
+                                                                exerciseSet.previousDataFormatted,
+                                                                style: TextStyle(
+                                                                  fontSize: isSmallScreen ? 14 : 16,
+                                                                  fontWeight: FontWeight.bold,
+                                                                  color: Colors.grey.shade500,
+                                                                ),
+                                                                textAlign: TextAlign.center,
+                                                                overflow: TextOverflow.ellipsis,
+                                                              ),
+                                                                            ),
+                                                                          ),
+                                                                          SizedBox(width: spacing),
                                                                           // Weight input - flexible
                                                                           Expanded(
                                                                             flex: 2,
                                                                             child: Center(
                                                                               child: ConstrainedBox(
                                                                                 constraints: BoxConstraints(
-                                                                                  maxWidth: isSmallScreen ? 60 : 80,
-                                                                                  minWidth: 50,
+                                                                                  maxWidth: isSmallScreen ? 45 : 60,
+                                                                                  minWidth: 40,
+                                                                                  maxHeight: 28,
                                                                                 ),
                                                                                 child: TextFormField(
                                                                                   controller: exerciseSet.weightController,
@@ -1020,23 +1083,50 @@ class _QuickStartPageState extends State<QuickStartPage> {
                                                                                   style: TextStyle(
                                                                                     fontWeight: FontWeight.bold,
                                                                                     fontSize: isSmallScreen ? 14 : 16,
+                                                                                    color: exerciseSet.isChecked 
+                                                                                        ? Colors.black 
+                                                                                        : (exerciseSet.isWeightPrefilled 
+                                                                                            ? Colors.grey.shade500 
+                                                                                            : Colors.black),
                                                                                   ),
                                                                                   textAlign: TextAlign.center,
                                                                                   decoration: InputDecoration(
                                                                                     border: OutlineInputBorder(
                                                                                       borderRadius: BorderRadius.circular(8),
-                                                                                      borderSide: BorderSide.none,
+                                                                                      borderSide: BorderSide(
+                                                                                        color: exerciseSet.isChecked ? Colors.green : Colors.grey.shade400,
+                                                                                        width: 1,
+                                                                                      ),
                                                                                     ),
-                                                                                    filled: true,
-                                                                                    fillColor: exerciseSet.isChecked ? Colors.green.shade200 : Colors.grey.shade300,
+                                                                                    enabledBorder: OutlineInputBorder(
+                                                                                      borderRadius: BorderRadius.circular(8),
+                                                                                      borderSide: BorderSide(
+                                                                                        color: exerciseSet.isChecked ? Colors.green : Colors.grey.shade400,
+                                                                                        width: 1,
+                                                                                      ),
+                                                                                    ),
+                                                                                    focusedBorder: OutlineInputBorder(
+                                                                                      borderRadius: BorderRadius.circular(8),
+                                                                                      borderSide: BorderSide(
+                                                                                        color: Colors.blue,
+                                                                                        width: 2,
+                                                                                      ),
+                                                                                    ),
+                                                                                    filled: false,
+                                                                                    isDense: true,
                                                                                     contentPadding: EdgeInsets.symmetric(
-                                                                                      horizontal: isSmallScreen ? 4 : 6,
-                                                                                      vertical: 4,
+                                                                                      horizontal: isSmallScreen ? 3 : 4,
+                                                                                      vertical: 0,
                                                                                     ),
                                                                                   ),
                                                                                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                                                                                   inputFormatters: [_DecimalTextInputFormatter(decimalRange: 2)],
                                                                                   onTap: () {
+                                                                                    // Mark as manually edited when user taps
+                                                                                    setState(() {
+                                                                                      exerciseSet.isWeightPrefilled = false;
+                                                                                    });
+                                                                                    
                                                                                     // Toggle selection state based on our tracking
                                                                                     if (exerciseSet._weightSelected) {
                                                                                       // Clear selection
@@ -1072,8 +1162,9 @@ class _QuickStartPageState extends State<QuickStartPage> {
                                                                             child: Center(
                                                                               child: ConstrainedBox(
                                                                                 constraints: BoxConstraints(
-                                                                                  maxWidth: isSmallScreen ? 60 : 80,
-                                                                                  minWidth: 50,
+                                                                                  maxWidth: isSmallScreen ? 45 : 60,
+                                                                                  minWidth: 40,
+                                                                                  maxHeight: 28,
                                                                                 ),
                                                                                 child: TextFormField(
                                                                                   controller: exerciseSet.repsController,
@@ -1084,23 +1175,50 @@ class _QuickStartPageState extends State<QuickStartPage> {
                                                                                   style: TextStyle(
                                                                                     fontWeight: FontWeight.bold,
                                                                                     fontSize: isSmallScreen ? 14 : 16,
+                                                                                    color: exerciseSet.isChecked 
+                                                                                        ? Colors.black 
+                                                                                        : (exerciseSet.isRepsPrefilled 
+                                                                                            ? Colors.grey.shade500 
+                                                                                            : Colors.black),
                                                                                   ),
                                                                                   textAlign: TextAlign.center,
                                                                                   decoration: InputDecoration(
                                                                                     border: OutlineInputBorder(
                                                                                       borderRadius: BorderRadius.circular(8),
-                                                                                      borderSide: BorderSide.none,
+                                                                                      borderSide: BorderSide(
+                                                                                        color: exerciseSet.isChecked ? Colors.green : Colors.grey.shade400,
+                                                                                        width: 1,
+                                                                                      ),
                                                                                     ),
-                                                                                    filled: true,
-                                                                                    fillColor: exerciseSet.isChecked ? Colors.green.shade200 : Colors.grey.shade300,
+                                                                                    enabledBorder: OutlineInputBorder(
+                                                                                      borderRadius: BorderRadius.circular(8),
+                                                                                      borderSide: BorderSide(
+                                                                                        color: exerciseSet.isChecked ? Colors.green : Colors.grey.shade400,
+                                                                                        width: 1,
+                                                                                      ),
+                                                                                    ),
+                                                                                    focusedBorder: OutlineInputBorder(
+                                                                                      borderRadius: BorderRadius.circular(8),
+                                                                                      borderSide: BorderSide(
+                                                                                        color: Colors.blue,
+                                                                                        width: 2,
+                                                                                      ),
+                                                                                    ),
+                                                                                    filled: false,
+                                                                                    isDense: true,
                                                                                     contentPadding: EdgeInsets.symmetric(
-                                                                                      horizontal: isSmallScreen ? 4 : 6,
-                                                                                      vertical: 4,
+                                                                                      horizontal: isSmallScreen ? 3 : 4,
+                                                                                      vertical: 0,
                                                                                     ),
                                                                                   ),
                                                                                   keyboardType: TextInputType.number,
                                                                                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                                                                                   onTap: () {
+                                                                                    // Mark as manually edited when user taps
+                                                                                    setState(() {
+                                                                                      exerciseSet.isRepsPrefilled = false;
+                                                                                    });
+                                                                                    
                                                                                     // Toggle selection state based on our tracking
                                                                                     if (exerciseSet._repsSelected) {
                                                                                       // Clear selection
@@ -1168,9 +1286,51 @@ class _QuickStartPageState extends State<QuickStartPage> {
                                                   SizedBox(
                                                     width: double.infinity,
                                                     child: ElevatedButton(
-                                                      onPressed: () {
+                                                      onPressed: () async {
+                                                        // Try to get data from the last set in the current exercise
+                                                        ExerciseSet newSet;
+                                                        if (e.sets.isNotEmpty) {
+                                                          // Use data from the last set in current exercise
+                                                          final lastSet = e.sets.last;
+                                                          newSet = ExerciseSet(
+                                                            weight: lastSet.weight,
+                                                            reps: lastSet.reps,
+                                                            isWeightPrefilled: true,
+                                                            isRepsPrefilled: true,
+                                                            previousWeight: lastSet.previousWeight,
+                                                            previousReps: lastSet.previousReps,
+                                                          );
+                                                                                                                 } else {
+                                                           // Fallback to previous workout data
+                                                           try {
+                                                             final previousData = await WorkoutService.getLastExerciseData(e.title);
+                                                             if (previousData != null && previousData['sets'] != null) {
+                                                               final previousSetsData = previousData['sets'] as List<dynamic>;
+                                                               if (previousSetsData.isNotEmpty) {
+                                                                 // Use the last set from previous workout
+                                                                 final lastSetData = previousSetsData.last;
+                                                                 final weight = (lastSetData['weight'] as num?)?.toDouble() ?? 0.0;
+                                                                 final reps = (lastSetData['reps'] as int?) ?? 0;
+                                                                                                                                   newSet = ExerciseSet(
+                                                                     weight: weight, 
+                                                                     reps: reps, 
+                                                                     isWeightPrefilled: true, 
+                                                                     isRepsPrefilled: true,
+                                                                     previousWeight: weight,
+                                                                     previousReps: reps,
+                                                                   );
+                                                               } else {
+                                                                 newSet = ExerciseSet();
+                                                               }
+                                                             } else {
+                                                               newSet = ExerciseSet();
+                                                             }
+                                                           } catch (e) {
+                                                             newSet = ExerciseSet();
+                                                           }
+                                                         }
+                                                        
                                                         setState(() {
-                                                          final newSet = ExerciseSet();
                                                           newSet.addFocusListeners(_updateFocusState);
                                                           e.sets.add(newSet);
                                                           QuickStartOverlay.selectedExercises = _selectedExercises;
@@ -1301,17 +1461,57 @@ class _QuickStartPageState extends State<QuickStartPage> {
                                         if (result != null && mounted) {
                                           setState(() {
                                             _preventAutoFocus = true; // Temporarily disable interaction
-                                            // Append new picks as QuickStartExercise entries
-                                            final newExercises = result.map((title) => QuickStartExercise(title: title)).toList();
-                                            // Add focus listeners to new exercises
-                                            for (var exercise in newExercises) {
-                                              for (var set in exercise.sets) {
-                                                set.addFocusListeners(_updateFocusState);
-                                              }
-                                            }
-                                            _selectedExercises.addAll(newExercises);
-                                            QuickStartOverlay.selectedExercises = _selectedExercises;
                                           });
+                                          
+                                          // Create new exercises with prefilled data
+                                          final List<QuickStartExercise> newExercises = [];
+                                          
+                                          for (final title in result) {
+                                            try {
+                                              // Try to get previous exercise data
+                                              final previousData = await WorkoutService.getLastExerciseData(title);
+                                              
+                                              List<ExerciseSet> sets;
+                                              if (previousData != null && previousData['sets'] != null) {
+                                                // Create sets based on previous workout data
+                                                final previousSetsData = previousData['sets'] as List<dynamic>;
+                                                
+                                                sets = previousSetsData.map((setData) {
+                                                  final weight = (setData['weight'] as num?)?.toDouble() ?? 0.0;
+                                                  final reps = (setData['reps'] as int?) ?? 0;
+                                                  return ExerciseSet(
+                                                    weight: weight, 
+                                                    reps: reps, 
+                                                    isWeightPrefilled: true, 
+                                                    isRepsPrefilled: true,
+                                                    previousWeight: weight,
+                                                    previousReps: reps,
+                                                  );
+                                                }).toList();
+                                              } else {
+                                                // No previous data, use default
+                                                sets = [ExerciseSet()];
+                                              }
+                                              
+                                              newExercises.add(QuickStartExercise(title: title, sets: sets));
+                                            } catch (e) {
+                                              // If there's an error fetching data, use default
+                                              newExercises.add(QuickStartExercise(title: title));
+                                            }
+                                          }
+                                          
+                                          if (mounted) {
+                                            setState(() {
+                                              // Add focus listeners to new exercises
+                                              for (var exercise in newExercises) {
+                                                for (var set in exercise.sets) {
+                                                  set.addFocusListeners(_updateFocusState);
+                                                }
+                                              }
+                                              _selectedExercises.addAll(newExercises);
+                                              QuickStartOverlay.selectedExercises = _selectedExercises;
+                                            });
+                                          }
                                           
                                           // Re-enable interaction after build is complete
                                           Future.microtask(() {

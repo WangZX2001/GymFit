@@ -338,6 +338,7 @@ class _CustomWorkoutPageState extends State<CustomWorkoutPage> {
     QuickStartOverlay.customWorkoutName = workout.name;
     
     // Navigate back to the main app and open QuickStart properly
+    if (!mounted) return;
     Navigator.of(context).popUntil((route) => route.isFirst);
     
     // Use the overlay system to open QuickStart properly

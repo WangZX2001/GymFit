@@ -452,4 +452,59 @@ class WorkoutService {
       return null;
     }
   }
+
+  /// Get the most recent exercise data for prefilling
+  static Future<Map<String, dynamic>?> getLastExerciseData(String exerciseName) async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw Exception('User not authenticated');
+    }
+
+    try {
+      // Get the most recent workouts that contain this exercise
+      // Note: We remove orderBy to avoid requiring a composite index
+      final querySnapshot = await _firestore
+          .collection('workouts')
+          .where('userId', isEqualTo: user.uid)
+          .limit(50) // Get more docs since we can't sort by date in query
+          .get();
+
+      // Convert to workouts and sort by date manually
+      final workouts = querySnapshot.docs
+          .map((doc) => Workout.fromSnapshot(doc))
+          .toList();
+      
+      // Sort by date descending (most recent first)
+      workouts.sort((a, b) => b.date.compareTo(a.date));
+
+      // Look through workouts to find the most recent one with this exercise
+      for (final workout in workouts) {
+        
+        // Find the exercise in this workout
+        final exercise = workout.exercises.firstWhere(
+          (e) => e.title.toLowerCase() == exerciseName.toLowerCase(),
+          orElse: () => WorkoutExercise(title: '', totalSets: 0, completedSets: 0, sets: []),
+        );
+
+        if (exercise.title.isNotEmpty && exercise.sets.isNotEmpty) {
+          // Return all sets data for intelligent prefilling
+          final setsData = exercise.sets.map((set) => {
+            'weight': set.weight,
+            'reps': set.reps,
+            'isCompleted': set.isCompleted,
+          }).toList();
+
+          return {
+            'sets': setsData,
+            'totalSets': exercise.sets.length,
+          };
+        }
+      }
+
+      return null; // No previous data found
+    } catch (e) {
+      debugPrint('Error fetching last exercise data: $e');
+      return null;
+    }
+  }
 }

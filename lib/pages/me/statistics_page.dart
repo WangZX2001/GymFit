@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:gymfit/pages/main_exercises_page.dart';
-import 'package:gymfit/pages/muscle_distribution_page.dart';
+import 'package:gymfit/pages/me/main_exercises_page.dart';
+import 'package:gymfit/pages/me/muscle_distribution_page.dart';
 
 class StatisticsPage extends StatefulWidget {
   const StatisticsPage({super.key});

@@ -3,7 +3,7 @@ import 'package:persistent_bottom_nav_bar_v2/persistent_bottom_nav_bar_v2.dart';
 import 'package:gymfit/pages/home_page.dart';
 import 'package:gymfit/pages/history/history_page.dart';
 import 'package:gymfit/pages/workout/workout_page.dart';
-import 'package:gymfit/pages/me_page.dart';
+import 'package:gymfit/pages/me/me_page.dart';
 import 'package:persistent_bottom_nav_bar_v2/components/animated_icon_wrapper.dart';
 import 'package:gymfit/components/quick_start_overlay.dart';
 

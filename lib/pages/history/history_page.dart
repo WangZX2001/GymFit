@@ -16,7 +16,7 @@ class HistoryPage extends StatefulWidget {
 
 class _HistoryPageState extends State<HistoryPage> with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  Map<String, Map<String, dynamic>> _userCache = {};
+  final Map<String, Map<String, dynamic>> _userCache = {};
 
   @override
   void initState() {
@@ -220,7 +220,7 @@ class _HistoryPageState extends State<HistoryPage> with SingleTickerProviderStat
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const FaIcon(
-                    FontAwesomeIcons.userFriends,
+                    FontAwesomeIcons.userGroup,
                     size: 64,
                     color: Colors.grey,
                   ),
