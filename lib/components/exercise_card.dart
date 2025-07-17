@@ -109,7 +109,7 @@ class ExerciseCard extends StatelessWidget {
                               ),
                               color: Colors.grey[100],
                               elevation: 8,
-                              shadowColor: Colors.black.withOpacity(0.2),
+                              shadowColor: Colors.black.withValues(alpha: 0.2),
                               itemBuilder: (context) => [
                                 PopupMenuItem<String>(
                                   value: 'reorder',

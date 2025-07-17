@@ -37,7 +37,7 @@ class _QuickStartPageState extends State<QuickStartPage> {
   @override
   void initState() {
     super.initState();
-    
+
     // Initialize state manager
     _stateManager = QuickStartStateManager();
     _stateManager.initialize(
@@ -71,7 +71,7 @@ class _QuickStartPageState extends State<QuickStartPage> {
         _stateManager.setEditingWorkoutName(false);
         _clearFocusAggressively();
         _stateManager.setPreventAutoFocus(true);
-        
+
         // Re-enable interaction after a short delay
         Future.delayed(const Duration(milliseconds: 300), () {
           if (mounted) {
@@ -110,7 +110,7 @@ class _QuickStartPageState extends State<QuickStartPage> {
     _stateManager.setEditingWorkoutName(false);
     _stateManager.setPreventAutoFocus(true);
     _clearFocusAggressively();
-    
+
     // Re-enable interaction after a delay
     Future.delayed(const Duration(milliseconds: 300), () {
       if (mounted) {
@@ -131,17 +131,29 @@ class _QuickStartPageState extends State<QuickStartPage> {
     _stateManager.removeSetFromExercise(exercise, set);
   }
 
-  void _handleWeightChanged(QuickStartExercise exercise, ExerciseSet set, double weight) {
+  void _handleWeightChanged(
+    QuickStartExercise exercise,
+    ExerciseSet set,
+    double weight,
+  ) {
     set.updateWeight(weight);
     QuickStartOverlay.selectedExercises = _stateManager.selectedExercises;
   }
 
-  void _handleRepsChanged(QuickStartExercise exercise, ExerciseSet set, int reps) {
+  void _handleRepsChanged(
+    QuickStartExercise exercise,
+    ExerciseSet set,
+    int reps,
+  ) {
     set.updateReps(reps);
     QuickStartOverlay.selectedExercises = _stateManager.selectedExercises;
   }
 
-  void _handleSetCheckedChanged(QuickStartExercise exercise, ExerciseSet set, bool checked) {
+  void _handleSetCheckedChanged(
+    QuickStartExercise exercise,
+    ExerciseSet set,
+    bool checked,
+  ) {
     _stateManager.updateSetChecked(exercise, set, checked);
     QuickStartOverlay.selectedExercises = _stateManager.selectedExercises;
   }
@@ -166,7 +178,7 @@ class _QuickStartPageState extends State<QuickStartPage> {
       _stateManager.addExercise(exercise);
     }
     QuickStartOverlay.selectedExercises = _stateManager.selectedExercises;
-    
+
     // Clear focus again after state changes
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
@@ -197,16 +209,14 @@ class _QuickStartPageState extends State<QuickStartPage> {
 
   Future<void> _handleCancel() async {
     if (!mounted) return;
-    
+
     final navigator = Navigator.of(context);
     final bool? confirmed = await showDialog<bool>(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('Cancel Workout'),
-          content: const Text(
-            'Are you sure you want to cancel this workout?',
-          ),
+          content: const Text('Are you sure you want to cancel this workout?'),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
@@ -240,8 +250,6 @@ class _QuickStartPageState extends State<QuickStartPage> {
   void _handleDoneReorder() {
     _stateManager.setReorderMode(false);
   }
-
-
 
   @override
   void dispose() {
@@ -283,43 +291,52 @@ class _QuickStartPageState extends State<QuickStartPage> {
                       begin: const Offset(0.0, 0.5),
                       end: Offset.zero,
                     ).animate(
-                      CurvedAnimation(parent: animation, curve: Curves.easeOutQuart),
+                      CurvedAnimation(
+                        parent: animation,
+                        curve: Curves.easeOutQuart,
+                      ),
                     ),
                     child: FadeTransition(opacity: animation, child: child),
                   );
                 },
-                child: stateManager.showWorkoutNameInAppBar
-                    ? WorkoutNameEditor(
-                        key: const ValueKey('workout-name'),
-                        currentWorkoutName: WorkoutNameGenerator.generateWorkoutName(
-                          customWorkoutName: stateManager.customWorkoutName,
-                          selectedExercises: stateManager.selectedExercises,
-                        ),
-                        isEditing: stateManager.isEditingWorkoutName,
-                        showInAppBar: true,
-                        onToggleEditing: _handleWorkoutNameToggle,
-                        onNameChanged: _handleWorkoutNameChanged,
-                        onSubmitted: _handleWorkoutNameSubmitted,
-                      )
-                    : Row(
-                        key: const ValueKey('timer'),
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const FaIcon(
-                            FontAwesomeIcons.stopwatch,
-                            color: Colors.black,
-                            size: 20,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            DurationFormatter.formatDuration(QuickStartOverlay.elapsedTime),
-                            style: const TextStyle(
+                child:
+                    stateManager.showWorkoutNameInAppBar
+                        ? WorkoutNameEditor(
+                          key: const ValueKey('workout-name'),
+                          currentWorkoutName:
+                              WorkoutNameGenerator.generateWorkoutName(
+                                customWorkoutName:
+                                    stateManager.customWorkoutName,
+                                selectedExercises:
+                                    stateManager.selectedExercises,
+                              ),
+                          isEditing: stateManager.isEditingWorkoutName,
+                          showInAppBar: true,
+                          onToggleEditing: _handleWorkoutNameToggle,
+                          onNameChanged: _handleWorkoutNameChanged,
+                          onSubmitted: _handleWorkoutNameSubmitted,
+                        )
+                        : Row(
+                          key: const ValueKey('timer'),
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const FaIcon(
+                              FontAwesomeIcons.stopwatch,
                               color: Colors.black,
-                              fontWeight: FontWeight.bold,
+                              size: 20,
                             ),
-                          ),
-                        ],
-                      ),
+                            const SizedBox(width: 8),
+                            Text(
+                              DurationFormatter.formatDuration(
+                                QuickStartOverlay.elapsedTime,
+                              ),
+                              style: const TextStyle(
+                                color: Colors.black,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
               ),
               actions: [
                 // Show timer when workout name is in app bar
@@ -336,7 +353,9 @@ class _QuickStartPageState extends State<QuickStartPage> {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          DurationFormatter.formatDuration(QuickStartOverlay.elapsedTime),
+                          DurationFormatter.formatDuration(
+                            QuickStartOverlay.elapsedTime,
+                          ),
                           style: const TextStyle(
                             color: Colors.black54,
                             fontWeight: FontWeight.w600,
@@ -411,77 +430,100 @@ class _QuickStartPageState extends State<QuickStartPage> {
                           AnimatedSize(
                             duration: const Duration(milliseconds: 500),
                             curve: Curves.easeOutQuart,
-                            child: stateManager.showWorkoutNameInAppBar
-                                ? const SizedBox.shrink()
-                                : WorkoutNameEditor(
-                                    currentWorkoutName: WorkoutNameGenerator.generateWorkoutName(
-                                      customWorkoutName: stateManager.customWorkoutName,
-                                      selectedExercises: stateManager.selectedExercises,
+                            child:
+                                stateManager.showWorkoutNameInAppBar
+                                    ? const SizedBox.shrink()
+                                    : WorkoutNameEditor(
+                                      currentWorkoutName:
+                                          WorkoutNameGenerator.generateWorkoutName(
+                                            customWorkoutName:
+                                                stateManager.customWorkoutName,
+                                            selectedExercises:
+                                                stateManager.selectedExercises,
+                                          ),
+                                      isEditing:
+                                          stateManager.isEditingWorkoutName,
+                                      showInAppBar: false,
+                                      onToggleEditing: _handleWorkoutNameToggle,
+                                      onNameChanged: _handleWorkoutNameChanged,
+                                      onSubmitted: _handleWorkoutNameSubmitted,
                                     ),
-                                    isEditing: stateManager.isEditingWorkoutName,
-                                    showInAppBar: false,
-                                    onToggleEditing: _handleWorkoutNameToggle,
-                                    onNameChanged: _handleWorkoutNameChanged,
-                                    onSubmitted: _handleWorkoutNameSubmitted,
-                                  ),
                           ),
                           Expanded(
-                            child: stateManager.selectedExercises.isEmpty
-                                ? SingleChildScrollView(
-                                    padding: const EdgeInsets.all(16.0),
-                                    child: Column(
-                                      children: [
-                                        const SizedBox(height: 120),
-                                        const FaIcon(
-                                          FontAwesomeIcons.dumbbell,
-                                          size: 48,
-                                          color: Colors.black,
-                                        ),
-                                        const SizedBox(height: 16),
-                                        const Text(
-                                          'Let\'s get moving!',
-                                          style: TextStyle(
+                            child:
+                                stateManager.selectedExercises.isEmpty
+                                    ? SingleChildScrollView(
+                                      padding: const EdgeInsets.all(16.0),
+                                      child: Column(
+                                        children: [
+                                          const SizedBox(height: 120),
+                                          const FaIcon(
+                                            FontAwesomeIcons.dumbbell,
+                                            size: 48,
                                             color: Colors.black,
-                                            fontSize: 20,
-                                            fontWeight: FontWeight.bold,
                                           ),
-                                        ),
-                                        const SizedBox(height: 8),
-                                        Text(
-                                          'Add an exercise to get started',
-                                          style: TextStyle(
-                                            color: Colors.grey[600],
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.bold,
+                                          const SizedBox(height: 16),
+                                          const Text(
+                                            'Let\'s get moving!',
+                                            style: TextStyle(
+                                              color: Colors.black,
+                                              fontSize: 20,
+                                              fontWeight: FontWeight.bold,
+                                            ),
                                           ),
-                                        ),
-                                        const SizedBox(height: 24),
-                                        // Custom workout suggestions
-                                        if (stateManager.loadingCustomWorkouts) ...[
-                                          const SizedBox(height: 80),
-                                          const CircularProgressIndicator(),
-                                        ] else ...[
-                                          CustomWorkoutList(
-                                            customWorkouts: stateManager.customWorkouts,
-                                            loadingCustomWorkouts: stateManager.loadingCustomWorkouts,
-                                            onWorkoutSelected: _handleCustomWorkoutSelected,
+                                          const SizedBox(height: 8),
+                                          Text(
+                                            'Add an exercise to get started',
+                                            style: TextStyle(
+                                              color: Colors.grey[600],
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.bold,
+                                            ),
                                           ),
+                                          const SizedBox(height: 24),
+                                          // Custom workout suggestions
+                                          if (stateManager
+                                              .loadingCustomWorkouts) ...[
+                                            const SizedBox(height: 80),
+                                            const CircularProgressIndicator(),
+                                          ] else ...[
+                                            CustomWorkoutList(
+                                              customWorkouts:
+                                                  stateManager.customWorkouts,
+                                              loadingCustomWorkouts:
+                                                  stateManager
+                                                      .loadingCustomWorkouts,
+                                              onWorkoutSelected:
+                                                  _handleCustomWorkoutSelected,
+                                            ),
+                                          ],
                                         ],
-                                      ],
-                                    ),
-                                  )
-                                : SingleChildScrollView(
-                                    controller: _scrollController,
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.center,
-                                      children: [
-                                                                                stateManager.isInReorderMode
-                                            ? ReorderableListView(
+                                      ),
+                                    )
+                                    : SingleChildScrollView(
+                                      controller: _scrollController,
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.center,
+                                        children: [
+                                          stateManager.isInReorderMode
+                                              ? ReorderableListView(
                                                 shrinkWrap: true,
-                                                physics: const NeverScrollableScrollPhysics(),
-                                                onReorder: (int oldIndex, int newIndex) {
-                                                  _stateManager.reorderExercises(oldIndex, newIndex);
-                                                  QuickStartOverlay.selectedExercises = _stateManager.selectedExercises;
+                                                physics:
+                                                    const NeverScrollableScrollPhysics(),
+                                                onReorder: (
+                                                  int oldIndex,
+                                                  int newIndex,
+                                                ) {
+                                                  _stateManager
+                                                      .reorderExercises(
+                                                        oldIndex,
+                                                        newIndex,
+                                                      );
+                                                  QuickStartOverlay
+                                                          .selectedExercises =
+                                                      _stateManager
+                                                          .selectedExercises;
                                                 },
                                                 onReorderStart: (int index) {
                                                   _handleReorderStart(index);
@@ -489,87 +531,201 @@ class _QuickStartPageState extends State<QuickStartPage> {
                                                 onReorderEnd: (int index) {
                                                   _handleReorderEnd(index);
                                                 },
-                                                children: stateManager.selectedExercises.asMap().entries.map((entry) {
-                                                  final index = entry.key;
-                                                  final exercise = entry.value;
-                                                  return ExerciseCard(
-                                                    key: Key('exercise_${exercise.title}_$index'),
-                                                    exercise: exercise,
-                                                    exerciseIndex: index,
-                                                    preventAutoFocus: stateManager.preventAutoFocus,
-                                                    isCollapsed: stateManager.isInReorderMode,
-                                                    onRemoveExercise: _handleRemoveExercise,
-                                                    onRemoveSet: _handleRemoveSet,
-                                                    onWeightChanged: _handleWeightChanged,
-                                                    onRepsChanged: _handleRepsChanged,
-                                                    onSetCheckedChanged: _handleSetCheckedChanged,
-                                                    onAllSetsCheckedChanged: _handleAllSetsCheckedChanged,
-                                                    onAddSet: () => _handleAddSet(exercise),
-                                                    onRequestReorderMode: () => _stateManager.setReorderMode(true),
-                                                  );
-                                                }).toList(),
+                                                children:
+                                                    stateManager.selectedExercises.asMap().entries.map((
+                                                      entry,
+                                                    ) {
+                                                      final index = entry.key;
+                                                      final exercise =
+                                                          entry.value;
+                                                      return ExerciseCard(
+                                                        key: Key(
+                                                          'exercise_${exercise.title}_$index',
+                                                        ),
+                                                        exercise: exercise,
+                                                        exerciseIndex: index,
+                                                        preventAutoFocus:
+                                                            stateManager
+                                                                .preventAutoFocus,
+                                                        isCollapsed:
+                                                            stateManager
+                                                                .isInReorderMode,
+                                                        onRemoveExercise:
+                                                            _handleRemoveExercise,
+                                                        onRemoveSet:
+                                                            _handleRemoveSet,
+                                                        onWeightChanged:
+                                                            _handleWeightChanged,
+                                                        onRepsChanged:
+                                                            _handleRepsChanged,
+                                                        onSetCheckedChanged:
+                                                            _handleSetCheckedChanged,
+                                                        onAllSetsCheckedChanged:
+                                                            _handleAllSetsCheckedChanged,
+                                                        onAddSet:
+                                                            () => _handleAddSet(
+                                                              exercise,
+                                                            ),
+                                                        onRequestReorderMode:
+                                                            () => _stateManager
+                                                                .setReorderMode(
+                                                                  true,
+                                                                ),
+                                                      );
+                                                    }).toList(),
                                               )
-                                            : Column(
-                                                children: stateManager.selectedExercises.asMap().entries.map((entry) {
-                                                  final index = entry.key;
-                                                  final exercise = entry.value;
-                                                  return ExerciseCard(
-                                                    key: Key('exercise_${exercise.title}_$index'),
-                                                    exercise: exercise,
-                                                    exerciseIndex: index,
-                                                    preventAutoFocus: stateManager.preventAutoFocus,
-                                                    isCollapsed: stateManager.isInReorderMode,
-                                                    onRemoveExercise: _handleRemoveExercise,
-                                                    onRemoveSet: _handleRemoveSet,
-                                                    onWeightChanged: _handleWeightChanged,
-                                                    onRepsChanged: _handleRepsChanged,
-                                                    onSetCheckedChanged: _handleSetCheckedChanged,
-                                                    onAllSetsCheckedChanged: _handleAllSetsCheckedChanged,
-                                                    onAddSet: () => _handleAddSet(exercise),
-                                                    onRequestReorderMode: () => _stateManager.setReorderMode(true),
-                                                  );
-                                                }).toList(),
+                                              : Column(
+                                                children:
+                                                    stateManager.selectedExercises.asMap().entries.map((
+                                                      entry,
+                                                    ) {
+                                                      final index = entry.key;
+                                                      final exercise =
+                                                          entry.value;
+                                                      return ExerciseCard(
+                                                        key: Key(
+                                                          'exercise_${exercise.title}_$index',
+                                                        ),
+                                                        exercise: exercise,
+                                                        exerciseIndex: index,
+                                                        preventAutoFocus:
+                                                            stateManager
+                                                                .preventAutoFocus,
+                                                        isCollapsed:
+                                                            stateManager
+                                                                .isInReorderMode,
+                                                        onRemoveExercise:
+                                                            _handleRemoveExercise,
+                                                        onRemoveSet:
+                                                            _handleRemoveSet,
+                                                        onWeightChanged:
+                                                            _handleWeightChanged,
+                                                        onRepsChanged:
+                                                            _handleRepsChanged,
+                                                        onSetCheckedChanged:
+                                                            _handleSetCheckedChanged,
+                                                        onAllSetsCheckedChanged:
+                                                            _handleAllSetsCheckedChanged,
+                                                        onAddSet:
+                                                            () => _handleAddSet(
+                                                              exercise,
+                                                            ),
+                                                        onRequestReorderMode:
+                                                            () => _stateManager
+                                                                .setReorderMode(
+                                                                  true,
+                                                                ),
+                                                      );
+                                                    }).toList(),
                                               ),
-                                        const SizedBox(height: 16),
-                                        stateManager.isInReorderMode
-                                            ? SizedBox(
+                                          const SizedBox(height: 16),
+                                          if (!stateManager.isInReorderMode)
+                                            FinishWorkoutButton(
+                                              completedExercises:
+                                                  stateManager
+                                                      .selectedExercises,
+                                              workoutDuration:
+                                                  QuickStartOverlay.elapsedTime,
+                                              customWorkoutName:
+                                                  stateManager
+                                                      .customWorkoutName,
+                                            ),
+                                          const SizedBox(height: 100),
+                                        ],
+                                      ),
+                                    ),
+                          ),
+                          // Done button with identical animation to AddExerciseButton (hide when keyboard is up)
+                          AnimatedSize(
+                            duration: const Duration(milliseconds: 400),
+                            curve: Curves.easeInOutQuart,
+                            child: AnimatedOpacity(
+                              duration: const Duration(milliseconds: 300),
+                              curve: Curves.easeInOut,
+                              opacity:
+                                  (stateManager.isInReorderMode &&
+                                          !stateManager.isAnyFieldFocused &&
+                                          !stateManager.isEditingWorkoutName)
+                                      ? 1.0
+                                      : 0.0,
+                              child:
+                                  (stateManager.isInReorderMode &&
+                                          !stateManager.isAnyFieldFocused &&
+                                          !stateManager.isEditingWorkoutName)
+                                      ? Column(
+                                        children: [
+                                          const SizedBox(height: 16),
+                                          LayoutBuilder(
+                                            builder: (context, constraints) {
+                                              final screenWidth =
+                                                  MediaQuery.of(
+                                                    context,
+                                                  ).size.width;
+                                              final buttonFontSize =
+                                                  screenWidth < 350
+                                                      ? 16.0
+                                                      : 18.0;
+                                              final buttonPadding =
+                                                  screenWidth < 350
+                                                      ? const EdgeInsets.symmetric(
+                                                        vertical: 12,
+                                                      )
+                                                      : const EdgeInsets.symmetric(
+                                                        vertical: 16,
+                                                      );
+
+                                              return SizedBox(
                                                 width: double.infinity,
                                                 child: ElevatedButton(
                                                   onPressed: _handleDoneReorder,
                                                   style: ElevatedButton.styleFrom(
-                                                    backgroundColor: Colors.blue,
-                                                    foregroundColor: Colors.white,
-                                                    elevation: 2,
-                                                    padding: const EdgeInsets.symmetric(vertical: 16),
-                                                    shape: RoundedRectangleBorder(
-                                                      borderRadius: BorderRadius.circular(12),
-                                                    ),
+                                                    backgroundColor:
+                                                        Colors.blue,
+                                                    foregroundColor:
+                                                        Colors.white,
+                                                    shape:
+                                                        const StadiumBorder(),
+                                                    padding: buttonPadding,
                                                   ),
-                                                  child: const Text(
+                                                  child: Text(
                                                     'Done',
                                                     style: TextStyle(
-                                                      fontSize: 16,
-                                                      fontWeight: FontWeight.w600,
+                                                      color: Colors.white,
+                                                      fontSize: buttonFontSize,
+                                                      fontWeight:
+                                                          FontWeight.bold,
                                                     ),
                                                   ),
                                                 ),
-                                              )
-                                            : FinishWorkoutButton(
-                                                completedExercises: stateManager.selectedExercises,
-                                                workoutDuration: QuickStartOverlay.elapsedTime,
-                                                customWorkoutName: stateManager.customWorkoutName,
-                                              ),
-                                        const SizedBox(height: 100),
-                                      ],
-                                    ),
-                                  ),
+                                              );
+                                            },
+                                          ),
+                                        ],
+                                      )
+                                      : const SizedBox.shrink(),
+                            ),
                           ),
-                          // Add Exercises button with keyboard-aware visibility
-                          AddExerciseButton(
-                            isAnyFieldFocused: stateManager.isAnyFieldFocused,
-                            isEditingWorkoutName: stateManager.isEditingWorkoutName,
-                            onExercisesAdded: _handleExercisesAdded,
-                            onExercisesLoaded: _handleExercisesLoaded,
+                          // Add Exercises button with identical animation to AddExerciseButton (positioned last for bottom-up animation)
+                          AnimatedSize(
+                            duration: const Duration(milliseconds: 400),
+                            curve: Curves.easeInOutQuart,
+                            child: AnimatedOpacity(
+                              duration: const Duration(milliseconds: 300),
+                              curve: Curves.easeInOut,
+                              opacity: stateManager.isInReorderMode ? 0.0 : 1.0,
+                              child:
+                                  stateManager.isInReorderMode
+                                      ? const SizedBox.shrink()
+                                      : AddExerciseButton(
+                                        isAnyFieldFocused:
+                                            stateManager.isAnyFieldFocused,
+                                        isEditingWorkoutName:
+                                            stateManager.isEditingWorkoutName,
+                                        onExercisesAdded: _handleExercisesAdded,
+                                        onExercisesLoaded:
+                                            _handleExercisesLoaded,
+                                      ),
+                            ),
                           ),
                         ],
                       ),
@@ -583,4 +739,4 @@ class _QuickStartPageState extends State<QuickStartPage> {
       ),
     );
   }
-} 
+}

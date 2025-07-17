@@ -13,16 +13,19 @@ class ConfigSet {
   late final FocusNode repsFocusNode;
   bool weightSelected = false;
   bool repsSelected = false;
-  bool isWeightPrefilled = false; // Track if weight was prefilled from previous data
-  bool isRepsPrefilled = false; // Track if reps was prefilled from previous data
+  bool isWeightPrefilled =
+      false; // Track if weight was prefilled from previous data
+  bool isRepsPrefilled =
+      false; // Track if reps was prefilled from previous data
   double? previousWeight; // Previous workout weight for reference
   int? previousReps; // Previous workout reps for reference
-  
+
   static int _counter = 0;
-  
+
   // Helper to format weight display (strip trailing .0)
-  static String _fmt(double v) => v % 1 == 0 ? v.toInt().toString() : v.toString();
-  
+  static String _fmt(double v) =>
+      v % 1 == 0 ? v.toInt().toString() : v.toString();
+
   // Helper to format previous data as "20kg x 5"
   String get previousDataFormatted {
     if (previousWeight != null && previousReps != null) {
@@ -30,24 +33,31 @@ class ConfigSet {
     }
     return '-';
   }
-  
-  ConfigSet({this.weight = 0.0, this.reps = 0, this.isWeightPrefilled = false, this.isRepsPrefilled = false, this.previousWeight, this.previousReps}) : id = '${DateTime.now().millisecondsSinceEpoch}_${++_counter}' {
+
+  ConfigSet({
+    this.weight = 0.0,
+    this.reps = 0,
+    this.isWeightPrefilled = false,
+    this.isRepsPrefilled = false,
+    this.previousWeight,
+    this.previousReps,
+  }) : id = '${DateTime.now().millisecondsSinceEpoch}_${++_counter}' {
     weightController = TextEditingController(text: _fmt(weight));
     repsController = TextEditingController(text: reps.toString());
     weightFocusNode = FocusNode();
     repsFocusNode = FocusNode();
   }
-  
+
   void addFocusListeners(VoidCallback onFocusChange) {
     weightFocusNode.addListener(onFocusChange);
     repsFocusNode.addListener(onFocusChange);
   }
-  
+
   void removeFocusListeners(VoidCallback onFocusChange) {
     weightFocusNode.removeListener(onFocusChange);
     repsFocusNode.removeListener(onFocusChange);
   }
-  
+
   void updateWeight(double newWeight) {
     // Always mark as manually edited when user types, even if same value
     isWeightPrefilled = false;
@@ -59,7 +69,7 @@ class ConfigSet {
       }
     }
   }
-  
+
   void updateReps(int newReps) {
     // Always mark as manually edited when user types, even if same value
     isRepsPrefilled = false;
@@ -70,7 +80,7 @@ class ConfigSet {
       }
     }
   }
-  
+
   void dispose() {
     weightController.dispose();
     repsController.dispose();
@@ -82,8 +92,9 @@ class ConfigSet {
 class ConfigExercise {
   final String title;
   List<ConfigSet> sets;
-  
-  ConfigExercise({required this.title, List<ConfigSet>? sets}) : sets = sets ?? [ConfigSet()];
+
+  ConfigExercise({required this.title, List<ConfigSet>? sets})
+    : sets = sets ?? [ConfigSet()];
 }
 
 class CustomWorkoutConfigurationStateManager extends ChangeNotifier {
@@ -107,39 +118,33 @@ class CustomWorkoutConfigurationStateManager extends ChangeNotifier {
     CustomWorkout? existingWorkout,
   }) {
     _existingWorkout = existingWorkout;
-    
+
     // If editing an existing workout, pre-populate with its data
     if (existingWorkout != null) {
-      _exercises = existingWorkout.exercises.map((exercise) {
-        final configExercise = ConfigExercise(title: exercise.name);
-        // Replace the default empty set with the actual sets from the workout
-        configExercise.sets.clear();
-        for (var set in exercise.sets) {
-          final configSet = ConfigSet();
-          configSet.weight = set.weight;
-          configSet.reps = set.reps;
-          configSet.weightController.text = ConfigSet._fmt(set.weight);
-          configSet.repsController.text = set.reps.toString();
-          configExercise.sets.add(configSet);
-        }
-        return configExercise;
-      }).toList();
+      _exercises =
+          existingWorkout.exercises.map((exercise) {
+            final configExercise = ConfigExercise(title: exercise.name);
+            // Replace the default empty set with the actual sets from the workout
+            configExercise.sets.clear();
+            for (var set in exercise.sets) {
+              final configSet = ConfigSet();
+              configSet.weight = set.weight;
+              configSet.reps = set.reps;
+              configSet.weightController.text = ConfigSet._fmt(set.weight);
+              configSet.repsController.text = set.reps.toString();
+              configSet.addFocusListeners(_updateFocusState);
+              configExercise.sets.add(configSet);
+            }
+            return configExercise;
+          }).toList();
+      notifyListeners();
     } else {
       // Creating new workout - use exercise names and try to load previous data
       _loadExercisesWithPreviousData(exerciseNames);
     }
-    
-    _setupFocusListeners();
   }
 
   // Focus management
-  void _setupFocusListeners() {
-    for (var exercise in _exercises) {
-      for (var set in exercise.sets) {
-        set.addFocusListeners(_updateFocusState);
-      }
-    }
-  }
 
   void _removeFocusListeners() {
     for (var exercise in _exercises) {
@@ -160,100 +165,114 @@ class CustomWorkoutConfigurationStateManager extends ChangeNotifier {
       }
       if (anyFieldFocused) break;
     }
-    
+
     if (anyFieldFocused != _isAnyFieldFocused) {
       _isAnyFieldFocused = anyFieldFocused;
       notifyListeners();
     }
   }
 
-  Future<void> _loadExercisesWithPreviousData(List<String> exerciseNames) async {
+  Future<void> _loadExercisesWithPreviousData(
+    List<String> exerciseNames,
+  ) async {
     List<ConfigExercise> exercises = [];
-    
+
     for (final name in exerciseNames) {
       try {
         // Try to get previous exercise data
         final previousData = await WorkoutService.getLastExerciseData(name);
-        
+
         List<ConfigSet> sets;
         if (previousData != null && previousData['sets'] != null) {
           // Create sets based on previous workout data
           final previousSetsData = previousData['sets'] as List<dynamic>;
-          
-          sets = previousSetsData.map((setData) {
-            final weight = (setData['weight'] as num?)?.toDouble() ?? 0.0;
-            final reps = (setData['reps'] as int?) ?? 0;
-            return ConfigSet(
-              weight: weight, 
-              reps: reps, 
-              isWeightPrefilled: true, 
-              isRepsPrefilled: true,
-              previousWeight: weight,
-              previousReps: reps,
-            );
-          }).toList();
+
+          sets =
+              previousSetsData.map((setData) {
+                final weight = (setData['weight'] as num?)?.toDouble() ?? 0.0;
+                final reps = (setData['reps'] as int?) ?? 0;
+                final configSet = ConfigSet(
+                  weight: weight,
+                  reps: reps,
+                  isWeightPrefilled: true,
+                  isRepsPrefilled: true,
+                  previousWeight: weight,
+                  previousReps: reps,
+                );
+                configSet.addFocusListeners(_updateFocusState);
+                return configSet;
+              }).toList();
         } else {
           // No previous data, use default
-          sets = [ConfigSet()];
+          final configSet = ConfigSet();
+          configSet.addFocusListeners(_updateFocusState);
+          sets = [configSet];
         }
-        
+
         exercises.add(ConfigExercise(title: name, sets: sets));
       } catch (e) {
         // If there's an error fetching data, use default
-        exercises.add(ConfigExercise(title: name));
+        final configExercise = ConfigExercise(title: name);
+        // Add focus listeners to the default set
+        for (var set in configExercise.sets) {
+          set.addFocusListeners(_updateFocusState);
+        }
+        exercises.add(configExercise);
       }
     }
-    
+
     _exercises = exercises;
-    _setupFocusListeners();
     notifyListeners();
   }
 
   // Exercise management
   void addExercises(List<String> exerciseNames) async {
     final List<ConfigExercise> newExercises = [];
-    
+
     for (final title in exerciseNames) {
       try {
         // Try to get previous exercise data
         final previousData = await WorkoutService.getLastExerciseData(title);
-        
+
         List<ConfigSet> sets;
         if (previousData != null && previousData['sets'] != null) {
           // Create sets based on previous workout data
           final previousSetsData = previousData['sets'] as List<dynamic>;
-          
-          sets = previousSetsData.map((setData) {
-            final weight = (setData['weight'] as num?)?.toDouble() ?? 0.0;
-            final reps = (setData['reps'] as int?) ?? 0;
-            return ConfigSet(
-              weight: weight, 
-              reps: reps, 
-              isWeightPrefilled: true, 
-              isRepsPrefilled: true,
-              previousWeight: weight,
-              previousReps: reps,
-            );
-          }).toList();
+
+          sets =
+              previousSetsData.map((setData) {
+                final weight = (setData['weight'] as num?)?.toDouble() ?? 0.0;
+                final reps = (setData['reps'] as int?) ?? 0;
+                final configSet = ConfigSet(
+                  weight: weight,
+                  reps: reps,
+                  isWeightPrefilled: true,
+                  isRepsPrefilled: true,
+                  previousWeight: weight,
+                  previousReps: reps,
+                );
+                configSet.addFocusListeners(_updateFocusState);
+                return configSet;
+              }).toList();
         } else {
           // No previous data, use default
-          sets = [ConfigSet()];
+          final configSet = ConfigSet();
+          configSet.addFocusListeners(_updateFocusState);
+          sets = [configSet];
         }
-        
+
         newExercises.add(ConfigExercise(title: title, sets: sets));
       } catch (e) {
         // If there's an error fetching data, use default
-        newExercises.add(ConfigExercise(title: title));
+        final configExercise = ConfigExercise(title: title);
+        // Add focus listeners to the default set
+        for (var set in configExercise.sets) {
+          set.addFocusListeners(_updateFocusState);
+        }
+        newExercises.add(configExercise);
       }
     }
-    
-    // Add focus listeners to new exercises
-    for (var exercise in newExercises) {
-      for (var set in exercise.sets) {
-        set.addFocusListeners(_updateFocusState);
-      }
-    }
-    
+
     _exercises.addAll(newExercises);
     notifyListeners();
   }
@@ -265,7 +284,7 @@ class CustomWorkoutConfigurationStateManager extends ChangeNotifier {
         set.removeFocusListeners(_updateFocusState);
         set.dispose();
       }
-      
+
       _exercises.removeAt(index);
       notifyListeners();
     }
@@ -297,7 +316,9 @@ class CustomWorkoutConfigurationStateManager extends ChangeNotifier {
     } else {
       // Fallback to previous workout data
       try {
-        final previousData = await WorkoutService.getLastExerciseData(exercise.title);
+        final previousData = await WorkoutService.getLastExerciseData(
+          exercise.title,
+        );
         if (previousData != null && previousData['sets'] != null) {
           final previousSetsData = previousData['sets'] as List<dynamic>;
           if (previousSetsData.isNotEmpty) {
@@ -305,11 +326,11 @@ class CustomWorkoutConfigurationStateManager extends ChangeNotifier {
             final lastSetData = previousSetsData.last;
             final weight = (lastSetData['weight'] as num?)?.toDouble() ?? 0.0;
             final reps = (lastSetData['reps'] as int?) ?? 0;
-            
+
             newSet = ConfigSet(
-              weight: weight, 
-              reps: reps, 
-              isWeightPrefilled: true, 
+              weight: weight,
+              reps: reps,
+              isWeightPrefilled: true,
               isRepsPrefilled: true,
               previousWeight: weight,
               previousReps: reps,
@@ -324,7 +345,7 @@ class CustomWorkoutConfigurationStateManager extends ChangeNotifier {
         newSet = ConfigSet();
       }
     }
-    
+
     newSet.addFocusListeners(_updateFocusState);
     exercise.sets.add(newSet);
     notifyListeners();
@@ -354,14 +375,14 @@ class CustomWorkoutConfigurationStateManager extends ChangeNotifier {
   // Convert to CustomWorkout format
   List<CustomWorkoutExercise> toCustomWorkoutExercises() {
     return _exercises.map((exercise) {
-      final customSets = exercise.sets.map((set) => 
-        CustomWorkoutSet(weight: set.weight, reps: set.reps)
-      ).toList();
-      
-      return CustomWorkoutExercise(
-        name: exercise.title,
-        sets: customSets,
-      );
+      final customSets =
+          exercise.sets
+              .map(
+                (set) => CustomWorkoutSet(weight: set.weight, reps: set.reps),
+              )
+              .toList();
+
+      return CustomWorkoutExercise(name: exercise.title, sets: customSets);
     }).toList();
   }
 
@@ -375,4 +396,4 @@ class CustomWorkoutConfigurationStateManager extends ChangeNotifier {
     }
     super.dispose();
   }
-} 
+}
