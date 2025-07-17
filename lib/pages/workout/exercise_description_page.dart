@@ -7,7 +7,7 @@ import 'package:gymfit/models/quick_start_exercise.dart';
 import 'package:gymfit/models/exercise_set.dart';
 import 'package:gymfit/models/custom_workout.dart';
 import 'package:gymfit/services/custom_workout_service.dart';
-import 'package:gymfit/pages/workout/custom_workout_configuration_page.dart';
+import 'package:gymfit/pages/workout/custom_workout_configuration_page_refactored.dart';
 
 class ExerciseDescriptionPage extends StatefulWidget {
   final String title;

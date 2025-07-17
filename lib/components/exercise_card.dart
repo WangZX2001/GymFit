@@ -9,6 +9,7 @@ class ExerciseCard extends StatelessWidget {
   final QuickStartExercise exercise;
   final int exerciseIndex;
   final bool preventAutoFocus;
+  final bool isCollapsed;
   final Function(QuickStartExercise) onRemoveExercise;
   final Function(QuickStartExercise, ExerciseSet) onRemoveSet;
   final Function(QuickStartExercise, ExerciseSet, double) onWeightChanged;
@@ -16,12 +17,14 @@ class ExerciseCard extends StatelessWidget {
   final Function(QuickStartExercise, ExerciseSet, bool) onSetCheckedChanged;
   final Function(QuickStartExercise, bool) onAllSetsCheckedChanged;
   final VoidCallback onAddSet;
+  final VoidCallback onRequestReorderMode;
 
   const ExerciseCard({
     super.key,
     required this.exercise,
     required this.exerciseIndex,
     required this.preventAutoFocus,
+    this.isCollapsed = false,
     required this.onRemoveExercise,
     required this.onRemoveSet,
     required this.onWeightChanged,
@@ -29,6 +32,7 @@ class ExerciseCard extends StatelessWidget {
     required this.onSetCheckedChanged,
     required this.onAllSetsCheckedChanged,
     required this.onAddSet,
+    required this.onRequestReorderMode,
   });
 
   @override
@@ -51,10 +55,15 @@ class ExerciseCard extends StatelessWidget {
         ),
       ),
       onDismissed: (direction) => onRemoveExercise(exercise),
-      child: Card(
-        color: Colors.white,
-        margin: const EdgeInsets.symmetric(vertical: 4),
-        child: Column(
+      child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeInOut,
+                    child: Card(
+            color: isCollapsed ? Colors.grey.shade50 : Colors.white,
+            margin: const EdgeInsets.symmetric(vertical: 4),
+            elevation: isCollapsed ? 2 : 1,
+            shadowColor: isCollapsed ? Colors.grey.shade400 : Colors.grey.shade300,
+          child: Column(
           children: [
             LayoutBuilder(
               builder: (context, constraints) {
@@ -76,8 +85,59 @@ class ExerciseCard extends StatelessWidget {
                               fontWeight: FontWeight.bold,
                             ),
                           ),
+                          if (isCollapsed)
+                            // Drag handle for reorder mode
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              child: const Icon(
+                                Icons.drag_handle,
+                                color: Colors.grey,
+                                size: 20,
+                              ),
+                            )
+                          else
+                            // 3-dots menu for normal mode
+                            PopupMenuButton<String>(
+                              icon: const Icon(Icons.more_horiz),
+                              onSelected: (value) {
+                                if (value == 'reorder') {
+                                  onRequestReorderMode();
+                                }
+                              },
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              color: Colors.grey[100],
+                              elevation: 8,
+                              shadowColor: Colors.black.withOpacity(0.2),
+                              itemBuilder: (context) => [
+                                PopupMenuItem<String>(
+                                  value: 'reorder',
+                                  height: 48,
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.drag_handle,
+                                        color: Colors.grey[700],
+                                        size: 20,
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Text(
+                                        'Reorder',
+                                        style: TextStyle(
+                                          color: Colors.grey[900],
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
                         ],
                       ),
+                      if (!isCollapsed) ...[
                       Column(
                         children: [
                           LayoutBuilder(
@@ -212,37 +272,40 @@ class ExerciseCard extends StatelessWidget {
                           onDismissed: () => onRemoveSet(exercise, exerciseSet),
                         );
                       }),
+                      ],
                     ],
                   ),
                 );
               },
             ),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: onAddSet,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.grey.shade200,
-                  foregroundColor: Colors.grey.shade600,
-                  elevation: 0,
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  side: BorderSide.none,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  shape: const RoundedRectangleBorder(
-                    borderRadius: BorderRadius.only(
-                      bottomLeft: Radius.circular(12),
-                      bottomRight: Radius.circular(12),
-                    ),
+            if (!isCollapsed)
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: onAddSet,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.grey.shade200,
+                    foregroundColor: Colors.grey.shade600,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 8),
                     side: BorderSide.none,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: BorderRadius.only(
+                        bottomLeft: Radius.circular(12),
+                        bottomRight: Radius.circular(12),
+                      ),
+                      side: BorderSide.none,
+                    ),
                   ),
-                ),
-                child: const FaIcon(
-                  FontAwesomeIcons.plus,
-                  color: Colors.grey,
-                ),
-              ),
+                  child: const FaIcon(
+                    FontAwesomeIcons.plus,
+                    color: Colors.grey,
+                  ),
+                              ),
             ),
           ],
+        ),
         ),
       ),
     );

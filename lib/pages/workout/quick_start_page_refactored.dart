@@ -228,6 +228,21 @@ class _QuickStartPageState extends State<QuickStartPage> {
     }
   }
 
+  void _handleReorderStart(int index) {
+    _stateManager.setCurrentlyReorderingIndex(index);
+  }
+
+  void _handleReorderEnd(int index) {
+    _stateManager.setCurrentlyReorderingIndex(null);
+    // Don't exit reorder mode when drag ends - user must tap "Done"
+  }
+
+  void _handleDoneReorder() {
+    _stateManager.setReorderMode(false);
+  }
+
+
+
   @override
   void dispose() {
     // Clear the page update callback
@@ -460,37 +475,90 @@ class _QuickStartPageState extends State<QuickStartPage> {
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.center,
                                       children: [
-                                        ReorderableListView(
-                                          shrinkWrap: true,
-                                          physics: const NeverScrollableScrollPhysics(),
-                                          onReorder: (int oldIndex, int newIndex) {
-                                            _stateManager.reorderExercises(oldIndex, newIndex);
-                                            QuickStartOverlay.selectedExercises = _stateManager.selectedExercises;
-                                          },
-                                          children: stateManager.selectedExercises.asMap().entries.map((entry) {
-                                            final index = entry.key;
-                                            final exercise = entry.value;
-                                            return ExerciseCard(
-                                              key: Key('exercise_${exercise.title}_$index'),
-                                              exercise: exercise,
-                                              exerciseIndex: index,
-                                              preventAutoFocus: stateManager.preventAutoFocus,
-                                              onRemoveExercise: _handleRemoveExercise,
-                                              onRemoveSet: _handleRemoveSet,
-                                              onWeightChanged: _handleWeightChanged,
-                                              onRepsChanged: _handleRepsChanged,
-                                              onSetCheckedChanged: _handleSetCheckedChanged,
-                                              onAllSetsCheckedChanged: _handleAllSetsCheckedChanged,
-                                              onAddSet: () => _handleAddSet(exercise),
-                                            );
-                                          }).toList(),
-                                        ),
+                                                                                stateManager.isInReorderMode
+                                            ? ReorderableListView(
+                                                shrinkWrap: true,
+                                                physics: const NeverScrollableScrollPhysics(),
+                                                onReorder: (int oldIndex, int newIndex) {
+                                                  _stateManager.reorderExercises(oldIndex, newIndex);
+                                                  QuickStartOverlay.selectedExercises = _stateManager.selectedExercises;
+                                                },
+                                                onReorderStart: (int index) {
+                                                  _handleReorderStart(index);
+                                                },
+                                                onReorderEnd: (int index) {
+                                                  _handleReorderEnd(index);
+                                                },
+                                                children: stateManager.selectedExercises.asMap().entries.map((entry) {
+                                                  final index = entry.key;
+                                                  final exercise = entry.value;
+                                                  return ExerciseCard(
+                                                    key: Key('exercise_${exercise.title}_$index'),
+                                                    exercise: exercise,
+                                                    exerciseIndex: index,
+                                                    preventAutoFocus: stateManager.preventAutoFocus,
+                                                    isCollapsed: stateManager.isInReorderMode,
+                                                    onRemoveExercise: _handleRemoveExercise,
+                                                    onRemoveSet: _handleRemoveSet,
+                                                    onWeightChanged: _handleWeightChanged,
+                                                    onRepsChanged: _handleRepsChanged,
+                                                    onSetCheckedChanged: _handleSetCheckedChanged,
+                                                    onAllSetsCheckedChanged: _handleAllSetsCheckedChanged,
+                                                    onAddSet: () => _handleAddSet(exercise),
+                                                    onRequestReorderMode: () => _stateManager.setReorderMode(true),
+                                                  );
+                                                }).toList(),
+                                              )
+                                            : Column(
+                                                children: stateManager.selectedExercises.asMap().entries.map((entry) {
+                                                  final index = entry.key;
+                                                  final exercise = entry.value;
+                                                  return ExerciseCard(
+                                                    key: Key('exercise_${exercise.title}_$index'),
+                                                    exercise: exercise,
+                                                    exerciseIndex: index,
+                                                    preventAutoFocus: stateManager.preventAutoFocus,
+                                                    isCollapsed: stateManager.isInReorderMode,
+                                                    onRemoveExercise: _handleRemoveExercise,
+                                                    onRemoveSet: _handleRemoveSet,
+                                                    onWeightChanged: _handleWeightChanged,
+                                                    onRepsChanged: _handleRepsChanged,
+                                                    onSetCheckedChanged: _handleSetCheckedChanged,
+                                                    onAllSetsCheckedChanged: _handleAllSetsCheckedChanged,
+                                                    onAddSet: () => _handleAddSet(exercise),
+                                                    onRequestReorderMode: () => _stateManager.setReorderMode(true),
+                                                  );
+                                                }).toList(),
+                                              ),
                                         const SizedBox(height: 16),
-                                        FinishWorkoutButton(
-                                          completedExercises: stateManager.selectedExercises,
-                                          workoutDuration: QuickStartOverlay.elapsedTime,
-                                          customWorkoutName: stateManager.customWorkoutName,
-                                        ),
+                                        stateManager.isInReorderMode
+                                            ? SizedBox(
+                                                width: double.infinity,
+                                                child: ElevatedButton(
+                                                  onPressed: _handleDoneReorder,
+                                                  style: ElevatedButton.styleFrom(
+                                                    backgroundColor: Colors.blue,
+                                                    foregroundColor: Colors.white,
+                                                    elevation: 2,
+                                                    padding: const EdgeInsets.symmetric(vertical: 16),
+                                                    shape: RoundedRectangleBorder(
+                                                      borderRadius: BorderRadius.circular(12),
+                                                    ),
+                                                  ),
+                                                  child: const Text(
+                                                    'Done',
+                                                    style: TextStyle(
+                                                      fontSize: 16,
+                                                      fontWeight: FontWeight.w600,
+                                                    ),
+                                                  ),
+                                                ),
+                                              )
+                                            : FinishWorkoutButton(
+                                                completedExercises: stateManager.selectedExercises,
+                                                workoutDuration: QuickStartOverlay.elapsedTime,
+                                                customWorkoutName: stateManager.customWorkoutName,
+                                              ),
                                         const SizedBox(height: 100),
                                       ],
                                     ),

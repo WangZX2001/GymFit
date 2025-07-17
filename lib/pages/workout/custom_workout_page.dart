@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:gymfit/pages/workout/exercise_information_page.dart';
-import 'package:gymfit/pages/workout/custom_workout_configuration_page.dart';
+import 'package:gymfit/pages/workout/custom_workout_configuration_page_refactored.dart';
 import 'package:gymfit/models/quick_start_exercise.dart';
 import 'package:gymfit/models/exercise_set.dart';
 import 'package:gymfit/services/custom_workout_service.dart';

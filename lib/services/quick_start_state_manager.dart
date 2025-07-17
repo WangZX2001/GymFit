@@ -14,6 +14,9 @@ class QuickStartStateManager extends ChangeNotifier {
   bool _isAnyFieldFocused = false;
   bool _preventAutoFocus = false;
   bool _showWorkoutNameInAppBar = false;
+  bool _isReordering = false;
+  int? _currentlyReorderingIndex;
+  bool _isInReorderMode = false;
 
   // Getters
   List<QuickStartExercise> get selectedExercises => _selectedExercises;
@@ -24,6 +27,9 @@ class QuickStartStateManager extends ChangeNotifier {
   bool get isAnyFieldFocused => _isAnyFieldFocused;
   bool get preventAutoFocus => _preventAutoFocus;
   bool get showWorkoutNameInAppBar => _showWorkoutNameInAppBar;
+  bool get isReordering => _isReordering;
+  int? get currentlyReorderingIndex => _currentlyReorderingIndex;
+  bool get isInReorderMode => _isInReorderMode;
 
   // Initialize state
   void initialize({
@@ -147,6 +153,21 @@ class QuickStartStateManager extends ChangeNotifier {
     }
     final QuickStartExercise item = _selectedExercises.removeAt(oldIndex);
     _selectedExercises.insert(newIndex, item);
+    notifyListeners();
+  }
+
+  void setReorderingState(bool isReordering) {
+    _isReordering = isReordering;
+    notifyListeners();
+  }
+
+  void setCurrentlyReorderingIndex(int? index) {
+    _currentlyReorderingIndex = index;
+    notifyListeners();
+  }
+
+  void setReorderMode(bool isInReorderMode) {
+    _isInReorderMode = isInReorderMode;
     notifyListeners();
   }
 
