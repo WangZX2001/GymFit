@@ -17,6 +17,8 @@ class QuickStartStateManager extends ChangeNotifier {
   bool _isReordering = false;
   int? _currentlyReorderingIndex;
   bool _isInReorderMode = false;
+  final Set<QuickStartExercise> _newlyAddedExercises = {};
+  bool _hasReorderedExercises = false;
 
   // Getters
   List<QuickStartExercise> get selectedExercises => _selectedExercises;
@@ -30,18 +32,31 @@ class QuickStartStateManager extends ChangeNotifier {
   bool get isReordering => _isReordering;
   int? get currentlyReorderingIndex => _currentlyReorderingIndex;
   bool get isInReorderMode => _isInReorderMode;
+  Set<QuickStartExercise> get newlyAddedExercises => _newlyAddedExercises;
+
+  // Check if an exercise is newly added
+  bool isExerciseNewlyAdded(QuickStartExercise exercise) {
+    return _newlyAddedExercises.contains(exercise);
+  }
+
+  // Clear newly added flag for an exercise
+  void clearNewlyAddedFlag(QuickStartExercise exercise) {
+    _newlyAddedExercises.remove(exercise);
+    notifyListeners();
+  }
 
   // Initialize state
   void initialize({
     required List<QuickStartExercise> initialExercises,
     String? initialWorkoutName,
   }) {
-    _selectedExercises = initialExercises
-        .map((e) => QuickStartExercise(title: e.title, sets: e.sets))
-        .toList();
+    _selectedExercises =
+        initialExercises
+            .map((e) => QuickStartExercise(title: e.title, sets: e.sets))
+            .toList();
     _customWorkoutName = initialWorkoutName;
     _setupFocusListeners();
-    
+
     if (_selectedExercises.isEmpty) {
       _loadCustomWorkouts();
     }
@@ -99,31 +114,35 @@ class QuickStartStateManager extends ChangeNotifier {
   }
 
   void loadCustomWorkout(CustomWorkout workout) {
-    final exercises = workout.exercises.map((customExercise) {
-      final sets = customExercise.sets
-          .map((customSet) => ExerciseSet(
-                weight: customSet.weight,
-                reps: customSet.reps,
-                isWeightPrefilled: false,
-                isRepsPrefilled: false,
-                previousWeight: null,
-                previousReps: null,
-              ))
-          .toList();
+    final exercises =
+        workout.exercises.map((customExercise) {
+          final sets =
+              customExercise.sets
+                  .map(
+                    (customSet) => ExerciseSet(
+                      weight: customSet.weight,
+                      reps: customSet.reps,
+                      isWeightPrefilled: false,
+                      isRepsPrefilled: false,
+                      previousWeight: null,
+                      previousReps: null,
+                    ),
+                  )
+                  .toList();
 
-      return QuickStartExercise(title: customExercise.name, sets: sets);
-    }).toList();
+          return QuickStartExercise(title: customExercise.name, sets: sets);
+        }).toList();
 
     _selectedExercises = exercises;
     _customWorkoutName = workout.name;
-    
+
     // Add focus listeners to loaded exercises
     for (var exercise in _selectedExercises) {
       for (var set in exercise.sets) {
         set.addFocusListeners(_updateFocusState);
       }
     }
-    
+
     notifyListeners();
   }
 
@@ -134,6 +153,7 @@ class QuickStartStateManager extends ChangeNotifier {
       set.addFocusListeners(_updateFocusState);
     }
     _selectedExercises.add(exercise);
+    _newlyAddedExercises.add(exercise);
     notifyListeners();
   }
 
@@ -144,6 +164,11 @@ class QuickStartStateManager extends ChangeNotifier {
       set.dispose();
     }
     _selectedExercises.remove(exercise);
+    _newlyAddedExercises.remove(exercise);
+
+    // Clear newly added flags for all remaining exercises to prevent animation on deletion
+    _newlyAddedExercises.clear();
+
     notifyListeners();
   }
 
@@ -153,6 +178,13 @@ class QuickStartStateManager extends ChangeNotifier {
     }
     final QuickStartExercise item = _selectedExercises.removeAt(oldIndex);
     _selectedExercises.insert(newIndex, item);
+
+    // Track that reordering has occurred
+    _hasReorderedExercises = true;
+
+    // Clear newly added flags when reordering to prevent animation during reorder
+    _newlyAddedExercises.clear();
+
     notifyListeners();
   }
 
@@ -168,6 +200,22 @@ class QuickStartStateManager extends ChangeNotifier {
 
   void setReorderMode(bool isInReorderMode) {
     _isInReorderMode = isInReorderMode;
+
+    // Automatically show workout name in app bar when entering reorder mode
+    if (isInReorderMode) {
+      _showWorkoutNameInAppBar = true;
+    }
+
+    // If exiting reorder mode, treat all exercises as newly added to trigger unfolding animations
+    if (!isInReorderMode) {
+      _newlyAddedExercises.addAll(_selectedExercises);
+      _hasReorderedExercises = false; // Reset the flag
+      
+      // Reset workout name app bar state when exiting reorder mode
+      // This allows the scroll-based logic to take over again
+      _showWorkoutNameInAppBar = false;
+    }
+
     notifyListeners();
   }
 
@@ -188,7 +236,9 @@ class QuickStartStateManager extends ChangeNotifier {
     } else {
       // Fallback to previous workout data
       try {
-        final previousData = await WorkoutService.getLastExerciseData(exercise.title);
+        final previousData = await WorkoutService.getLastExerciseData(
+          exercise.title,
+        );
         if (previousData != null && previousData['sets'] != null) {
           final previousSetsData = previousData['sets'] as List<dynamic>;
           if (previousSetsData.isNotEmpty) {
@@ -227,7 +277,11 @@ class QuickStartStateManager extends ChangeNotifier {
     notifyListeners();
   }
 
-  void updateSetChecked(QuickStartExercise exercise, ExerciseSet set, bool value) {
+  void updateSetChecked(
+    QuickStartExercise exercise,
+    ExerciseSet set,
+    bool value,
+  ) {
     set.isChecked = value;
     notifyListeners();
   }
@@ -267,4 +321,4 @@ class QuickStartStateManager extends ChangeNotifier {
     _removeFocusListeners();
     super.dispose();
   }
-} 
+}

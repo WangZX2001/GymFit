@@ -91,10 +91,14 @@ class ConfigSet {
 
 class ConfigExercise {
   final String title;
+  final String id;
   List<ConfigSet> sets;
 
+  static int _counter = 0;
+
   ConfigExercise({required this.title, List<ConfigSet>? sets})
-    : sets = sets ?? [ConfigSet()];
+    : id = '${DateTime.now().millisecondsSinceEpoch}_${++_counter}',
+      sets = sets ?? [ConfigSet()];
 }
 
 class CustomWorkoutConfigurationStateManager extends ChangeNotifier {
@@ -103,6 +107,8 @@ class CustomWorkoutConfigurationStateManager extends ChangeNotifier {
   bool _isAnyFieldFocused = false;
   bool _isInReorderMode = false;
   CustomWorkout? _existingWorkout;
+  final Set<String> _newlyAddedExercises =
+      {}; // Track newly added exercises for animations
 
   // Getters
   List<ConfigExercise> get exercises => _exercises;
@@ -111,6 +117,25 @@ class CustomWorkoutConfigurationStateManager extends ChangeNotifier {
   bool get isInReorderMode => _isInReorderMode;
   bool get hasExercises => _exercises.isNotEmpty;
   CustomWorkout? get existingWorkout => _existingWorkout;
+
+  // Check if an exercise is newly added
+  bool isExerciseNewlyAdded(ConfigExercise exercise) {
+    return _newlyAddedExercises.contains(exercise.id);
+  }
+
+  // Mark exercise as no longer newly added
+  void markExerciseAsNotNewlyAdded(ConfigExercise exercise) {
+    _newlyAddedExercises.remove(exercise.id);
+    notifyListeners();
+  }
+
+  // Clear newly added flags during scrolling to prevent animations
+  void clearNewlyAddedFlagsForScrolling() {
+    if (_newlyAddedExercises.isNotEmpty) {
+      _newlyAddedExercises.clear();
+      notifyListeners();
+    }
+  }
 
   // Initialize state
   void initialize({
@@ -137,6 +162,12 @@ class CustomWorkoutConfigurationStateManager extends ChangeNotifier {
             }
             return configExercise;
           }).toList();
+      
+      // Mark existing workout exercises as newly added for entrance animations
+      for (var exercise in _exercises) {
+        _newlyAddedExercises.add(exercise.id);
+      }
+      
       notifyListeners();
     } else {
       // Creating new workout - use exercise names and try to load previous data
@@ -222,6 +253,12 @@ class CustomWorkoutConfigurationStateManager extends ChangeNotifier {
     }
 
     _exercises = exercises;
+    
+    // Mark initial exercises as newly added for entrance animations
+    for (var exercise in exercises) {
+      _newlyAddedExercises.add(exercise.id);
+    }
+    
     notifyListeners();
   }
 
@@ -273,6 +310,11 @@ class CustomWorkoutConfigurationStateManager extends ChangeNotifier {
       }
     }
 
+    // Mark new exercises as newly added for animations
+    for (var exercise in newExercises) {
+      _newlyAddedExercises.add(exercise.id);
+    }
+
     _exercises.addAll(newExercises);
     notifyListeners();
   }
@@ -286,6 +328,10 @@ class CustomWorkoutConfigurationStateManager extends ChangeNotifier {
       }
 
       _exercises.removeAt(index);
+      
+      // Clear newly added flags for all remaining exercises to prevent animation on deletion
+      _newlyAddedExercises.clear();
+      
       notifyListeners();
     }
   }
@@ -296,6 +342,10 @@ class CustomWorkoutConfigurationStateManager extends ChangeNotifier {
     }
     final ConfigExercise item = _exercises.removeAt(oldIndex);
     _exercises.insert(newIndex, item);
+
+    // Clear newly added flags when reordering to prevent animation during reorder
+    _newlyAddedExercises.clear();
+
     notifyListeners();
   }
 
@@ -364,6 +414,15 @@ class CustomWorkoutConfigurationStateManager extends ChangeNotifier {
   void setReorderMode(bool isInReorderMode) {
     _isInReorderMode = isInReorderMode;
     _isAnyFieldFocused = false; // Ensure button stays visible
+
+    // If exiting reorder mode, trigger unfolding animations for all exercises
+    if (!isInReorderMode) {
+      // Mark all exercises as newly added to trigger unfolding animations
+      for (var exercise in _exercises) {
+        _newlyAddedExercises.add(exercise.id);
+      }
+    }
+
     notifyListeners();
   }
 

@@ -3,11 +3,12 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:gymfit/components/custom_workout_set_row.dart';
 import 'package:gymfit/services/custom_workout_configuration_state_manager.dart';
 
-class CustomWorkoutExerciseCard extends StatelessWidget {
+class CustomWorkoutExerciseCard extends StatefulWidget {
   final ConfigExercise exercise;
   final int index;
   final bool isCollapsed;
   final bool preventAutoFocus;
+  final bool isNewlyAdded;
   final VoidCallback onRequestReorderMode;
   final VoidCallback onAddSet;
   final Function(ConfigSet) onRemoveSet;
@@ -20,6 +21,7 @@ class CustomWorkoutExerciseCard extends StatelessWidget {
     required this.index,
     required this.isCollapsed,
     required this.preventAutoFocus,
+    this.isNewlyAdded = false,
     required this.onRequestReorderMode,
     required this.onAddSet,
     required this.onRemoveSet,
@@ -28,7 +30,163 @@ class CustomWorkoutExerciseCard extends StatelessWidget {
   });
 
   @override
+  State<CustomWorkoutExerciseCard> createState() => _CustomWorkoutExerciseCardState();
+}
+
+class _CustomWorkoutExerciseCardState extends State<CustomWorkoutExerciseCard>
+    with TickerProviderStateMixin {
+  AnimationController? _animationController;
+  AnimationController? _unfoldAnimationController;
+  Animation<double>? _contentHeightAnimation;
+  Animation<double>? _opacityAnimation;
+  Animation<Offset>? _slideAnimation;
+  Animation<double>? _unfoldContentHeightAnimation;
+  bool _isAnimatingToCollapsed = false;
+  bool _isUnfolding = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+
+    // Animation for the content height (sets and add button)
+    _contentHeightAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _animationController!,
+        curve: const Interval(0.2, 1.0, curve: Curves.easeOutQuart),
+      ),
+    );
+
+    // Animation for the overall opacity
+    _opacityAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _animationController!,
+        curve: const Interval(0.0, 0.4, curve: Curves.easeOut),
+      ),
+    );
+
+    // Animation for the slide-in effect
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, -0.15),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(
+        parent: _animationController!,
+        curve: const Interval(0.0, 0.5, curve: Curves.easeOutQuart),
+      ),
+    );
+
+    // Separate animation controller for unfolding
+    _unfoldAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+
+    // Animation for unfolding content height
+    _unfoldContentHeightAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _unfoldAnimationController!,
+        curve: const Interval(0.2, 1.0, curve: Curves.easeOutQuart),
+      ),
+    );
+
+    // Start animation if this is a newly added exercise
+    if (widget.isNewlyAdded) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _animationController?.forward();
+      });
+    } else {
+      // For existing exercises, start fully expanded
+      _animationController?.value = 1.0;
+      _unfoldAnimationController?.value = 1.0;
+    }
+  }
+
+  @override
+  void didUpdateWidget(CustomWorkoutExerciseCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    // Handle transition to reorder mode (folding animation)
+    if (!oldWidget.isCollapsed &&
+        widget.isCollapsed &&
+        !_isAnimatingToCollapsed) {
+      _isAnimatingToCollapsed = true;
+      // Use a more deliberate reverse animation
+      _animationController
+          ?.animateTo(
+            0.0,
+            duration: const Duration(milliseconds: 600),
+            curve: Curves.easeInQuart,
+          )
+          .then((_) {
+            _isAnimatingToCollapsed = false;
+          });
+    }
+
+    // Handle transition out of reorder mode
+    if (oldWidget.isCollapsed && !widget.isCollapsed) {
+      _isAnimatingToCollapsed = false;
+
+      // If this exercise is marked as newly added, use the full entrance animation
+      if (widget.isNewlyAdded) {
+        _animationController?.value = 0.0;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _animationController?.forward();
+        });
+      } else {
+        // Otherwise use the unfolding animation
+        _isUnfolding = true;
+        _unfoldAnimationController?.value = 0.0;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _unfoldAnimationController?.forward().then((_) {
+            _isUnfolding = false;
+          });
+        });
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _animationController?.dispose();
+    _unfoldAnimationController?.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    // Return a simple card if animations aren't ready yet
+    if (_animationController == null ||
+        _contentHeightAnimation == null ||
+        _opacityAnimation == null ||
+        _slideAnimation == null ||
+        _unfoldAnimationController == null ||
+        _unfoldContentHeightAnimation == null) {
+      return _buildCardContent();
+    }
+
+    return AnimatedBuilder(
+      animation: Listenable.merge([
+        _animationController!,
+        _unfoldAnimationController!,
+      ]),
+      builder: (context, child) {
+        return SlideTransition(
+          position: _slideAnimation!,
+          child: FadeTransition(
+            opacity: _opacityAnimation!,
+            child: _buildCardContent(),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildCardContent() {
     return Column(
       children: [
         LayoutBuilder(
@@ -45,13 +203,13 @@ class CustomWorkoutExerciseCard extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        exercise.title,
+                        widget.exercise.title,
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      if (isCollapsed)
+                      if (widget.isCollapsed)
                         // Drag handle for reorder mode
                         Container(
                           padding: const EdgeInsets.all(8),
@@ -67,7 +225,7 @@ class CustomWorkoutExerciseCard extends StatelessWidget {
                           icon: const Icon(Icons.more_horiz),
                           onSelected: (value) {
                             if (value == 'reorder') {
-                              onRequestReorderMode();
+                              widget.onRequestReorderMode();
                             }
                           },
                           shape: RoundedRectangleBorder(
@@ -103,146 +261,164 @@ class CustomWorkoutExerciseCard extends StatelessWidget {
                         ),
                     ],
                   ),
-                  if (!isCollapsed) ...[
-                    const SizedBox(height: 8),
-                    Column(
-                      children: [
-                        LayoutBuilder(
-                          builder: (context, constraints) {
-                            final availableWidth = constraints.maxWidth;
-                            final isSmallScreen = availableWidth < 350;
-                            final spacing = isSmallScreen ? 6.0 : 8.0;
-                            
-                            return Row(
-                              children: [
-                                // Set number - fixed small width
-                                SizedBox(
-                                  width: isSmallScreen ? 35 : 45,
-                                  child: Center(
-                                    child: Text(
-                                      'Set',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: isSmallScreen ? 14 : 16,
-                                      ),
-                                      textAlign: TextAlign.center,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ),
-                                SizedBox(width: spacing),
-                                // Previous - flexible
-                                Expanded(
-                                  flex: 2,
-                                  child: Center(
-                                    child: Text(
-                                      'Previous',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: isSmallScreen ? 14 : 16,
-                                      ),
-                                      textAlign: TextAlign.center,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ),
-                                SizedBox(width: spacing),
-                                // Weight - flexible
-                                Expanded(
-                                  flex: 2,
-                                  child: Center(
-                                    child: ConstrainedBox(
-                                      constraints: BoxConstraints(
-                                        maxWidth: isSmallScreen ? 45 : 60,
-                                        minWidth: 40,
-                                      ),
-                                      child: Text(
-                                        'Kg',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: isSmallScreen ? 14 : 16,
+                  // Animated content that unfolds/folds
+                  if (!widget.isCollapsed || _isAnimatingToCollapsed) ...[
+                    if (_contentHeightAnimation != null)
+                      SizeTransition(
+                        sizeFactor: _isUnfolding
+                            ? _unfoldContentHeightAnimation!
+                            : _contentHeightAnimation!,
+                        child: Column(
+                          children: [
+                            const SizedBox(height: 8),
+                            LayoutBuilder(
+                              builder: (context, constraints) {
+                                final availableWidth = constraints.maxWidth;
+                                final isSmallScreen = availableWidth < 350;
+                                final spacing = isSmallScreen ? 6.0 : 8.0;
+                                
+                                return Row(
+                                  children: [
+                                    // Set number - fixed small width
+                                    SizedBox(
+                                      width: isSmallScreen ? 35 : 45,
+                                      child: Center(
+                                        child: Text(
+                                          'Set',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: isSmallScreen ? 14 : 16,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                          overflow: TextOverflow.ellipsis,
                                         ),
-                                        textAlign: TextAlign.center,
-                                        overflow: TextOverflow.ellipsis,
                                       ),
                                     ),
-                                  ),
-                                ),
-                                SizedBox(width: spacing),
-                                // Reps - flexible
-                                Expanded(
-                                  flex: 2,
-                                  child: Center(
-                                    child: ConstrainedBox(
-                                      constraints: BoxConstraints(
-                                        maxWidth: isSmallScreen ? 45 : 60,
-                                        minWidth: 40,
-                                      ),
-                                      child: Text(
-                                        'Reps',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: isSmallScreen ? 14 : 16,
+                                    SizedBox(width: spacing),
+                                    // Previous - flexible
+                                    Expanded(
+                                      flex: 2,
+                                      child: Center(
+                                        child: Text(
+                                          'Previous',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: isSmallScreen ? 14 : 16,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                          overflow: TextOverflow.ellipsis,
                                         ),
-                                        textAlign: TextAlign.center,
-                                        overflow: TextOverflow.ellipsis,
                                       ),
                                     ),
-                                  ),
-                                ),
-                              ],
+                                    SizedBox(width: spacing),
+                                    // Weight - flexible
+                                    Expanded(
+                                      flex: 2,
+                                      child: Center(
+                                        child: ConstrainedBox(
+                                          constraints: BoxConstraints(
+                                            maxWidth: isSmallScreen ? 45 : 60,
+                                            minWidth: 40,
+                                          ),
+                                          child: Text(
+                                            'Kg',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: isSmallScreen ? 14 : 16,
+                                            ),
+                                            textAlign: TextAlign.center,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(width: spacing),
+                                    // Reps - flexible
+                                    Expanded(
+                                      flex: 2,
+                                      child: Center(
+                                        child: ConstrainedBox(
+                                          constraints: BoxConstraints(
+                                            maxWidth: isSmallScreen ? 45 : 60,
+                                            minWidth: 40,
+                                          ),
+                                          child: Text(
+                                            'Reps',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: isSmallScreen ? 14 : 16,
+                                            ),
+                                            textAlign: TextAlign.center,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              },
+                            ),
+                            const SizedBox(height: 8),
+                            Divider(
+                              height: 1,
+                              thickness: 1,
+                              color: Colors.grey.shade300,
+                            ),
+                          ],
+                        ),
+                      ),
+                    // Exercise sets - also animated
+                    if (_contentHeightAnimation != null)
+                      SizeTransition(
+                        sizeFactor: _contentHeightAnimation!,
+                        child: Column(
+                          children: widget.exercise.sets.asMap().entries.map((entry) {
+                            final setIndex = entry.key;
+                            final set = entry.value;
+                            return CustomWorkoutSetRow(
+                              key: Key('${widget.exercise.title}_${set.id}'),
+                              set: set,
+                              setIndex: setIndex,
+                              preventAutoFocus: widget.preventAutoFocus,
+                              onWeightChanged: widget.onWeightChanged,
+                              onRepsChanged: widget.onRepsChanged,
+                              onRemoveSet: () => widget.onRemoveSet(set),
                             );
-                          },
+                          }).toList(),
                         ),
-                        const SizedBox(height: 8),
-                        Divider(
-                          height: 1,
-                          thickness: 1,
-                          color: Colors.grey.shade300,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    ...exercise.sets.asMap().entries.map((entry) {
-                      final setIndex = entry.key;
-                      final set = entry.value;
-                      return CustomWorkoutSetRow(
-                        key: Key('${exercise.title}_${set.id}'),
-                        set: set,
-                        setIndex: setIndex,
-                        preventAutoFocus: preventAutoFocus,
-                        onWeightChanged: onWeightChanged,
-                        onRepsChanged: onRepsChanged,
-                        onRemoveSet: () => onRemoveSet(set),
-                      );
-                    }),
+                      ),
                   ],
                 ],
               ),
             );
           },
         ),
-        if (!isCollapsed)
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: onAddSet,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.grey.shade200,
-                foregroundColor: Colors.grey.shade600,
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                side: BorderSide.none,
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                shape: const RoundedRectangleBorder(
-                  borderRadius: BorderRadius.only(
-                    bottomLeft: Radius.circular(12),
-                    bottomRight: Radius.circular(12),
-                  ),
+        // Add set button - also animated
+        if ((!widget.isCollapsed || _isAnimatingToCollapsed) &&
+            _contentHeightAnimation != null)
+          SizeTransition(
+            sizeFactor: _contentHeightAnimation!,
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: widget.onAddSet,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.grey.shade200,
+                  foregroundColor: Colors.grey.shade600,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(vertical: 8),
                   side: BorderSide.none,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(12),
+                      bottomRight: Radius.circular(12),
+                    ),
+                    side: BorderSide.none,
+                  ),
                 ),
+                child: const FaIcon(FontAwesomeIcons.plus, color: Colors.grey),
               ),
-              child: const FaIcon(FontAwesomeIcons.plus, color: Colors.grey),
             ),
           ),
       ],

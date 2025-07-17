@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
 
@@ -61,6 +62,11 @@ class _QuickStartPageState extends State<QuickStartPage> {
   }
 
   void _onScroll() {
+    // Don't change workout name app bar state during reorder mode
+    if (_stateManager.isInReorderMode) {
+      return;
+    }
+
     // Show workout name in app bar when scrolled past the workout name card (approximately 100 pixels)
     const double threshold = 100.0;
     bool shouldShow = _scrollController.offset > threshold;
@@ -239,6 +245,9 @@ class _QuickStartPageState extends State<QuickStartPage> {
   }
 
   void _handleReorderStart(int index) {
+    // Provide haptic feedback when starting to reorder
+    HapticFeedback.mediumImpact();
+    
     _stateManager.setCurrentlyReorderingIndex(index);
   }
 
@@ -515,6 +524,9 @@ class _QuickStartPageState extends State<QuickStartPage> {
                                                   int oldIndex,
                                                   int newIndex,
                                                 ) {
+                                                  // Provide haptic feedback when reordering
+                                                  HapticFeedback.lightImpact();
+                                                  
                                                   _stateManager
                                                       .reorderExercises(
                                                         oldIndex,
@@ -550,6 +562,8 @@ class _QuickStartPageState extends State<QuickStartPage> {
                                                         isCollapsed:
                                                             stateManager
                                                                 .isInReorderMode,
+                                                        isNewlyAdded:
+                                                            stateManager.isExerciseNewlyAdded(exercise),
                                                         onRemoveExercise:
                                                             _handleRemoveExercise,
                                                         onRemoveSet:
@@ -594,6 +608,8 @@ class _QuickStartPageState extends State<QuickStartPage> {
                                                         isCollapsed:
                                                             stateManager
                                                                 .isInReorderMode,
+                                                        isNewlyAdded:
+                                                            stateManager.isExerciseNewlyAdded(exercise),
                                                         onRemoveExercise:
                                                             _handleRemoveExercise,
                                                         onRemoveSet:
