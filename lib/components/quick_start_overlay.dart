@@ -1,7 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:gymfit/pages/workout/quick_start_page.dart';
+import 'package:gymfit/pages/workout/quick_start_page_refactored.dart';
+import 'package:gymfit/models/quick_start_exercise.dart';
 
 class QuickStartOverlay {
   static OverlayEntry? _minibarEntry;

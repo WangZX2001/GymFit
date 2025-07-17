@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:gymfit/components/quick_start_overlay.dart';
-import 'package:gymfit/pages/workout/quick_start_page.dart';
+import 'package:gymfit/models/quick_start_exercise.dart';
 import 'package:gymfit/services/workout_service.dart';
 import 'package:gymfit/services/calorie_calculation_service.dart';
 import 'package:gymfit/models/workout.dart';

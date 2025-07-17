@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:gymfit/models/workout.dart';
-import 'package:gymfit/pages/workout/quick_start_page.dart';
+import 'package:gymfit/models/quick_start_exercise.dart';
 
 class WorkoutService {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;

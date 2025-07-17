@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:gymfit/models/custom_workout.dart';
 import 'package:gymfit/services/recommended_training_service.dart';
-import 'package:gymfit/pages/workout/quick_start_page.dart';
+import 'package:gymfit/pages/workout/quick_start_page_refactored.dart';
+import 'package:gymfit/models/quick_start_exercise.dart';
+import 'package:gymfit/models/exercise_set.dart';
 import 'package:gymfit/components/chatbot.dart';
 
 class RecommendedTrainingPage extends StatefulWidget {
