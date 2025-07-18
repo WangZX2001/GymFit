@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:gymfit/pages/workout/exercise_information_page.dart';
 import 'package:gymfit/pages/workout/custom_workout_page.dart';
 import 'package:gymfit/pages/workout/recommended_training_page.dart';
@@ -41,6 +42,8 @@ class WorkoutPage extends StatelessWidget {
       // Show confirmation dialog and handle result in callback
       _showQuickStartConfirmationDialog(context).then((shouldStartNew) {
         if (shouldStartNew) {
+          // Add haptic feedback when starting new workout after confirmation
+          HapticFeedback.mediumImpact();
           // Clear existing workout
           QuickStartOverlay.selectedExercises.clear();
           QuickStartOverlay.resetTimer();
@@ -53,6 +56,8 @@ class WorkoutPage extends StatelessWidget {
         }
       });
     } else {
+      // Add haptic feedback when starting new workout
+      HapticFeedback.mediumImpact();
       // No confirmation needed, start directly
       QuickStartOverlay.customWorkoutName = null;
       QuickStartOverlay.openQuickStart(context);

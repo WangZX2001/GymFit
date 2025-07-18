@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:gymfit/models/custom_workout.dart';
 import 'package:gymfit/services/recommended_training_service.dart';
 import 'package:gymfit/pages/workout/quick_start_page_refactored.dart';
@@ -53,6 +54,8 @@ class _RecommendedTrainingPageState extends State<RecommendedTrainingPage> {
 
   void _startWorkout() {
     if (_recommendedWorkout != null) {
+      // Add haptic feedback when starting recommended workout
+      HapticFeedback.mediumImpact();
       final quickStartExercises =
           _recommendedWorkout!.exercises.map((exercise) {
             return QuickStartExercise(

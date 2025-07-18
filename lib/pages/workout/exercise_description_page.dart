@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:gymfit/components/quick_start_overlay.dart';
@@ -138,6 +139,9 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> {
   }
 
   void _addToQuickStart() {
+    // Add haptic feedback when adding exercise to quick start
+    HapticFeedback.mediumImpact();
+    
     // Create a new QuickStartExercise with this exercise
     final newExercise = QuickStartExercise(
       title: widget.title,

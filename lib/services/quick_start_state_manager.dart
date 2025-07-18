@@ -57,6 +57,12 @@ class QuickStartStateManager extends ChangeNotifier {
     _customWorkoutName = initialWorkoutName;
     _setupFocusListeners();
 
+    // Mark all initial exercises as newly added to trigger unfolding animations
+    // when starting a saved workout
+    if (_selectedExercises.isNotEmpty) {
+      _newlyAddedExercises.addAll(_selectedExercises);
+    }
+
     if (_selectedExercises.isEmpty) {
       _loadCustomWorkouts();
     }
@@ -143,6 +149,9 @@ class QuickStartStateManager extends ChangeNotifier {
       }
     }
 
+    // Mark all loaded exercises as newly added to trigger unfolding animations
+    _newlyAddedExercises.addAll(_selectedExercises);
+
     notifyListeners();
   }
 
@@ -211,9 +220,8 @@ class QuickStartStateManager extends ChangeNotifier {
       _newlyAddedExercises.addAll(_selectedExercises);
       _hasReorderedExercises = false; // Reset the flag
       
-      // Reset workout name app bar state when exiting reorder mode
-      // This allows the scroll-based logic to take over again
-      _showWorkoutNameInAppBar = false;
+      // Don't automatically reset workout name app bar state when exiting reorder mode
+      // Let the scroll position check determine the correct state
     }
 
     notifyListeners();
@@ -311,6 +319,12 @@ class QuickStartStateManager extends ChangeNotifier {
   }
 
   void setShowWorkoutNameInAppBar(bool show) {
+    // Don't change workout name app bar state during reorder mode
+    // The workout name should stay in the app bar during reorder mode
+    if (_isInReorderMode) {
+      return;
+    }
+    
     _showWorkoutNameInAppBar = show;
     notifyListeners();
   }

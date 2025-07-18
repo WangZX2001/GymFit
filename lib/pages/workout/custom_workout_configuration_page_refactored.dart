@@ -28,6 +28,7 @@ class _CustomWorkoutConfigurationPageState
     extends State<CustomWorkoutConfigurationPage> {
   late CustomWorkoutConfigurationStateManager _stateManager;
   late ScrollController _scrollController;
+  final Map<String, GlobalKey> _exerciseKeys = {};
 
   @override
   void initState() {
@@ -165,7 +166,10 @@ class _CustomWorkoutConfigurationPageState
     _stateManager.setPreventAutoFocus(true); // Temporarily disable interaction
   }
 
-  void _handleExercisesLoaded(List<String> newExerciseNames) {
+  Future<void> _handleExercisesLoaded(List<String> newExerciseNames) async {
+    // Add exercises to state manager first (this is async)
+    final newExercises = await _stateManager.addExercises(newExerciseNames);
+
     // Additional focus clearing after state change
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
@@ -173,8 +177,8 @@ class _CustomWorkoutConfigurationPageState
       }
     });
 
-    // Add exercises to state manager
-    _stateManager.addExercises(newExerciseNames);
+    // Await robust scroll
+    await _scrollToNewExercises(newExercises);
 
     // Mark exercises as no longer newly added after animation completes
     Future.delayed(const Duration(milliseconds: 1000), () {
@@ -205,6 +209,8 @@ class _CustomWorkoutConfigurationPageState
       }
     }
 
+    final exerciseToRemove = _stateManager.exercises[index];
+    _exerciseKeys.remove(exerciseToRemove.id); // Clean up key
     _stateManager.removeExercise(index);
   }
 
@@ -270,6 +276,27 @@ class _CustomWorkoutConfigurationPageState
         }
       });
     }
+  }
+
+  Future<void> _scrollToNewExercises(List<ConfigExercise> newExercises) async {
+    if (!mounted || newExercises.isEmpty) return;
+    final firstNew = newExercises.first;
+    const maxTries = 10;
+    int tries = 0;
+    while (tries < maxTries) {
+      final key = _exerciseKeys[firstNew.id];
+      if (key != null && key.currentContext != null) {
+        await Scrollable.ensureVisible(
+          key.currentContext!,
+          duration: const Duration(milliseconds: 700),
+          curve: Curves.easeOutCubic,
+        );
+        return;
+      }
+      await Future.delayed(const Duration(milliseconds: 50));
+      tries++;
+    }
+    debugPrint('Failed to find key/context for exercise id: ${firstNew.id} after $maxTries tries');
   }
 
   @override
@@ -386,63 +413,71 @@ class _CustomWorkoutConfigurationPageState
                                   );
                                 },
                               )
-                              : ListView.builder(
+                              : SingleChildScrollView(
                                 controller: _scrollController,
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 16.0,
                                 ),
-                                itemCount: stateManager.exercises.length,
-                                itemBuilder: (context, index) {
-                                  final exercise =
-                                      stateManager.exercises[index];
-                                  return Dismissible(
-                                    key: Key('exercise_${exercise.id}'),
-                                    direction: DismissDirection.endToStart,
-                                    background: Container(
-                                      alignment: Alignment.centerRight,
-                                      padding: const EdgeInsets.only(right: 20),
-                                      margin: const EdgeInsets.symmetric(
-                                        vertical: 4,
+                                child: Column(
+                                  children: [
+                                    for (int index = 0; index < stateManager.exercises.length; index++) ...[
+                                      Builder(
+                                        builder: (context) {
+                                          final exercise = stateManager.exercises[index];
+                                          final cardKey = _exerciseKeys.putIfAbsent(exercise.id, () => GlobalKey());
+                                          return Dismissible(
+                                            key: Key('exercise_${exercise.id}'),
+                                            direction: DismissDirection.endToStart,
+                                            background: Container(
+                                              alignment: Alignment.centerRight,
+                                              padding: const EdgeInsets.only(right: 20),
+                                              margin: const EdgeInsets.symmetric(
+                                                vertical: 4,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: Colors.red,
+                                                borderRadius: BorderRadius.circular(12),
+                                              ),
+                                              child: const FaIcon(
+                                                FontAwesomeIcons.trash,
+                                                color: Colors.white,
+                                                size: 24,
+                                              ),
+                                            ),
+                                            onDismissed: (direction) {
+                                              _handleRemoveExercise(index);
+                                            },
+                                            child: Card(
+                                              key: cardKey,
+                                              color: Colors.white,
+                                              margin: const EdgeInsets.symmetric(
+                                                vertical: 4,
+                                              ),
+                                              child: CustomWorkoutExerciseCard(
+                                                exercise: exercise,
+                                                index: index,
+                                                isCollapsed: false,
+                                                isNewlyAdded: stateManager
+                                                    .isExerciseNewlyAdded(exercise),
+                                                preventAutoFocus:
+                                                    stateManager.preventAutoFocus,
+                                                onRequestReorderMode:
+                                                    _handleRequestReorderMode,
+                                                onAddSet: () => _handleAddSet(exercise),
+                                                onRemoveSet:
+                                                    (set) =>
+                                                        _handleRemoveSet(exercise, set),
+                                                onWeightChanged: _handleWeightChanged,
+                                                onRepsChanged: _handleRepsChanged,
+                                              ),
+                                            ),
+                                          );
+                                        },
                                       ),
-                                      decoration: BoxDecoration(
-                                        color: Colors.red,
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: const FaIcon(
-                                        FontAwesomeIcons.trash,
-                                        color: Colors.white,
-                                        size: 24,
-                                      ),
-                                    ),
-                                    onDismissed: (direction) {
-                                      _handleRemoveExercise(index);
-                                    },
-                                    child: Card(
-                                      key: Key('card_${exercise.id}'),
-                                      color: Colors.white,
-                                      margin: const EdgeInsets.symmetric(
-                                        vertical: 4,
-                                      ),
-                                      child: CustomWorkoutExerciseCard(
-                                        exercise: exercise,
-                                        index: index,
-                                        isCollapsed: false,
-                                        isNewlyAdded: stateManager
-                                            .isExerciseNewlyAdded(exercise),
-                                        preventAutoFocus:
-                                            stateManager.preventAutoFocus,
-                                        onRequestReorderMode:
-                                            _handleRequestReorderMode,
-                                        onAddSet: () => _handleAddSet(exercise),
-                                        onRemoveSet:
-                                            (set) =>
-                                                _handleRemoveSet(exercise, set),
-                                        onWeightChanged: _handleWeightChanged,
-                                        onRepsChanged: _handleRepsChanged,
-                                      ),
-                                    ),
-                                  );
-                                },
+                                    ],
+                                    const SizedBox(height: 100), // bottom padding
+                                  ],
+                                ),
                               ),
                     ),
                     // Add Exercises button with animations

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:gymfit/pages/workout/exercise_information_page.dart';
 import 'package:gymfit/pages/workout/custom_workout_configuration_page_refactored.dart';
@@ -320,9 +321,14 @@ class _CustomWorkoutPageState extends State<CustomWorkoutPage> {
         return; // User cancelled, don't start new workout
       }
       
+      // Add haptic feedback when starting new workout after confirmation
+      HapticFeedback.mediumImpact();
       // Clear existing workout
       QuickStartOverlay.selectedExercises.clear();
       QuickStartOverlay.resetTimer();
+    } else {
+      // Add haptic feedback when starting new workout
+      HapticFeedback.mediumImpact();
     }
 
     // Convert custom workout exercises to QuickStartExercise objects with configured sets

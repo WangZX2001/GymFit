@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:gymfit/packages/exercise_information_repository/exercise_information_repository.dart';
 import 'package:gymfit/pages/workout/exercise_description_page.dart';
 import 'package:gymfit/pages/workout/filter/exercise_filter_page.dart';
@@ -488,6 +489,8 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage>
                                     return GestureDetector(
                                       onTap: () {
                                         if (widget.isSelectionMode) {
+                                          // Add haptic feedback when selecting/deselecting exercises
+                                          HapticFeedback.lightImpact();
                                           setState(() {
                                             if (isSelected) {
                                               _selectedTitles.remove(e.title);

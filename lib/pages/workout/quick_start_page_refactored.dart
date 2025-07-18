@@ -34,6 +34,7 @@ class QuickStartPage extends StatefulWidget {
 class _QuickStartPageState extends State<QuickStartPage> {
   late ScrollController _scrollController;
   late QuickStartStateManager _stateManager;
+  final Map<QuickStartExercise, GlobalKey> _exerciseKeys = {};
 
   @override
   void initState() {
@@ -127,10 +128,18 @@ class _QuickStartPageState extends State<QuickStartPage> {
 
   void _handleCustomWorkoutSelected(dynamic customWorkout) {
     _stateManager.loadCustomWorkout(customWorkout);
+    
+    // Scroll to the newly loaded exercises after the UI has been updated
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _scrollToNewExercises(_stateManager.selectedExercises);
+      }
+    });
   }
 
   void _handleRemoveExercise(QuickStartExercise exercise) {
     _stateManager.removeExercise(exercise);
+    _exerciseKeys.remove(exercise); // Clean up key
   }
 
   void _handleRemoveSet(QuickStartExercise exercise, ExerciseSet set) {
@@ -189,6 +198,7 @@ class _QuickStartPageState extends State<QuickStartPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _clearFocusAggressively();
+        _scrollToNewExercises(newExercises);
       }
     });
 
@@ -196,6 +206,22 @@ class _QuickStartPageState extends State<QuickStartPage> {
     Future.delayed(const Duration(milliseconds: 300), () {
       if (mounted) {
         _stateManager.setPreventAutoFocus(false);
+      }
+    });
+  }
+
+  void _scrollToNewExercises(List<QuickStartExercise> newExercises) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      if (newExercises.isEmpty) return;
+      final firstNew = newExercises.first;
+      final key = _exerciseKeys[firstNew];
+      if (key != null && key.currentContext != null) {
+        await Scrollable.ensureVisible(
+          key.currentContext!,
+          duration: const Duration(milliseconds: 700),
+          curve: Curves.easeOutCubic,
+        );
       }
     });
   }
@@ -258,6 +284,24 @@ class _QuickStartPageState extends State<QuickStartPage> {
 
   void _handleDoneReorder() {
     _stateManager.setReorderMode(false);
+    
+    // After exiting reorder mode, check the current scroll position
+    // to determine if workout name should be shown in app bar
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _checkScrollPositionForWorkoutName();
+      }
+    });
+  }
+
+  void _checkScrollPositionForWorkoutName() {
+    // Show workout name in app bar when scrolled past the workout name card (approximately 100 pixels)
+    const double threshold = 100.0;
+    bool shouldShow = _scrollController.offset > threshold;
+    
+    if (shouldShow != _stateManager.showWorkoutNameInAppBar) {
+      _stateManager.setShowWorkoutNameInAppBar(shouldShow);
+    }
   }
 
   @override
@@ -515,7 +559,7 @@ class _QuickStartPageState extends State<QuickStartPage> {
                                         crossAxisAlignment:
                                             CrossAxisAlignment.center,
                                         children: [
-                                          stateManager.isInReorderMode
+                                                                                        stateManager.isInReorderMode
                                               ? ReorderableListView(
                                                 shrinkWrap: true,
                                                 physics:
@@ -596,10 +640,9 @@ class _QuickStartPageState extends State<QuickStartPage> {
                                                       final index = entry.key;
                                                       final exercise =
                                                           entry.value;
+                                                      final cardKey = _exerciseKeys.putIfAbsent(exercise, () => GlobalKey());
                                                       return ExerciseCard(
-                                                        key: Key(
-                                                          'exercise_${exercise.title}_$index',
-                                                        ),
+                                                        key: cardKey,
                                                         exercise: exercise,
                                                         exerciseIndex: index,
                                                         preventAutoFocus:

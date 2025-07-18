@@ -263,7 +263,7 @@ class CustomWorkoutConfigurationStateManager extends ChangeNotifier {
   }
 
   // Exercise management
-  void addExercises(List<String> exerciseNames) async {
+  Future<List<ConfigExercise>> addExercises(List<String> exerciseNames) async {
     final List<ConfigExercise> newExercises = [];
 
     for (final title in exerciseNames) {
@@ -317,6 +317,8 @@ class CustomWorkoutConfigurationStateManager extends ChangeNotifier {
 
     _exercises.addAll(newExercises);
     notifyListeners();
+    
+    return newExercises;
   }
 
   void removeExercise(int index) {
