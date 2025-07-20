@@ -238,12 +238,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
       }
       
       if (!isUnique) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Username is already taken'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Username is already taken'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
         return;
       }
     }
@@ -649,7 +651,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          backgroundColor: themeService.currentTheme.dialogBackgroundColor,
+          backgroundColor: themeService.currentTheme.dialogTheme.backgroundColor,
           title: Text(
             'Change Profile Picture',
             style: themeService.currentTheme.textTheme.titleLarge,

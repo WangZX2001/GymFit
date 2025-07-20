@@ -18,7 +18,7 @@ class QuickStartStateManager extends ChangeNotifier {
   int? _currentlyReorderingIndex;
   bool _isInReorderMode = false;
   final Set<QuickStartExercise> _newlyAddedExercises = {};
-  bool _hasReorderedExercises = false;
+
 
   // Getters
   List<QuickStartExercise> get selectedExercises => _selectedExercises;
@@ -188,8 +188,7 @@ class QuickStartStateManager extends ChangeNotifier {
     final QuickStartExercise item = _selectedExercises.removeAt(oldIndex);
     _selectedExercises.insert(newIndex, item);
 
-    // Track that reordering has occurred
-    _hasReorderedExercises = true;
+
 
     // Clear newly added flags when reordering to prevent animation during reorder
     _newlyAddedExercises.clear();
@@ -218,7 +217,7 @@ class QuickStartStateManager extends ChangeNotifier {
     // If exiting reorder mode, treat all exercises as newly added to trigger unfolding animations
     if (!isInReorderMode) {
       _newlyAddedExercises.addAll(_selectedExercises);
-      _hasReorderedExercises = false; // Reset the flag
+  
       
       // Don't automatically reset workout name app bar state when exiting reorder mode
       // Let the scroll position check determine the correct state

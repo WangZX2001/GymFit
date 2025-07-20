@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
-import 'package:gymfit/pages/auth_page.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+
 import 'package:gymfit/models/workout.dart';
 import 'package:gymfit/services/workout_service.dart';
 import 'package:gymfit/pages/me/statistics_page.dart';
@@ -252,8 +253,8 @@ class _MePageState extends State<MePage> with WidgetsBindingObserver, AutomaticK
                       ),
                       child: Column(
                         children: [
-                          Icon(
-                            Icons.person,
+                          FaIcon(
+                            FontAwesomeIcons.user,
                             size: 80,
                             color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
                           ),
@@ -295,8 +296,8 @@ class _MePageState extends State<MePage> with WidgetsBindingObserver, AutomaticK
                           color: themeService.isDarkMode ? Colors.grey.shade700 : Colors.grey.shade200,
                           shape: BoxShape.circle,
                         ),
-                        child: Icon(
-                          Icons.settings,
+                        child: FaIcon(
+                          FontAwesomeIcons.gear,
                           size: 20,
                           color: themeService.isDarkMode ? Colors.grey.shade300 : Colors.grey.shade600,
                         ),
@@ -317,7 +318,7 @@ class _MePageState extends State<MePage> with WidgetsBindingObserver, AutomaticK
                         child: _buildStreakCard(
                           'Current Streak',
                           currentStreak.toString(),
-                          Icons.local_fire_department,
+                          FontAwesomeIcons.fire,
                           Colors.orange,
                         ),
                       ),
@@ -326,7 +327,7 @@ class _MePageState extends State<MePage> with WidgetsBindingObserver, AutomaticK
                         child: _buildStreakCard(
                           'Longest Streak',
                           longestStreak.toString(),
-                          Icons.military_tech,
+                          FontAwesomeIcons.trophy,
                           Colors.purple,
                         ),
                       ),
@@ -342,7 +343,7 @@ class _MePageState extends State<MePage> with WidgetsBindingObserver, AutomaticK
                         child: _buildStreakCard(
                           'Total Workouts',
                           workouts.length.toString(),
-                          Icons.fitness_center,
+                          FontAwesomeIcons.dumbbell,
                           Colors.green,
                         ),
                       ),
@@ -351,7 +352,7 @@ class _MePageState extends State<MePage> with WidgetsBindingObserver, AutomaticK
                         child: _buildStreakCard(
                           'Workout Days',
                           workoutDays.length.toString(),
-                          Icons.calendar_month,
+                          FontAwesomeIcons.calendarDays,
                           Colors.blue,
                         ),
                       ),
@@ -383,7 +384,7 @@ class _MePageState extends State<MePage> with WidgetsBindingObserver, AutomaticK
                         // Statistics Button
                         _buildActionButton(
                           title: 'Statistics',
-                          icon: Icons.analytics,
+                          icon: FontAwesomeIcons.chartLine,
                           color: Colors.blue.shade600,
                           onTap: () {
                             Navigator.of(context, rootNavigator: true).push(
@@ -407,7 +408,7 @@ class _MePageState extends State<MePage> with WidgetsBindingObserver, AutomaticK
                         // Friends Button
                         _buildActionButton(
                           title: 'Friends',
-                          icon: Icons.group,
+                          icon: FontAwesomeIcons.users,
                           color: Colors.green.shade600,
                           onTap: () {
                             Navigator.of(context, rootNavigator: true).push(
@@ -517,8 +518,8 @@ class _MePageState extends State<MePage> with WidgetsBindingObserver, AutomaticK
                 ),
               ),
             ),
-            Icon(
-              Icons.arrow_forward_ios,
+            FaIcon(
+              FontAwesomeIcons.chevronRight,
               size: 16,
               color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
             ),

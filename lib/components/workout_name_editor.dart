@@ -77,7 +77,7 @@ class _WorkoutNameEditorState extends State<WorkoutNameEditor> {
     final themeService = Provider.of<ThemeService>(context);
     
     if (widget.showInAppBar) {
-      return Container(
+      return SizedBox(
         key: const ValueKey('workout-name-app-bar'),
         height: 20,
         child: Row(
@@ -170,24 +170,20 @@ class _WorkoutNameEditorState extends State<WorkoutNameEditor> {
                         )
                       : GestureDetector(
                           onTap: _handleToggleEditing,
-                          child: Container(
+                          child: SizedBox(
                             width: double.infinity,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 8,
-                            ),
-                            decoration: BoxDecoration(
-                              border: Border.all(
-                                color: Colors.transparent,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
                               ),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              widget.currentWorkoutName,
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.purple,
+                              child: Text(
+                                widget.currentWorkoutName,
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.purple,
+                                ),
                               ),
                             ),
                           ),

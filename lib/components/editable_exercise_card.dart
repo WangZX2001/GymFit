@@ -47,7 +47,6 @@ class _EditableExerciseCardState extends State<EditableExerciseCard>
   Animation<Offset>? _slideAnimation;
   Animation<double>? _contentHeightAnimation;
   Animation<double>? _unfoldContentHeightAnimation;
-  bool _isUnfolding = false;
 
   @override
   void initState() {

@@ -329,6 +329,7 @@ class _CustomWorkoutConfigurationPageState
               builder: (context, themeService, child) {
                 return Scaffold(
                   backgroundColor: themeService.currentTheme.scaffoldBackgroundColor,
+                  resizeToAvoidBottomInset: false,
                   appBar: AppBar(
                     backgroundColor: themeService.currentTheme.appBarTheme.backgroundColor,
                     elevation: 0,

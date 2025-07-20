@@ -8,6 +8,7 @@ import 'package:persistent_bottom_nav_bar_v2/components/animated_icon_wrapper.da
 import 'package:gymfit/components/quick_start_overlay.dart';
 import 'package:provider/provider.dart';
 import 'package:gymfit/services/theme_service.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class PersistentNavBar extends StatefulWidget {
   final int initialIndex;
@@ -31,10 +32,19 @@ class _PersistentNavBarState extends State<PersistentNavBar> {
         PersistentTabConfig(
           screen: const HomePage(),
           item: ItemConfig(
-            icon: AnimatedIconWrapper(
-              icon: AnimatedIcons.home_menu,
-              duration: const Duration(milliseconds: 400),
-              curve: Curves.easeInOut,
+            icon: AnimatedBuilder(
+              animation: _controller,
+              builder: (context, child) {
+                final isSelected = _controller.index == 0;
+                return AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 300),
+                  child: FaIcon(
+                    isSelected ? FontAwesomeIcons.houseUser : FontAwesomeIcons.house,
+                    key: ValueKey(isSelected),
+                    size: 24,
+                  ),
+                );
+              },
             ),
             title: 'Home',
           ),
@@ -42,21 +52,21 @@ class _PersistentNavBarState extends State<PersistentNavBar> {
         PersistentTabConfig(
           screen: const HistoryPage(),
           item: ItemConfig(
-            icon: const Icon(Icons.history),
+            icon: const FaIcon(FontAwesomeIcons.clockRotateLeft, size: 24),
             title: 'History',
           ),
         ),
         PersistentTabConfig(
           screen: const WorkoutPage(),
           item: ItemConfig(
-            icon: const Icon(Icons.fitness_center),
+            icon: const FaIcon(FontAwesomeIcons.dumbbell, size: 24),
             title: 'Workout',
           ),
         ),
         PersistentTabConfig(
           screen: const MePage(),
           item: ItemConfig(
-            icon: const Icon(Icons.person),
+            icon: const FaIcon(FontAwesomeIcons.user, size: 24),
             title: 'Me',
           ),
         ),

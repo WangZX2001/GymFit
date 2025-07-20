@@ -4,7 +4,6 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:gymfit/models/workout.dart';
 import 'package:gymfit/models/editable_workout_models.dart';
 import 'package:gymfit/models/quick_start_exercise.dart';
-import 'package:gymfit/pages/workout/exercise_information_page.dart';
 import 'package:gymfit/services/workout_edit_service.dart';
 import 'package:gymfit/services/theme_service.dart';
 import 'package:gymfit/components/workout_name_editor.dart';
@@ -33,7 +32,7 @@ class _WorkoutEditPageState extends State<WorkoutEditPage> {
   bool _showWorkoutNameInAppBar = false;
   bool _preventAutoFocus = false;
   bool _isAnyFieldFocused = false;
-  Set<EditableExercise> _newlyAddedExercises = {};
+  final Set<EditableExercise> _newlyAddedExercises = {};
   bool _isInReorderMode = false;
 
   @override
@@ -265,9 +264,7 @@ class _WorkoutEditPageState extends State<WorkoutEditPage> {
     return _newlyAddedExercises.contains(exercise);
   }
 
-  void _clearNewlyAddedFlag(EditableExercise exercise) {
-    _newlyAddedExercises.remove(exercise);
-  }
+
 
   void _handleRequestReorderMode() {
     setState(() {

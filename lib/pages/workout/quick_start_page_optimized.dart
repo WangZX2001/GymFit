@@ -744,7 +744,7 @@ class _QuickStartPageOptimizedState extends State<QuickStartPageOptimized> {
                                                             true,
                                                           ),
                                                 );
-                                              }).toList(),
+                                              }),
                                               const SizedBox(height: 16),
                                               if (!stateManager.isInReorderMode)
                                                 FinishWorkoutButton(

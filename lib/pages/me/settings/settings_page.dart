@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:gymfit/pages/auth_page.dart';
 import 'package:gymfit/pages/me/settings/edit_profile_page.dart';
 import 'package:gymfit/services/user_profile_service.dart';
@@ -86,8 +87,8 @@ class _SettingsPageState extends State<SettingsPage> {
         backgroundColor: themeService.currentTheme.appBarTheme.backgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back,
+          icon: FaIcon(
+            FontAwesomeIcons.arrowLeft,
             color: themeService.currentTheme.appBarTheme.foregroundColor,
           ),
           onPressed: () => Navigator.of(context).pop(),
@@ -110,7 +111,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   'Account',
                   [
                                          _buildSettingsTile(
-                       icon: Icons.edit,
+                       icon: FontAwesomeIcons.userPen,
                        title: 'Edit Profile',
                        subtitle: 'Update your personal information',
                        onTap: () {
@@ -127,14 +128,11 @@ class _SettingsPageState extends State<SettingsPage> {
                        },
                      ),
                     _buildSettingsTile(
-                      icon: Icons.lock,
+                      icon: FontAwesomeIcons.shieldHalved,
                       title: 'Privacy',
                       subtitle: 'Manage your privacy settings',
                       onTap: () {
-                        // TODO: Implement privacy settings
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Privacy Settings - Coming Soon')),
-                        );
+                        _showPrivacySettingsDialog();
                       },
                     ),
                   ],
@@ -146,29 +144,23 @@ class _SettingsPageState extends State<SettingsPage> {
                   'App',
                   [
                     _buildSettingsTile(
-                      icon: Icons.notifications,
+                      icon: FontAwesomeIcons.bell,
                       title: 'Notifications',
                       subtitle: 'Manage notification preferences',
                       onTap: () {
-                        // TODO: Implement notification settings
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Notification Settings - Coming Soon')),
-                        );
+                        _showNotificationSettingsDialog();
                       },
                     ),
                     _buildSettingsTile(
-                      icon: Icons.language,
+                      icon: FontAwesomeIcons.language,
                       title: 'Language',
                       subtitle: 'Change app language',
                       onTap: () {
-                        // TODO: Implement language settings
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Language Settings - Coming Soon')),
-                        );
+                        _showLanguageSettingsDialog();
                       },
                     ),
                     _buildSettingsTile(
-                      icon: Icons.dark_mode,
+                      icon: FontAwesomeIcons.palette,
                       title: 'Theme',
                       subtitle: 'Light or dark mode',
                       onTap: () {
@@ -184,25 +176,19 @@ class _SettingsPageState extends State<SettingsPage> {
                   'Support',
                   [
                     _buildSettingsTile(
-                      icon: Icons.help,
+                      icon: FontAwesomeIcons.circleQuestion,
                       title: 'Help & Support',
                       subtitle: 'Get help and contact support',
                       onTap: () {
-                        // TODO: Implement help and support
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Help & Support - Coming Soon')),
-                        );
+                        _showHelpSupportDialog();
                       },
                     ),
                     _buildSettingsTile(
-                      icon: Icons.info,
+                      icon: FontAwesomeIcons.circleInfo,
                       title: 'About',
                       subtitle: 'App version and information',
                       onTap: () {
-                        // TODO: Implement about page
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('About - Coming Soon')),
-                        );
+                        _showAboutDialog();
                       },
                     ),
                   ],
@@ -230,7 +216,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     child: const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.logout, size: 20),
+                        FaIcon(FontAwesomeIcons.rightFromBracket, size: 20),
                         SizedBox(width: 8),
                         Text(
                           'Logout',
@@ -324,8 +310,8 @@ class _SettingsPageState extends State<SettingsPage> {
           fontSize: 12,
         ),
       ),
-      trailing: Icon(
-        Icons.arrow_forward_ios,
+      trailing: FaIcon(
+        FontAwesomeIcons.chevronRight,
         color: themeService.isDarkMode ? Colors.grey.shade500 : Colors.grey.shade400,
         size: 16,
       ),
@@ -345,24 +331,24 @@ class _SettingsPageState extends State<SettingsPage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
-                leading: Icon(
-                  Icons.light_mode,
+                leading: FaIcon(
+                  FontAwesomeIcons.sun,
                   color: themeService.isDarkMode ? Colors.grey : Colors.orange,
                 ),
                 title: const Text('Light Mode'),
-                trailing: themeService.isDarkMode ? null : const Icon(Icons.check, color: Colors.green),
+                trailing: themeService.isDarkMode ? null : const FaIcon(FontAwesomeIcons.check, color: Colors.green),
                 onTap: () {
                   themeService.setTheme(false);
                   Navigator.of(context).pop();
                 },
               ),
               ListTile(
-                leading: Icon(
-                  Icons.dark_mode,
+                leading: FaIcon(
+                  FontAwesomeIcons.moon,
                   color: themeService.isDarkMode ? Colors.blue : Colors.grey,
                 ),
                 title: const Text('Dark Mode'),
-                trailing: themeService.isDarkMode ? const Icon(Icons.check, color: Colors.green) : null,
+                trailing: themeService.isDarkMode ? const FaIcon(FontAwesomeIcons.check, color: Colors.green) : null,
                 onTap: () {
                   themeService.setTheme(true);
                   Navigator.of(context).pop();
@@ -394,19 +380,183 @@ class _SettingsPageState extends State<SettingsPage> {
               child: const Text('Cancel'),
             ),
             TextButton(
-              onPressed: () {
+              onPressed: () async {
+                final navigator = Navigator.of(context, rootNavigator: true);
                 Navigator.of(context).pop();
-                FirebaseAuth.instance.signOut().then((_) {
-                  Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+                await FirebaseAuth.instance.signOut();
+                if (mounted) {
+                  navigator.pushAndRemoveUntil(
                     MaterialPageRoute(builder: (c) => const AuthPage()),
                     (route) => false,
                   );
-                });
+                }
               },
               child: const Text(
                 'Logout',
                 style: TextStyle(color: Colors.red),
               ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showPrivacySettingsDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Privacy Settings'),
+          content: const Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Privacy settings will be implemented in a future update.'),
+              SizedBox(height: 8),
+              Text('Features planned:'),
+              SizedBox(height: 4),
+              Text('• Profile visibility'),
+              Text('• Data sharing preferences'),
+              Text('• Account privacy controls'),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showNotificationSettingsDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Notification Settings'),
+          content: const Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Notification settings will be implemented in a future update.'),
+              SizedBox(height: 8),
+              Text('Features planned:'),
+              SizedBox(height: 4),
+              Text('• Workout reminders'),
+              Text('• Achievement notifications'),
+              Text('• Friend activity updates'),
+              Text('• App updates'),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showLanguageSettingsDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Language Settings'),
+          content: const Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Language settings will be implemented in a future update.'),
+              SizedBox(height: 8),
+              Text('Languages planned:'),
+              SizedBox(height: 4),
+              Text('• English'),
+              Text('• Spanish'),
+              Text('• French'),
+              Text('• German'),
+              Text('• More languages coming soon'),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showHelpSupportDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Help & Support'),
+          content: const Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Need help? Here are some resources:'),
+              SizedBox(height: 8),
+              Text('• FAQ section'),
+              Text('• Contact support team'),
+              Text('• User guide'),
+              Text('• Troubleshooting tips'),
+              SizedBox(height: 8),
+              Text('For immediate support, please email:'),
+              Text('support@gymfit.app'),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showAboutDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('About GymFit'),
+          content: const Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('GymFit - Your Personal Fitness Companion'),
+              SizedBox(height: 8),
+              Text('Version: 1.0.0'),
+              Text('Build: 2024.1.0'),
+              SizedBox(height: 8),
+              Text('Features:'),
+              SizedBox(height: 4),
+              Text('• Custom workout creation'),
+              Text('• Exercise tracking'),
+              Text('• Progress monitoring'),
+              Text('• Social features'),
+              SizedBox(height: 8),
+              Text('© 2024 GymFit Team'),
+              Text('All rights reserved.'),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
             ),
           ],
         );

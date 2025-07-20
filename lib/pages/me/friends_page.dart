@@ -585,7 +585,7 @@ class _FriendsPageState extends State<FriendsPage> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: themeService.currentTheme.dialogBackgroundColor,
+        backgroundColor: themeService.currentTheme.dialogTheme.backgroundColor,
         title: Text(
           'Remove Friend',
           style: themeService.currentTheme.textTheme.titleLarge,
