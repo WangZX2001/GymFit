@@ -36,7 +36,7 @@ class AddExerciseButton extends StatelessWidget {
             ? const SizedBox.shrink()
             : Column(
                 children: [
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 4),
                   LayoutBuilder(
                     builder: (context, constraints) {
                       final screenWidth = MediaQuery.of(context).size.width;

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:provider/provider.dart';
 import 'package:gymfit/components/quick_start_overlay.dart';
 import 'package:gymfit/models/quick_start_exercise.dart';
 import 'package:gymfit/services/workout_service.dart';
 import 'package:gymfit/services/calorie_calculation_service.dart';
+import 'package:gymfit/services/theme_service.dart';
 import 'package:gymfit/models/workout.dart';
 
 class WorkoutSummaryPage extends StatefulWidget {
@@ -183,19 +185,24 @@ class _WorkoutSummaryPageState extends State<WorkoutSummaryPage> {
 
   @override
   Widget build(BuildContext context) {
+    final themeService = Provider.of<ThemeService>(context);
+    
     try {
       final totalCompletedSets = _getTotalCompletedSets();
       final totalExercises = widget.completedExercises.length;
 
       return Scaffold(
-        backgroundColor: Colors.grey.shade200,
+        backgroundColor: themeService.currentTheme.scaffoldBackgroundColor,
         appBar: AppBar(
-          backgroundColor: Colors.grey.shade200,
+          backgroundColor: themeService.currentTheme.appBarTheme.backgroundColor,
           elevation: 0,
           leading: const SizedBox(), // Remove back button
-          title: const Text(
+          title: Text(
             'Workout Complete!',
-            style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              color: themeService.currentTheme.appBarTheme.foregroundColor,
+              fontWeight: FontWeight.bold
+            ),
           ),
           centerTitle: true,
         ),
@@ -213,11 +220,13 @@ class _WorkoutSummaryPageState extends State<WorkoutSummaryPage> {
                           width: double.infinity,
                           padding: const EdgeInsets.all(24.0),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: themeService.currentTheme.cardTheme.color,
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.1),
+                                color: themeService.isDarkMode 
+                                    ? Colors.black.withValues(alpha: 0.3)
+                                    : Colors.black.withValues(alpha: 0.1),
                                 blurRadius: 8,
                                 offset: const Offset(0, 2),
                               ),
@@ -231,21 +240,21 @@ class _WorkoutSummaryPageState extends State<WorkoutSummaryPage> {
                                 color: Colors.amber,
                               ),
                               const SizedBox(height: 16),
-                              const Text(
+                              Text(
                                 'Congratulations!',
                                 style: TextStyle(
                                   fontSize: 28,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.black,
+                                  color: themeService.currentTheme.textTheme.titleLarge?.color,
                                 ),
                                 textAlign: TextAlign.center,
                               ),
                               const SizedBox(height: 8),
-                              const Text(
+                              Text(
                                 'You\'ve completed your workout!',
                                 style: TextStyle(
                                   fontSize: 16,
-                                  color: Colors.grey,
+                                  color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey,
                                 ),
                                 textAlign: TextAlign.center,
                               ),
@@ -260,11 +269,13 @@ class _WorkoutSummaryPageState extends State<WorkoutSummaryPage> {
                           width: double.infinity,
                           padding: const EdgeInsets.all(20.0),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: themeService.currentTheme.cardTheme.color,
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.1),
+                                color: themeService.isDarkMode 
+                                    ? Colors.black.withValues(alpha: 0.3)
+                                    : Colors.black.withValues(alpha: 0.1),
                                 blurRadius: 8,
                                 offset: const Offset(0, 2),
                               ),
@@ -282,11 +293,11 @@ class _WorkoutSummaryPageState extends State<WorkoutSummaryPage> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    const Text(
+                                    Text(
                                       'Workout Name',
                                       style: TextStyle(
                                         fontSize: 14,
-                                        color: Colors.grey,
+                                        color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey,
                                         fontWeight: FontWeight.w500,
                                       ),
                                     ),
@@ -313,11 +324,13 @@ class _WorkoutSummaryPageState extends State<WorkoutSummaryPage> {
                           width: double.infinity,
                           padding: const EdgeInsets.all(20.0),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: themeService.currentTheme.cardTheme.color,
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.1),
+                                color: themeService.isDarkMode 
+                                    ? Colors.black.withValues(alpha: 0.3)
+                                    : Colors.black.withValues(alpha: 0.1),
                                 blurRadius: 8,
                                 offset: const Offset(0, 2),
                               ),
@@ -326,12 +339,12 @@ class _WorkoutSummaryPageState extends State<WorkoutSummaryPage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text(
+                              Text(
                                 'Workout Summary',
                                 style: TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.black,
+                                  color: themeService.currentTheme.textTheme.titleLarge?.color,
                                 ),
                               ),
                               const SizedBox(height: 16),
@@ -345,11 +358,12 @@ class _WorkoutSummaryPageState extends State<WorkoutSummaryPage> {
                                     color: Colors.blue,
                                   ),
                                   const SizedBox(width: 12),
-                                  const Text(
+                                  Text(
                                     'Time Elapsed:',
                                     style: TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w500,
+                                      color: themeService.currentTheme.textTheme.bodyLarge?.color,
                                     ),
                                   ),
                                   const Spacer(),
@@ -375,11 +389,12 @@ class _WorkoutSummaryPageState extends State<WorkoutSummaryPage> {
                                     color: Colors.green,
                                   ),
                                   const SizedBox(width: 12),
-                                  const Text(
+                                  Text(
                                     'Exercises:',
                                     style: TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w500,
+                                      color: themeService.currentTheme.textTheme.bodyLarge?.color,
                                     ),
                                   ),
                                   const Spacer(),
@@ -405,11 +420,12 @@ class _WorkoutSummaryPageState extends State<WorkoutSummaryPage> {
                                     color: Colors.orange,
                                   ),
                                   const SizedBox(width: 12),
-                                  const Text(
+                                  Text(
                                     'Sets Completed:',
                                     style: TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w500,
+                                      color: themeService.currentTheme.textTheme.bodyLarge?.color,
                                     ),
                                   ),
                                   const Spacer(),
@@ -435,11 +451,12 @@ class _WorkoutSummaryPageState extends State<WorkoutSummaryPage> {
                                     color: Colors.red,
                                   ),
                                   const SizedBox(width: 12),
-                                  const Text(
+                                  Text(
                                     'Calories Burnt:',
                                     style: TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w500,
+                                      color: themeService.currentTheme.textTheme.bodyLarge?.color,
                                     ),
                                   ),
                                   const Spacer(),
@@ -463,12 +480,12 @@ class _WorkoutSummaryPageState extends State<WorkoutSummaryPage> {
                                           color: Colors.red,
                                         ),
                                       )
-                                      : const Text(
+                                      : Text(
                                         '0 cal',
                                         style: TextStyle(
                                           fontSize: 16,
                                           fontWeight: FontWeight.bold,
-                                          color: Colors.grey,
+                                          color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey,
                                         ),
                                       ),
                                 ],
@@ -485,11 +502,13 @@ class _WorkoutSummaryPageState extends State<WorkoutSummaryPage> {
                             width: double.infinity,
                             padding: const EdgeInsets.all(20.0),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: themeService.currentTheme.cardTheme.color,
                               borderRadius: BorderRadius.circular(16),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.1),
+                                  color: themeService.isDarkMode 
+                                      ? Colors.black.withValues(alpha: 0.3)
+                                      : Colors.black.withValues(alpha: 0.1),
                                   blurRadius: 8,
                                   offset: const Offset(0, 2),
                                 ),
@@ -498,12 +517,12 @@ class _WorkoutSummaryPageState extends State<WorkoutSummaryPage> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text(
+                                Text(
                                   'Exercise Breakdown',
                                   style: TextStyle(
                                     fontSize: 20,
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.black,
+                                    color: themeService.currentTheme.textTheme.titleLarge?.color,
                                   ),
                                 ),
                                 const SizedBox(height: 16),
@@ -526,9 +545,10 @@ class _WorkoutSummaryPageState extends State<WorkoutSummaryPage> {
                                         Expanded(
                                           child: Text(
                                             exercise.title,
-                                            style: const TextStyle(
+                                            style: TextStyle(
                                               fontSize: 16,
                                               fontWeight: FontWeight.w500,
+                                              color: themeService.currentTheme.textTheme.bodyLarge?.color,
                                             ),
                                           ),
                                         ),
@@ -540,8 +560,8 @@ class _WorkoutSummaryPageState extends State<WorkoutSummaryPage> {
                                           decoration: BoxDecoration(
                                             color:
                                                 completedSets > 0
-                                                    ? Colors.green.shade100
-                                                    : Colors.grey.shade100,
+                                                    ? (themeService.isDarkMode ? Colors.green.shade900 : Colors.green.shade100)
+                                                    : (themeService.isDarkMode ? Colors.grey.shade800 : Colors.grey.shade100),
                                             borderRadius: BorderRadius.circular(
                                               12,
                                             ),
@@ -553,8 +573,8 @@ class _WorkoutSummaryPageState extends State<WorkoutSummaryPage> {
                                               fontWeight: FontWeight.bold,
                                               color:
                                                   completedSets > 0
-                                                      ? Colors.green.shade700
-                                                      : Colors.grey.shade600,
+                                                      ? (themeService.isDarkMode ? Colors.green.shade300 : Colors.green.shade700)
+                                                      : (themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600),
                                             ),
                                           ),
                                         ),
@@ -586,18 +606,19 @@ class _WorkoutSummaryPageState extends State<WorkoutSummaryPage> {
                       Navigator.of(context).popUntil((route) => route.isFirst);
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.black,
-                      foregroundColor: Colors.white,
+                      backgroundColor: themeService.isDarkMode ? Colors.white : Colors.black,
+                      foregroundColor: themeService.isDarkMode ? Colors.black : Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: const Text(
+                    child: Text(
                       'Done',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
+                        color: themeService.isDarkMode ? Colors.black : Colors.white,
                       ),
                     ),
                   ),
@@ -610,14 +631,17 @@ class _WorkoutSummaryPageState extends State<WorkoutSummaryPage> {
     } catch (e) {
       // Fallback UI in case of any build errors
       return Scaffold(
-        backgroundColor: Colors.grey.shade200,
+        backgroundColor: themeService.currentTheme.scaffoldBackgroundColor,
         appBar: AppBar(
-          backgroundColor: Colors.grey.shade200,
+          backgroundColor: themeService.currentTheme.appBarTheme.backgroundColor,
           elevation: 0,
           leading: const SizedBox(),
-          title: const Text(
+          title: Text(
             'Workout Complete!',
-            style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              color: themeService.currentTheme.appBarTheme.foregroundColor,
+              fontWeight: FontWeight.bold
+            ),
           ),
           centerTitle: true,
         ),
@@ -628,14 +652,21 @@ class _WorkoutSummaryPageState extends State<WorkoutSummaryPage> {
               children: [
                 const Icon(Icons.check_circle, size: 64, color: Colors.green),
                 const SizedBox(height: 16),
-                const Text(
+                Text(
                   'Workout Completed!',
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: themeService.currentTheme.textTheme.titleLarge?.color,
+                  ),
                 ),
                 const SizedBox(height: 8),
-                const Text(
+                Text(
                   'Great job completing your workout!',
-                  style: TextStyle(fontSize: 16, color: Colors.grey),
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey
+                  ),
                 ),
                 const SizedBox(height: 32),
                 SizedBox(
@@ -653,18 +684,19 @@ class _WorkoutSummaryPageState extends State<WorkoutSummaryPage> {
                         ).popUntil((route) => route.isFirst);
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.black,
-                        foregroundColor: Colors.white,
+                        backgroundColor: themeService.isDarkMode ? Colors.white : Colors.black,
+                        foregroundColor: themeService.isDarkMode ? Colors.black : Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: const Text(
+                      child: Text(
                         'Done',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
+                          color: themeService.isDarkMode ? Colors.black : Colors.white,
                         ),
                       ),
                     ),

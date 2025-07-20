@@ -2,118 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:gymfit/models/workout.dart';
+import 'package:gymfit/models/editable_workout_models.dart';
+import 'package:gymfit/models/quick_start_exercise.dart';
 import 'package:gymfit/pages/workout/exercise_information_page.dart';
-import 'package:gymfit/services/workout_service.dart';
-import 'package:provider/provider.dart';
+import 'package:gymfit/services/workout_edit_service.dart';
 import 'package:gymfit/services/theme_service.dart';
-import 'package:intl/intl.dart';
-
-// Input formatter to restrict decimals to a fixed number of places (default 2)
-class _DecimalTextInputFormatter extends TextInputFormatter {
-  _DecimalTextInputFormatter({this.decimalRange = 2}) : assert(decimalRange > 0);
-
-  final int decimalRange;
-
-  @override
-  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
-    final text = newValue.text;
-
-    if (text == '.') {
-      // Prefix lone decimal with 0
-      return TextEditingValue(
-        text: '0.',
-        selection: const TextSelection.collapsed(offset: 2),
-      );
-    }
-
-    // Allow empty input
-    if (text.isEmpty) {
-      return newValue;
-    }
-
-    final regExp = RegExp(r'^\d*\.?\d{0,' + decimalRange.toString() + r'}$');
-    if (regExp.hasMatch(text)) {
-      return newValue;
-    }
-
-    // Reject invalid additions by returning old value
-    return oldValue;
-  }
-}
-
-// Model to track individual set data for editing
-class EditableExerciseSet {
-  final String id;
-  double weight;
-  int reps;
-  bool isChecked;
-  late final TextEditingController weightController;
-  late final TextEditingController repsController;
-  late final FocusNode weightFocusNode;
-  late final FocusNode repsFocusNode;
-  
-  // Helper to format weight: whole number if no decimal part
-  static String _formatWeight(double value) {
-    if (value % 1 == 0) {
-      // Whole number – show without decimal
-      return value.toInt().toString();
-    }
-    return value.toString();
-  }
-  
-  static int _counter = 0;
-  
-  EditableExerciseSet({this.weight = 0.0, this.reps = 0, this.isChecked = false}) 
-    : id = '${DateTime.now().millisecondsSinceEpoch}_${++_counter}' {
-    weightController = TextEditingController(text: _formatWeight(weight));
-    repsController = TextEditingController(text: reps.toString());
-    weightFocusNode = FocusNode();
-    repsFocusNode = FocusNode();
-  }
-  
-  void updateWeight(double newWeight) {
-    if (weight != newWeight) {
-      weight = newWeight;
-      final formatted = _formatWeight(newWeight);
-      if (weightController.text != formatted) {
-        weightController.text = formatted;
-      }
-    }
-  }
-  
-  void updateReps(int newReps) {
-    if (reps != newReps) {
-      reps = newReps;
-      if (repsController.text != newReps.toString()) {
-        repsController.text = newReps.toString();
-      }
-    }
-  }
-  
-  // Get formatted previous data (similar to ExerciseSet)
-  String get previousDataFormatted {
-    if (weight > 0 && reps > 0) {
-      final weightStr = weight % 1 == 0 ? weight.toInt().toString() : weight.toString();
-      return '$weightStr × $reps';
-    }
-    return '—';
-  }
-  
-  void dispose() {
-    weightController.dispose();
-    repsController.dispose();
-    weightFocusNode.dispose();
-    repsFocusNode.dispose();
-  }
-}
-
-// Model to track exercise with multiple sets for editing
-class EditableExercise {
-  final String title;
-  List<EditableExerciseSet> sets;
-  EditableExercise({required this.title, List<EditableExerciseSet>? sets}) 
-    : sets = sets ?? [EditableExerciseSet()];
-}
+import 'package:gymfit/components/workout_name_editor.dart';
+import 'package:gymfit/components/workout_timing_card.dart';
+import 'package:gymfit/components/editable_exercise_card.dart';
+import 'package:gymfit/components/add_exercise_button.dart';
+import 'package:provider/provider.dart';
 
 class WorkoutEditPage extends StatefulWidget {
   final Workout workout;
@@ -133,6 +31,10 @@ class _WorkoutEditPageState extends State<WorkoutEditPage> {
   bool _isSaving = false;
   late ScrollController _scrollController;
   bool _showWorkoutNameInAppBar = false;
+  bool _preventAutoFocus = false;
+  bool _isAnyFieldFocused = false;
+  Set<EditableExercise> _newlyAddedExercises = {};
+  bool _isInReorderMode = false;
 
   @override
   void initState() {
@@ -146,14 +48,10 @@ class _WorkoutEditPageState extends State<WorkoutEditPage> {
     _scrollController.addListener(_onScroll);
     
     // Convert workout exercises to editable format
-    _exercises = widget.workout.exercises.map((exercise) {
-      final sets = exercise.sets.map((set) => EditableExerciseSet(
-        weight: set.weight,
-        reps: set.reps,
-        isChecked: set.isCompleted,
-      )).toList();
-      return EditableExercise(title: exercise.title, sets: sets);
-    }).toList();
+    _exercises = WorkoutEditService.convertWorkoutToEditable(widget.workout);
+    
+    // Add focus listeners to all existing fields
+    _addFocusListeners();
   }
 
   @override
@@ -169,19 +67,6 @@ class _WorkoutEditPageState extends State<WorkoutEditPage> {
     super.dispose();
   }
 
-  String _formatDuration(Duration duration) {
-    String twoDigits(int n) => n.toString().padLeft(2, '0');
-    String hours = twoDigits(duration.inHours);
-    String minutes = twoDigits(duration.inMinutes.remainder(60));
-    String seconds = twoDigits(duration.inSeconds.remainder(60));
-    
-    if (duration.inHours > 0) {
-      return '$hours:$minutes:$seconds';
-    } else {
-      return '$minutes:$seconds';
-    }
-  }
-
   void _toggleWorkoutNameEditing() {
     setState(() {
       _isEditingWorkoutName = !_isEditingWorkoutName;
@@ -192,121 +77,70 @@ class _WorkoutEditPageState extends State<WorkoutEditPage> {
     setState(() {
       _isEditingWorkoutName = false;
     });
+    _preventAutoFocus = true;
+    _clearFocusAggressively();
+
+    // Re-enable interaction after a delay
+    Future.delayed(const Duration(milliseconds: 300), () {
+      if (mounted) {
+        setState(() {
+          _preventAutoFocus = false;
+        });
+      }
+    });
+  }
+
+  void _onWorkoutNameChanged(String newName) {
+    setState(() {
+      // The controller will be updated automatically
+    });
+  }
+
+  void _clearFocusAggressively() {
+    // Check if widget is still mounted and context is active
+    if (!mounted) return;
+
+    try {
+      // Multiple approaches to ensure focus is completely cleared
+      FocusScope.of(context).unfocus();
+      FocusManager.instance.primaryFocus?.unfocus();
+    } catch (e) {
+      // Safely handle cases where context is no longer valid
+      FocusManager.instance.primaryFocus?.unfocus();
+    }
   }
 
   Future<void> _selectStartTime() async {
-    final DateTime? pickedDate = await showDatePicker(
-      context: context,
-      initialDate: _startTime,
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now(),
+    await WorkoutEditService.selectStartTime(
+      context,
+      _startTime,
+      (newStartTime) => setState(() => _startTime = newStartTime),
+      (newEndTime) => setState(() => _endTime = newEndTime),
     );
-    
-    if (pickedDate != null && mounted) {
-      final TimeOfDay? pickedTime = await showTimePicker(
-        context: context,
-        initialTime: TimeOfDay.fromDateTime(_startTime),
-      );
-      
-      if (pickedTime != null && mounted) {
-        setState(() {
-          _startTime = DateTime(
-            pickedDate.year,
-            pickedDate.month,
-            pickedDate.day,
-            pickedTime.hour,
-            pickedTime.minute,
-          );
-          
-          // Ensure end time is after start time
-          if (_endTime.isBefore(_startTime)) {
-            _endTime = _startTime.add(const Duration(minutes: 30));
-          }
-        });
-      }
-    }
   }
 
   Future<void> _selectEndTime() async {
-    final DateTime? pickedDate = await showDatePicker(
-      context: context,
-      initialDate: _endTime,
-      firstDate: _startTime,
-      lastDate: DateTime.now().add(const Duration(days: 1)),
+    await WorkoutEditService.selectEndTime(
+      context,
+      _startTime,
+      _endTime,
+      (newEndTime) => setState(() => _endTime = newEndTime),
     );
-    
-    if (pickedDate != null && mounted) {
-      final TimeOfDay? pickedTime = await showTimePicker(
-        context: context,
-        initialTime: TimeOfDay.fromDateTime(_endTime),
-      );
-      
-      if (pickedTime != null && mounted) {
-        final newEndTime = DateTime(
-          pickedDate.year,
-          pickedDate.month,
-          pickedDate.day,
-          pickedTime.hour,
-          pickedTime.minute,
-        );
-        
-        if (newEndTime.isAfter(_startTime)) {
-          setState(() {
-            _endTime = newEndTime;
-          });
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('End time must be after start time'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
-    }
   }
 
   Future<void> _saveWorkout() async {
-    setState(() {
-      _isSaving = true;
-    });
-
     try {
-      // Convert editable exercises back to workout format
-      final updatedExercises = _exercises.map((exercise) {
-        final sets = exercise.sets.map((set) => WorkoutSet(
-          weight: set.weight,
-          reps: set.reps,
-          isCompleted: set.isChecked,
-        )).toList();
-        
-        final completedSets = sets.where((set) => set.isCompleted).length;
-        return WorkoutExercise(
-          title: exercise.title,
-          totalSets: sets.length,
-          completedSets: completedSets,
-          sets: sets,
-        );
-      }).toList();
-
-      final totalSets = updatedExercises.fold(0, (total, exercise) => total + exercise.totalSets);
-      final completedSets = updatedExercises.fold(0, (total, exercise) => total + exercise.completedSets);
-
-      final updatedWorkout = Workout(
-        id: widget.workout.id,
-        name: _workoutNameController.text.trim(),
-        date: _startTime,
-        duration: _endTime.difference(_startTime),
-        exercises: updatedExercises,
-        totalSets: totalSets,
-        completedSets: completedSets,
-        userId: widget.workout.userId,
+      final success = await WorkoutEditService.saveWorkout(
+        widget.workout,
+        _workoutNameController.text,
+        _startTime,
+        _endTime,
+        _exercises,
+        (isSaving) => setState(() => _isSaving = isSaving),
       );
 
-      await WorkoutService.updateWorkout(updatedWorkout);
-
-      if (mounted) {
-        Navigator.of(context).pop(true); // Return true to indicate successful save
+      if (success && mounted) {
+        Navigator.of(context).pop(true);
       }
     } catch (e) {
       if (mounted) {
@@ -317,33 +151,219 @@ class _WorkoutEditPageState extends State<WorkoutEditPage> {
           ),
         );
       }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isSaving = false;
-        });
-      }
     }
   }
 
   void _onScroll() {
-    // Show workout name in app bar when scrolled past the workout name card (approximately 100 pixels)
     const double threshold = 100.0;
     bool shouldShow = _scrollController.offset > threshold;
     
     if (shouldShow != _showWorkoutNameInAppBar) {
+      // Auto-save workout name when it slides into the app bar during editing
+      if (shouldShow && _isEditingWorkoutName) {
+        setState(() {
+          _isEditingWorkoutName = false;
+        });
+        _clearFocusAggressively();
+        _preventAutoFocus = true;
+
+        // Re-enable interaction after a short delay
+        Future.delayed(const Duration(milliseconds: 300), () {
+          if (mounted) {
+            setState(() {
+              _preventAutoFocus = false;
+            });
+          }
+        });
+      }
+      
       setState(() {
         _showWorkoutNameInAppBar = shouldShow;
       });
     }
   }
 
+
+
+  void _onExercisesAdded() {
+    // This method is called when exercises are being added
+    // We can add any additional logic here if needed
+  }
+
+  void _onExercisesLoaded(List<QuickStartExercise> newExercises) {
+    // Convert QuickStartExercise to EditableExercise
+    setState(() {
+      final editableExercises = newExercises.map((exercise) {
+        final title = exercise.title;
+        final sets = exercise.sets.map((set) {
+          return EditableExerciseSet(
+            weight: set.weight,
+            reps: set.reps,
+            isChecked: set.isChecked,
+          );
+        }).toList();
+        return EditableExercise(title: title, sets: sets);
+      }).toList();
+      
+      _exercises.addAll(editableExercises);
+      
+      // Mark new exercises as newly added for animation
+      _newlyAddedExercises.addAll(editableExercises);
+      
+      // Add focus listeners to new exercises
+      for (var exercise in editableExercises) {
+        for (var set in exercise.sets) {
+          set.weightFocusNode.addListener(() {
+            _checkFocusState();
+          });
+          set.repsFocusNode.addListener(() {
+            _checkFocusState();
+          });
+        }
+      }
+    });
+  }
+
+  void _onFocusChanged(bool hasFocus) {
+    setState(() {
+      _isAnyFieldFocused = hasFocus;
+    });
+  }
+
+  void _checkFocusState() {
+    // Check if any field is currently focused
+    bool anyFieldFocused = false;
+    for (var exercise in _exercises) {
+      for (var set in exercise.sets) {
+        if (set.weightFocusNode.hasFocus || set.repsFocusNode.hasFocus) {
+          anyFieldFocused = true;
+          break;
+        }
+      }
+      if (anyFieldFocused) break;
+    }
+    
+    setState(() {
+      _isAnyFieldFocused = anyFieldFocused;
+    });
+  }
+
+  void _addFocusListeners() {
+    for (var exercise in _exercises) {
+      for (var set in exercise.sets) {
+        set.weightFocusNode.addListener(() {
+          _checkFocusState();
+        });
+        set.repsFocusNode.addListener(() {
+          _checkFocusState();
+        });
+      }
+    }
+  }
+
+  bool _isExerciseNewlyAdded(EditableExercise exercise) {
+    return _newlyAddedExercises.contains(exercise);
+  }
+
+  void _clearNewlyAddedFlag(EditableExercise exercise) {
+    _newlyAddedExercises.remove(exercise);
+  }
+
+  void _handleRequestReorderMode() {
+    setState(() {
+      _isInReorderMode = true;
+      // Automatically show workout name in app bar when entering reorder mode
+      _showWorkoutNameInAppBar = true;
+    });
+  }
+
+  void _handleReorderStart(int index) {
+    // Provide haptic feedback when starting to reorder
+    HapticFeedback.mediumImpact();
+  }
+
+  void _handleReorderEnd(int index) {
+    // Don't exit reorder mode when drag ends - user must tap "Done"
+  }
+
+  void _handleDoneReorder() {
+    setState(() {
+      _isInReorderMode = false;
+      // Mark all exercises as newly added to trigger unfolding animations
+      _newlyAddedExercises.addAll(_exercises);
+    });
+  }
+
+  void _handleReorderExercises(int oldIndex, int newIndex) {
+    // Provide haptic feedback when reordering
+    HapticFeedback.lightImpact();
+    
+    setState(() {
+      if (newIndex > oldIndex) {
+        newIndex -= 1;
+      }
+      final EditableExercise item = _exercises.removeAt(oldIndex);
+      _exercises.insert(newIndex, item);
+      
+      // Clear newly added flags when reordering to prevent animation during reorder
+      _newlyAddedExercises.clear();
+    });
+  }
+
+  void _removeExercise(int exerciseIndex) {
+    setState(() {
+      final exercise = _exercises[exerciseIndex];
+      for (var set in exercise.sets) {
+        set.dispose();
+      }
+      _exercises.removeAt(exerciseIndex);
+    });
+  }
+
+  void _addSet(int exerciseIndex) {
+    setState(() {
+      final newSet = EditableExerciseSet();
+      _exercises[exerciseIndex].sets.add(newSet);
+      
+      // Add focus listeners to new set
+      newSet.weightFocusNode.addListener(() {
+        _checkFocusState();
+      });
+      newSet.repsFocusNode.addListener(() {
+        _checkFocusState();
+      });
+    });
+  }
+
+  void _removeSet(int exerciseIndex, int setIndex) {
+    setState(() {
+      final exercise = _exercises[exerciseIndex];
+      final set = exercise.sets[setIndex];
+      set.dispose();
+      exercise.sets.removeAt(setIndex);
+    });
+  }
+
+  void _onExerciseCheckChanged(int exerciseIndex, bool? value) {
+    HapticFeedback.lightImpact();
+    setState(() {
+      bool newValue = value ?? false;
+      for (var set in _exercises[exerciseIndex].sets) {
+        set.isChecked = newValue;
+      }
+    });
+  }
+
+  void _onSetCheckChanged(int exerciseIndex, int setIndex, bool? value) {
+    HapticFeedback.lightImpact();
+    setState(() {
+      _exercises[exerciseIndex].sets[setIndex].isChecked = value ?? false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final themeService = Provider.of<ThemeService>(context);
-    final dateFormat = DateFormat('MMM dd, yyyy');
-    final timeFormat = DateFormat('h:mm a');
-    final duration = _endTime.difference(_startTime);
 
     return Scaffold(
       backgroundColor: themeService.currentTheme.scaffoldBackgroundColor,
@@ -427,10 +447,10 @@ class _WorkoutEditPageState extends State<WorkoutEditPage> {
       body: SafeArea(
         child: GestureDetector(
           onTap: () {
-            FocusScope.of(context).unfocus();
+            _clearFocusAggressively();
           },
           child: Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 0.0),
             child: Column(
               children: [
                 // Workout Name Card with smooth transition
@@ -439,749 +459,173 @@ class _WorkoutEditPageState extends State<WorkoutEditPage> {
                   curve: Curves.easeOutQuart,
                   child: _showWorkoutNameInAppBar
                       ? const SizedBox.shrink()
-                      : Card(
-                          color: themeService.currentTheme.cardTheme.color,
-                          margin: const EdgeInsets.only(bottom: 16),
-                          child: Padding(
-                            padding: const EdgeInsets.all(12.0),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                const FaIcon(
-                                  FontAwesomeIcons.tag,
-                                  color: Colors.purple,
-                                  size: 20,
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'Workout Name',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      _isEditingWorkoutName
-                                          ? TextField(
-                                              controller: _workoutNameController,
-                                              decoration: InputDecoration(
-                                                border: OutlineInputBorder(
-                                                  borderRadius: BorderRadius.circular(8),
-                                                  borderSide: const BorderSide(color: Colors.purple),
-                                                ),
-                                                focusedBorder: OutlineInputBorder(
-                                                  borderRadius: BorderRadius.circular(8),
-                                                  borderSide: const BorderSide(color: Colors.purple, width: 2),
-                                                ),
-                                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                                hintText: 'Enter workout name',
-                                                hintStyle: TextStyle(
-                                                  color: themeService.isDarkMode ? Colors.grey.shade500 : Colors.grey.shade400,
-                                                ),
-                                              ),
-                                              style: const TextStyle(
-                                                fontSize: 18,
-                                                fontWeight: FontWeight.bold,
-                                                color: Colors.purple,
-                                              ),
-                                              maxLength: 50,
-                                              autofocus: true,
-                                              onSubmitted: (_) => _onWorkoutNameSubmitted(),
-                                              textInputAction: TextInputAction.done,
-                                            )
-                                          : GestureDetector(
-                                              onTap: _toggleWorkoutNameEditing,
-                                              child: Container(
-                                                width: double.infinity,
-                                                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-                                                decoration: BoxDecoration(
-                                                  border: Border.all(color: Colors.transparent, width: 1),
-                                                  borderRadius: BorderRadius.circular(8),
-                                                ),
-                                                child: Text(
-                                                  _workoutNameController.text.isEmpty 
-                                                      ? 'Untitled Workout' 
-                                                      : _workoutNameController.text,
-                                                  style: const TextStyle(
-                                                    fontSize: 18,
-                                                    fontWeight: FontWeight.bold,
-                                                    color: Colors.purple,
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                    ],
-                                  ),
-                                ),
-                                IconButton(
-                                  onPressed: _toggleWorkoutNameEditing,
-                                  icon: FaIcon(
-                                    _isEditingWorkoutName ? FontAwesomeIcons.check : FontAwesomeIcons.pen,
-                                    color: _isEditingWorkoutName ? Colors.green : Colors.grey,
-                                    size: 16,
-                                  ),
-                                  padding: EdgeInsets.zero,
-                                  constraints: const BoxConstraints(),
-                                ),
-                              ],
-                            ),
-                          ),
+                      : WorkoutNameEditor(
+                          currentWorkoutName: _workoutNameController.text.isEmpty 
+                              ? 'Untitled Workout' 
+                              : _workoutNameController.text,
+                          isEditing: _isEditingWorkoutName,
+                          showInAppBar: _showWorkoutNameInAppBar,
+                          onToggleEditing: _toggleWorkoutNameEditing,
+                          onNameChanged: _onWorkoutNameChanged,
+                          onSubmitted: _onWorkoutNameSubmitted,
                         ),
                 ),
 
                 // Exercise List with timing card
                 Expanded(
-                  child: ListView.builder(
-                    controller: _scrollController,
-                    itemCount: _exercises.length + 1, // +1 for timing card
-                    itemBuilder: (context, exerciseIndex) {
-                      // Show timing card as first item
-                      if (exerciseIndex == 0) {
-                        return Card(
-                          color: themeService.currentTheme.cardTheme.color,
-                          margin: const EdgeInsets.only(bottom: 16),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Column(
-                              children: [
-                                Row(
-                                  children: [
-                                    const FaIcon(
-                                      FontAwesomeIcons.clock,
-                                      color: Colors.blue,
-                                      size: 20,
+                  child: _isInReorderMode
+                      ? ReorderableListView.builder(
+                          itemCount: _exercises.length + 1, // +1 for timing card
+                          padding: const EdgeInsets.only(bottom: 100),
+                          onReorder: (oldIndex, newIndex) {
+                            // Adjust indices since timing card is first
+                            if (oldIndex > 0 && newIndex > 0) {
+                              _handleReorderExercises(oldIndex - 1, newIndex - 1);
+                            }
+                          },
+                          onReorderStart: (int index) {
+                            _handleReorderStart(index);
+                          },
+                          onReorderEnd: (int index) {
+                            _handleReorderEnd(index);
+                          },
+                          itemBuilder: (context, exerciseIndex) {
+                            // Show timing card as first item
+                            if (exerciseIndex == 0) {
+                              return WorkoutTimingCard(
+                                key: const ValueKey('timing_card'),
+                                startTime: _startTime,
+                                endTime: _endTime,
+                                onStartTimeTap: _selectStartTime,
+                                onEndTimeTap: _selectEndTime,
+                              );
+                            }
+                            
+                            // Show exercises (adjust index since timing card is first)
+                            final exercise = _exercises[exerciseIndex - 1];
+                            return EditableExerciseCard(
+                              key: ValueKey('exercise_${exercise.title}_${exerciseIndex - 1}'),
+                              exercise: exercise,
+                              exerciseIndex: exerciseIndex - 1,
+                              onAddSet: () => _addSet(exerciseIndex - 1),
+                              onRemoveExercise: () => _removeExercise(exerciseIndex - 1),
+                              onRemoveSet: (setIndex) => _removeSet(exerciseIndex - 1, setIndex),
+                              onExerciseCheckChanged: (value) => _onExerciseCheckChanged(exerciseIndex - 1, value),
+                              onSetCheckChanged: (setIndex, value) => _onSetCheckChanged(exerciseIndex - 1, setIndex, value),
+                              preventAutoFocus: _preventAutoFocus,
+                              onFocusChanged: _onFocusChanged,
+                              isNewlyAdded: _isExerciseNewlyAdded(exercise),
+                              isCollapsed: _isInReorderMode,
+                              onRequestReorderMode: _handleRequestReorderMode,
+                            );
+                          },
+                        )
+                      : ListView.builder(
+                          controller: _scrollController,
+                          itemCount: _exercises.length + 1, // +1 for timing card
+                          padding: const EdgeInsets.only(bottom: 100),
+                          itemBuilder: (context, exerciseIndex) {
+                            // Show timing card as first item
+                            if (exerciseIndex == 0) {
+                              return WorkoutTimingCard(
+                                startTime: _startTime,
+                                endTime: _endTime,
+                                onStartTimeTap: _selectStartTime,
+                                onEndTimeTap: _selectEndTime,
+                              );
+                            }
+                            
+                            // Show exercises (adjust index since timing card is first)
+                            final exercise = _exercises[exerciseIndex - 1];
+                            return EditableExerciseCard(
+                              exercise: exercise,
+                              exerciseIndex: exerciseIndex - 1,
+                              onAddSet: () => _addSet(exerciseIndex - 1),
+                              onRemoveExercise: () => _removeExercise(exerciseIndex - 1),
+                              onRemoveSet: (setIndex) => _removeSet(exerciseIndex - 1, setIndex),
+                              onExerciseCheckChanged: (value) => _onExerciseCheckChanged(exerciseIndex - 1, value),
+                              onSetCheckChanged: (setIndex, value) => _onSetCheckChanged(exerciseIndex - 1, setIndex, value),
+                              preventAutoFocus: _preventAutoFocus,
+                              onFocusChanged: _onFocusChanged,
+                              isNewlyAdded: _isExerciseNewlyAdded(exercise),
+                              isCollapsed: _isInReorderMode,
+                              onRequestReorderMode: _handleRequestReorderMode,
+                            );
+                          },
+                        ),
+                ),
+                
+                // Done button for reorder mode
+                AnimatedSize(
+                  duration: const Duration(milliseconds: 400),
+                  curve: Curves.easeInOutQuart,
+                  child: AnimatedOpacity(
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                    opacity: (_isInReorderMode && !_isAnyFieldFocused && !_isEditingWorkoutName) ? 1.0 : 0.0,
+                    child: (_isInReorderMode && !_isAnyFieldFocused && !_isEditingWorkoutName)
+                        ? Column(
+                          children: [
+                            const SizedBox(height: 4),
+                            LayoutBuilder(
+                              builder: (context, constraints) {
+                                final screenWidth = MediaQuery.of(context).size.width;
+                                final buttonFontSize = screenWidth < 350 ? 16.0 : 18.0;
+                                final buttonPadding = screenWidth < 350 
+                                    ? const EdgeInsets.symmetric(vertical: 12) 
+                                    : const EdgeInsets.symmetric(vertical: 16);
+
+                                return SizedBox(
+                                  width: double.infinity,
+                                  child: ElevatedButton(
+                                    onPressed: _handleDoneReorder,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.blue,
+                                      foregroundColor: Colors.white,
+                                      shape: const StadiumBorder(),
+                                      padding: buttonPadding,
                                     ),
-                                    const SizedBox(width: 12),
-                                    const Text(
-                                      'Workout Timing',
+                                    child: Text(
+                                      'Done',
                                       style: TextStyle(
-                                        fontSize: 16,
+                                        color: Colors.white,
+                                        fontSize: buttonFontSize,
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
-                                  ],
-                                ),
-                                const SizedBox(height: 16),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: GestureDetector(
-                                        onTap: _selectStartTime,
-                                        child: Container(
-                                          padding: const EdgeInsets.all(12),
-                                          decoration: BoxDecoration(
-                                            border: Border.all(color: Colors.blue.shade300),
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Row(
-                                                children: [
-                                                  Text(
-                                                    'Start',
-                                                    style: TextStyle(
-                                                      fontSize: 12,
-                                                      color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey,
-                                                      fontWeight: FontWeight.w500,
-                                                    ),
-                                                  ),
-                                                  const Spacer(),
-                                                  FaIcon(
-                                                    FontAwesomeIcons.pen,
-                                                    color: Colors.blue.shade400,
-                                                    size: 10,
-                                                  ),
-                                                ],
-                                              ),
-                                              const SizedBox(height: 4),
-                                              Text(
-                                                '${dateFormat.format(_startTime)} ${timeFormat.format(_startTime)}',
-                                                style: const TextStyle(
-                                                  fontSize: 14,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 16),
-                                    Expanded(
-                                      child: GestureDetector(
-                                        onTap: _selectEndTime,
-                                        child: Container(
-                                          padding: const EdgeInsets.all(12),
-                                          decoration: BoxDecoration(
-                                            border: Border.all(color: Colors.blue.shade300),
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Row(
-                                                children: [
-                                                  Text(
-                                                    'End',
-                                                    style: TextStyle(
-                                                      fontSize: 12,
-                                                      color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey,
-                                                      fontWeight: FontWeight.w500,
-                                                    ),
-                                                  ),
-                                                  const Spacer(),
-                                                  FaIcon(
-                                                    FontAwesomeIcons.pen,
-                                                    color: Colors.blue.shade400,
-                                                    size: 10,
-                                                  ),
-                                                ],
-                                              ),
-                                              const SizedBox(height: 4),
-                                              Text(
-                                                '${dateFormat.format(_endTime)} ${timeFormat.format(_endTime)}',
-                                                style: const TextStyle(
-                                                  fontSize: 14,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 12),
-                                Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: Colors.blue.shade50,
-                                    borderRadius: BorderRadius.circular(8),
                                   ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      const FaIcon(
-                                        FontAwesomeIcons.stopwatch,
-                                        color: Colors.blue,
-                                        size: 16,
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        'Duration: ${_formatDuration(duration)}',
-                                        style: const TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.blue,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
+                                );
+                              },
                             ),
-                          ),
-                        );
-                      }
-                      
-                      // Show exercises (adjust index since timing card is first)
-                      final exercise = _exercises[exerciseIndex - 1];
-                      return Dismissible(
-                        key: Key('exercise_${exercise.title}_${exerciseIndex - 1}'),
-                        direction: DismissDirection.endToStart,
-                        background: Container(
-                          alignment: Alignment.centerRight,
-                          padding: const EdgeInsets.only(right: 20),
-                          margin: const EdgeInsets.symmetric(vertical: 4),
-                          decoration: BoxDecoration(
-                            color: themeService.isDarkMode ? Colors.red.shade700 : Colors.red,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const FaIcon(
-                            FontAwesomeIcons.trash,
-                            color: Colors.white,
-                            size: 24,
-                          ),
-                        ),
-                        onDismissed: (direction) {
-                          setState(() {
-                            _exercises.removeAt(exerciseIndex - 1);
-                          });
-                        },
-                        child: Card(
-                          color: themeService.currentTheme.cardTheme.color,
-                          margin: const EdgeInsets.symmetric(vertical: 4),
-                          child: Column(
-                            children: [
-                              LayoutBuilder(
-                                builder: (context, constraints) {
-                                  final isSmallScreen = constraints.maxWidth < 350;
-                                  final cardPadding = isSmallScreen ? 6.0 : 8.0;
-                                  
-                                  return Padding(
-                                    padding: EdgeInsets.all(cardPadding),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Text(
-                                              exercise.title,
-                                              style: TextStyle(
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.bold,
-                                                color: themeService.currentTheme.textTheme.titleMedium?.color,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 8),
-                                        Row(
-                                          children: [
-                                            // Set number - fixed small width
-                                            SizedBox(
-                                              width: isSmallScreen ? 35 : 45,
-                                              child: Center(
-                                                child: Text(
-                                                  'Set',
-                                                  style: TextStyle(
-                                                    fontWeight: FontWeight.bold,
-                                                    fontSize: isSmallScreen ? 14 : 16,
-                                                    color: themeService.currentTheme.textTheme.titleMedium?.color,
-                                                  ),
-                                                  textAlign: TextAlign.center,
-                                                  overflow: TextOverflow.ellipsis,
-                                                ),
-                                              ),
-                                            ),
-                                            SizedBox(width: isSmallScreen ? 6.0 : 8.0),
-                                            // Previous - flexible
-                                            Expanded(
-                                              flex: 2,
-                                              child: Center(
-                                                child: Text(
-                                                  'Previous',
-                                                  style: TextStyle(
-                                                    fontWeight: FontWeight.bold,
-                                                    fontSize: isSmallScreen ? 14 : 16,
-                                                    color: themeService.currentTheme.textTheme.titleMedium?.color,
-                                                  ),
-                                                  textAlign: TextAlign.center,
-                                                  overflow: TextOverflow.ellipsis,
-                                                ),
-                                              ),
-                                            ),
-                                            SizedBox(width: isSmallScreen ? 6.0 : 8.0),
-                                            // Weight - flexible
-                                            Expanded(
-                                              flex: 2,
-                                              child: Center(
-                                                child: ConstrainedBox(
-                                                  constraints: BoxConstraints(
-                                                    maxWidth: isSmallScreen ? 45 : 60,
-                                                    minWidth: 40,
-                                                  ),
-                                                  child: Text(
-                                                    'Kg',
-                                                    style: TextStyle(
-                                                      fontWeight: FontWeight.bold,
-                                                      fontSize: isSmallScreen ? 14 : 16,
-                                                      color: themeService.currentTheme.textTheme.titleMedium?.color,
-                                                    ),
-                                                    textAlign: TextAlign.center,
-                                                    overflow: TextOverflow.ellipsis,
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                            SizedBox(width: isSmallScreen ? 6.0 : 8.0),
-                                            // Reps - flexible
-                                            Expanded(
-                                              flex: 2,
-                                              child: Center(
-                                                child: ConstrainedBox(
-                                                  constraints: BoxConstraints(
-                                                    maxWidth: isSmallScreen ? 45 : 60,
-                                                    minWidth: 40,
-                                                  ),
-                                                  child: Text(
-                                                    'Reps',
-                                                    style: TextStyle(
-                                                      fontWeight: FontWeight.bold,
-                                                      fontSize: isSmallScreen ? 14 : 16,
-                                                      color: themeService.currentTheme.textTheme.titleMedium?.color,
-                                                    ),
-                                                    textAlign: TextAlign.center,
-                                                    overflow: TextOverflow.ellipsis,
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                            SizedBox(width: isSmallScreen ? 6.0 : 8.0),
-                                            // Checkbox - fixed minimum size
-                                            SizedBox(
-                                              width: 48.0,
-                                              height: 48.0,
-                                              child: Center(
-                                                child: Checkbox(
-                                                  value: exercise.sets.every((set) => set.isChecked),
-                                                  tristate: true,
-                                                  fillColor: WidgetStateProperty.resolveWith<Color>((Set<WidgetState> states) {
-                                                    if (states.contains(WidgetState.selected)) {
-                                                      return Colors.green;
-                                                    }
-                                                    return themeService.isDarkMode ? Colors.grey.shade600 : Colors.grey.shade300;
-                                                  }),
-                                                  onChanged: (val) {
-                                                    HapticFeedback.lightImpact();
-                                                    setState(() {
-                                                      bool newValue = val ?? false;
-                                                      for (var set in exercise.sets) {
-                                                        set.isChecked = newValue;
-                                                      }
-                                                    });
-                                                  },
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        Divider(
-                                          height: 1,
-                                          thickness: 1,
-                                          color: themeService.isDarkMode ? Colors.grey.shade700 : Colors.grey.shade300,
-                                        ),
-                                        ...exercise.sets.asMap().entries.map((entry) {
-                                          int setIndex = entry.key;
-                                          EditableExerciseSet exerciseSet = entry.value;
-                                          return Dismissible(
-                                            key: Key('${exercise.title}_${exerciseSet.id}'),
-                                            direction: DismissDirection.endToStart,
-                                            background: Container(
-                                              alignment: Alignment.centerRight,
-                                              padding: const EdgeInsets.only(right: 20),
-                                              margin: const EdgeInsets.symmetric(vertical: 2),
-                                              color: themeService.isDarkMode ? Colors.red.shade700 : Colors.red,
-                                              child: const FaIcon(
-                                                FontAwesomeIcons.trash,
-                                                color: Colors.white,
-                                                size: 24,
-                                              ),
-                                            ),
-                                            onDismissed: (direction) {
-                                              setState(() {
-                                                exercise.sets.remove(exerciseSet);
-                                                exerciseSet.dispose();
-                                              });
-                                            },
-                                            child: Container(
-                                              width: double.infinity,
-                                              color: exerciseSet.isChecked 
-                                                  ? (themeService.isDarkMode ? Colors.green.shade900 : Colors.green.shade100) 
-                                                  : Colors.transparent,
-                                              padding: const EdgeInsets.all(4),
-                                              margin: const EdgeInsets.symmetric(vertical: 2),
-                                              child: Row(
-                                                children: [
-                                                  // Set number - fixed small width
-                                                  SizedBox(
-                                                    width: isSmallScreen ? 35 : 45,
-                                                    child: Center(
-                                                      child: Text(
-                                                        '${setIndex + 1}',
-                                                        style: TextStyle(
-                                                          fontSize: isSmallScreen ? 16 : 18,
-                                                          fontWeight: FontWeight.bold,
-                                                          color: themeService.currentTheme.textTheme.bodyLarge?.color,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                  SizedBox(width: isSmallScreen ? 6.0 : 8.0),
-                                                  // Previous data - flexible
-                                                  Expanded(
-                                                    flex: 2,
-                                                    child: Center(
-                                                      child: Text(
-                                                        exerciseSet.previousDataFormatted,
-                                                        style: TextStyle(
-                                                          fontSize: isSmallScreen ? 14 : 16,
-                                                          fontWeight: FontWeight.bold,
-                                                          color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade500,
-                                                        ),
-                                                        textAlign: TextAlign.center,
-                                                        overflow: TextOverflow.ellipsis,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                  SizedBox(width: isSmallScreen ? 6.0 : 8.0),
-                                                  // Weight input - flexible
-                                                  Expanded(
-                                                    flex: 2,
-                                                    child: Center(
-                                                      child: ConstrainedBox(
-                                                        constraints: BoxConstraints(
-                                                          maxWidth: isSmallScreen ? 45 : 60,
-                                                          minWidth: 40,
-                                                          maxHeight: 28,
-                                                        ),
-                                                        child: TextFormField(
-                                                          controller: exerciseSet.weightController,
-                                                          focusNode: exerciseSet.weightFocusNode,
-                                                          autofocus: false,
-                                                          style: TextStyle(
-                                                            fontWeight: FontWeight.bold,
-                                                            fontSize: isSmallScreen ? 14 : 16,
-                                                            color: exerciseSet.isChecked
-                                                                ? (themeService.isDarkMode ? Colors.white : Colors.black)
-                                                                : (themeService.isDarkMode ? Colors.white : Colors.black),
-                                                          ),
-                                                          textAlign: TextAlign.center,
-                                                          decoration: InputDecoration(
-                                                            border: OutlineInputBorder(
-                                                              borderRadius: BorderRadius.circular(8),
-                                                              borderSide: BorderSide(
-                                                                color: exerciseSet.isChecked
-                                                                    ? Colors.green
-                                                                    : (themeService.isDarkMode ? Colors.grey.shade600 : Colors.grey.shade400),
-                                                                width: 1,
-                                                              ),
-                                                            ),
-                                                            enabledBorder: OutlineInputBorder(
-                                                              borderRadius: BorderRadius.circular(8),
-                                                              borderSide: BorderSide(
-                                                                color: exerciseSet.isChecked
-                                                                    ? Colors.green
-                                                                    : (themeService.isDarkMode ? Colors.grey.shade600 : Colors.grey.shade400),
-                                                                width: 1,
-                                                              ),
-                                                            ),
-                                                            focusedBorder: OutlineInputBorder(
-                                                              borderRadius: BorderRadius.circular(8),
-                                                              borderSide: BorderSide(
-                                                                color: themeService.isDarkMode ? Colors.blue.shade300 : Colors.blue,
-                                                                width: 2,
-                                                              ),
-                                                            ),
-                                                            filled: true,
-                                                            fillColor: themeService.isDarkMode ? Colors.grey.shade800 : Colors.white,
-                                                            isDense: true,
-                                                            contentPadding: EdgeInsets.symmetric(
-                                                              horizontal: isSmallScreen ? 3 : 4,
-                                                              vertical: 0,
-                                                            ),
-                                                          ),
-                                                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                                          inputFormatters: [_DecimalTextInputFormatter(decimalRange: 2)],
-                                                          onChanged: (val) {
-                                                            final newWeight = double.tryParse(val) ?? 0.0;
-                                                            setState(() {
-                                                              exerciseSet.updateWeight(newWeight);
-                                                            });
-                                                          },
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                  SizedBox(width: isSmallScreen ? 6.0 : 8.0),
-                                                  // Reps input - flexible
-                                                  Expanded(
-                                                    flex: 2,
-                                                    child: Center(
-                                                      child: ConstrainedBox(
-                                                        constraints: BoxConstraints(
-                                                          maxWidth: isSmallScreen ? 45 : 60,
-                                                          minWidth: 40,
-                                                          maxHeight: 28,
-                                                        ),
-                                                        child: TextFormField(
-                                                          controller: exerciseSet.repsController,
-                                                          focusNode: exerciseSet.repsFocusNode,
-                                                          autofocus: false,
-                                                          enableInteractiveSelection: true,
-                                                          style: TextStyle(
-                                                            fontWeight: FontWeight.bold,
-                                                            fontSize: isSmallScreen ? 14 : 16,
-                                                            color: exerciseSet.isChecked
-                                                                ? (themeService.isDarkMode ? Colors.white : Colors.black)
-                                                                : (themeService.isDarkMode ? Colors.white : Colors.black),
-                                                          ),
-                                                          textAlign: TextAlign.center,
-                                                          decoration: InputDecoration(
-                                                            border: OutlineInputBorder(
-                                                              borderRadius: BorderRadius.circular(8),
-                                                              borderSide: BorderSide(
-                                                                color: exerciseSet.isChecked
-                                                                    ? Colors.green
-                                                                    : (themeService.isDarkMode ? Colors.grey.shade600 : Colors.grey.shade400),
-                                                                width: 1,
-                                                              ),
-                                                            ),
-                                                            enabledBorder: OutlineInputBorder(
-                                                              borderRadius: BorderRadius.circular(8),
-                                                              borderSide: BorderSide(
-                                                                color: exerciseSet.isChecked
-                                                                    ? Colors.green
-                                                                    : (themeService.isDarkMode ? Colors.grey.shade600 : Colors.grey.shade400),
-                                                                width: 1,
-                                                              ),
-                                                            ),
-                                                            focusedBorder: OutlineInputBorder(
-                                                              borderRadius: BorderRadius.circular(8),
-                                                              borderSide: BorderSide(
-                                                                color: themeService.isDarkMode ? Colors.blue.shade300 : Colors.blue,
-                                                                width: 2,
-                                                              ),
-                                                            ),
-                                                            filled: true,
-                                                            fillColor: themeService.isDarkMode ? Colors.grey.shade800 : Colors.white,
-                                                            isDense: true,
-                                                            contentPadding: EdgeInsets.symmetric(
-                                                              horizontal: isSmallScreen ? 3 : 4,
-                                                              vertical: 0,
-                                                            ),
-                                                          ),
-                                                          keyboardType: TextInputType.number,
-                                                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                                                          onChanged: (val) {
-                                                            final newReps = int.tryParse(val) ?? 0;
-                                                            setState(() {
-                                                              exerciseSet.updateReps(newReps);
-                                                            });
-                                                          },
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                  SizedBox(width: isSmallScreen ? 6.0 : 8.0),
-                                                  // Checkbox - fixed minimum size
-                                                  SizedBox(
-                                                    width: 48.0,
-                                                    height: 48.0,
-                                                    child: Center(
-                                                      child: Checkbox(
-                                                        value: exerciseSet.isChecked,
-                                                        fillColor: WidgetStateProperty.resolveWith<Color>((Set<WidgetState> states) {
-                                                          if (states.contains(WidgetState.selected)) {
-                                                            return Colors.green;
-                                                          }
-                                                          return themeService.isDarkMode ? Colors.grey.shade600 : Colors.grey.shade300;
-                                                        }),
-                                                        onChanged: (val) {
-                                                          HapticFeedback.lightImpact();
-                                                          setState(() {
-                                                            exerciseSet.isChecked = val ?? false;
-                                                          });
-                                                        },
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          );
-                                        }).toList(),
-                                      ],
-                                    ),
-                                  );
-                                },
-                              ),
-                              SizedBox(
-                                width: double.infinity,
-                                child: ElevatedButton(
-                                  onPressed: () {
-                                    setState(() {
-                                      exercise.sets.add(EditableExerciseSet());
-                                    });
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: themeService.isDarkMode ? Colors.grey.shade800 : Colors.grey.shade200,
-                                    foregroundColor: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
-                                    elevation: 0,
-                                    padding: const EdgeInsets.symmetric(vertical: 8),
-                                    side: BorderSide.none,
-                                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                    shape: const RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.only(
-                                        bottomLeft: Radius.circular(12),
-                                        bottomRight: Radius.circular(12),
-                                      ),
-                                      side: BorderSide.none,
-                                    ),
-                                  ),
-                                  child: FaIcon(
-                                    FontAwesomeIcons.plus, 
-                                    color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
+                          ],
+                        )
+                        : const SizedBox.shrink(),
                   ),
                 ),
                 // Add Exercises button at the bottom
-                const SizedBox(height: 16),
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    final screenWidth = MediaQuery.of(context).size.width;
-                    final buttonFontSize = screenWidth < 350 ? 16.0 : 18.0;
-                    final buttonPadding = screenWidth < 350 
-                        ? const EdgeInsets.symmetric(vertical: 12) 
-                        : const EdgeInsets.symmetric(vertical: 16);
-                    
-                    return SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: () async {
-                          final navigator = Navigator.of(context, rootNavigator: true);
-                          final result = await navigator.push<List<String>>(
-                            MaterialPageRoute(
-                              builder: (ctx) => const ExerciseInformationPage(
-                                isSelectionMode: true,
-                              ),
+                AnimatedSize(
+                  duration: const Duration(milliseconds: 400),
+                  curve: Curves.easeInOutQuart,
+                  child: AnimatedOpacity(
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                    opacity: _isInReorderMode ? 0.0 : 1.0,
+                    child: _isInReorderMode
+                        ? const SizedBox.shrink()
+                        : Column(
+                          children: [
+                            const SizedBox(height: 4),
+                            AddExerciseButton(
+                              isAnyFieldFocused: _isAnyFieldFocused,
+                              isEditingWorkoutName: _isEditingWorkoutName,
+                              onExercisesAdded: _onExercisesAdded,
+                              onExercisesLoaded: _onExercisesLoaded,
                             ),
-                          );
-                          
-                          if (result != null && mounted) {
-                            setState(() {
-                              // Add new exercises to the existing list
-                              final newExercises = result.map((title) => EditableExercise(
-                                title: title,
-                                sets: [EditableExerciseSet()],
-                              )).toList();
-                              _exercises.addAll(newExercises);
-                            });
-                          }
-                        },
-                        icon: const FaIcon(FontAwesomeIcons.plus, color: Colors.white),
-                        label: Text(
-                          'Add Exercises',
-                          style: TextStyle(
-                            color: Colors.white, 
-                            fontSize: buttonFontSize, 
-                            fontWeight: FontWeight.bold
-                          ),
+                          ],
                         ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.black,
-                          shape: const StadiumBorder(),
-                          padding: buttonPadding,
-                        ),
-                      ),
-                    );
-                  },
+                  ),
                 ),
+
               ],
             ),
           ),

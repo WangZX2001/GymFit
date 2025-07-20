@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:provider/provider.dart';
 import 'package:gymfit/models/custom_workout.dart';
 import 'package:gymfit/services/custom_workout_service.dart';
+import 'package:gymfit/services/theme_service.dart';
 
 class WorkoutNameDescriptionPage extends StatefulWidget {
   final List<CustomWorkoutExercise> exercises;
@@ -124,18 +126,26 @@ class _WorkoutNameDescriptionPageState extends State<WorkoutNameDescriptionPage>
 
   @override
   Widget build(BuildContext context) {
+    final themeService = Provider.of<ThemeService>(context);
+    
     return Scaffold(
-      backgroundColor: Colors.grey.shade200,
+      backgroundColor: themeService.currentTheme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.grey.shade200,
+        backgroundColor: themeService.currentTheme.appBarTheme.backgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
+          icon: Icon(
+            Icons.arrow_back_ios,
+            color: themeService.currentTheme.appBarTheme.foregroundColor
+          ),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text(
+        title: Text(
           'Save Workout',
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: themeService.currentTheme.appBarTheme.foregroundColor,
+            fontWeight: FontWeight.bold
+          ),
         ),
         actions: [
           IconButton(
@@ -146,7 +156,11 @@ class _WorkoutNameDescriptionPageState extends State<WorkoutNameDescriptionPage>
                     height: 20,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : const Icon(Icons.done, color: Colors.black, size: 24),
+                : Icon(
+                    Icons.done,
+                    color: themeService.currentTheme.appBarTheme.foregroundColor,
+                    size: 24
+                  ),
           ),
         ],
       ),
@@ -161,7 +175,7 @@ class _WorkoutNameDescriptionPageState extends State<WorkoutNameDescriptionPage>
               children: [
             // Workout Name Input
             Card(
-              color: Colors.white,
+              color: themeService.currentTheme.cardTheme.color,
               elevation: 2,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -184,7 +198,7 @@ class _WorkoutNameDescriptionPageState extends State<WorkoutNameDescriptionPage>
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            color: Colors.grey.shade800,
+                            color: themeService.currentTheme.textTheme.titleMedium?.color,
                           ),
                         ),
                         const Text(
@@ -206,7 +220,13 @@ class _WorkoutNameDescriptionPageState extends State<WorkoutNameDescriptionPage>
                           borderRadius: BorderRadius.circular(8),
                         ),
                         filled: true,
-                        fillColor: Colors.grey.shade50,
+                        fillColor: themeService.isDarkMode ? Colors.grey.shade800 : Colors.grey.shade50,
+                        hintStyle: TextStyle(
+                          color: themeService.isDarkMode ? Colors.grey.shade500 : Colors.grey.shade600,
+                        ),
+                      ),
+                      style: TextStyle(
+                        color: themeService.currentTheme.textTheme.bodyLarge?.color,
                       ),
                     ),
                   ],
@@ -218,7 +238,7 @@ class _WorkoutNameDescriptionPageState extends State<WorkoutNameDescriptionPage>
             
             // Description Input (Optional)
             Card(
-              color: Colors.white,
+              color: themeService.currentTheme.cardTheme.color,
               elevation: 2,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -241,7 +261,7 @@ class _WorkoutNameDescriptionPageState extends State<WorkoutNameDescriptionPage>
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            color: Colors.grey.shade800,
+                            color: themeService.currentTheme.textTheme.titleMedium?.color,
                           ),
                         ),
                         const SizedBox(width: 4),
@@ -249,7 +269,7 @@ class _WorkoutNameDescriptionPageState extends State<WorkoutNameDescriptionPage>
                           '(Optional)',
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.grey.shade500,
+                            color: themeService.isDarkMode ? Colors.grey.shade500 : Colors.grey.shade500,
                             fontStyle: FontStyle.italic,
                           ),
                         ),
@@ -265,7 +285,13 @@ class _WorkoutNameDescriptionPageState extends State<WorkoutNameDescriptionPage>
                           borderRadius: BorderRadius.circular(8),
                         ),
                         filled: true,
-                        fillColor: Colors.grey.shade50,
+                        fillColor: themeService.isDarkMode ? Colors.grey.shade800 : Colors.grey.shade50,
+                        hintStyle: TextStyle(
+                          color: themeService.isDarkMode ? Colors.grey.shade500 : Colors.grey.shade600,
+                        ),
+                      ),
+                      style: TextStyle(
+                        color: themeService.currentTheme.textTheme.bodyLarge?.color,
                       ),
                     ),
                   ],
@@ -277,7 +303,7 @@ class _WorkoutNameDescriptionPageState extends State<WorkoutNameDescriptionPage>
             
             // Workout Summary
             Card(
-              color: Colors.white,
+              color: themeService.currentTheme.cardTheme.color,
               elevation: 2,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -300,7 +326,7 @@ class _WorkoutNameDescriptionPageState extends State<WorkoutNameDescriptionPage>
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            color: Colors.grey.shade800,
+                            color: themeService.currentTheme.textTheme.titleMedium?.color,
                           ),
                         ),
                       ],
@@ -331,7 +357,7 @@ class _WorkoutNameDescriptionPageState extends State<WorkoutNameDescriptionPage>
                                       style: TextStyle(
                                         fontSize: 14,
                                         fontWeight: FontWeight.bold,
-                                        color: Colors.grey.shade700,
+                                        color: themeService.isDarkMode ? Colors.grey.shade300 : Colors.grey.shade700,
                                       ),
                                     ),
                                   );
@@ -348,7 +374,7 @@ class _WorkoutNameDescriptionPageState extends State<WorkoutNameDescriptionPage>
                                     style: TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.bold,
-                                      color: Colors.grey.shade700,
+                                      color: themeService.isDarkMode ? Colors.grey.shade300 : Colors.grey.shade700,
                                     ),
                                   ),
                                 );

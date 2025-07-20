@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:provider/provider.dart';
 import 'package:gymfit/models/custom_workout.dart';
+import 'package:gymfit/services/theme_service.dart';
 
 class CustomWorkoutList extends StatelessWidget {
   final List<CustomWorkout> customWorkouts;
@@ -16,6 +18,8 @@ class CustomWorkoutList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeService = Provider.of<ThemeService>(context);
+    
     if (loadingCustomWorkouts) {
       return const SizedBox(height: 80);
     }
@@ -24,7 +28,9 @@ class CustomWorkoutList extends StatelessWidget {
       return Column(
         children: [
           const SizedBox(height: 80),
-          const Divider(),
+          Divider(
+            color: themeService.isDarkMode ? Colors.grey.shade700 : Colors.grey.shade300,
+          ),
           const SizedBox(height: 16),
           Container(
             padding: const EdgeInsets.all(16),
@@ -37,14 +43,14 @@ class CustomWorkoutList extends StatelessWidget {
                 Icon(
                   Icons.push_pin_outlined,
                   size: 32,
-                  color: Colors.grey.shade400,
+                  color: themeService.isDarkMode ? Colors.grey.shade500 : Colors.grey.shade400,
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'No pinned workouts',
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
-                    color: Colors.grey.shade600,
+                    color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -53,7 +59,7 @@ class CustomWorkoutList extends StatelessWidget {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 12,
-                    color: Colors.grey.shade500,
+                    color: themeService.isDarkMode ? Colors.grey.shade500 : Colors.grey.shade500,
                   ),
                 ),
               ],
@@ -66,21 +72,24 @@ class CustomWorkoutList extends StatelessWidget {
     return Column(
       children: [
         const SizedBox(height: 80),
-        const Divider(),
+        Divider(
+          color: themeService.isDarkMode ? Colors.grey.shade700 : Colors.grey.shade300,
+        ),
         const SizedBox(height: 16),
         Row(
           children: [
             Icon(
               Icons.push_pin,
-              color: Colors.grey.shade700,
+              color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade700,
               size: 18,
             ),
             const SizedBox(width: 8),
-            const Text(
+            Text(
               'Pinned',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
+                color: themeService.currentTheme.textTheme.titleMedium?.color,
               ),
             ),
           ],
@@ -89,7 +98,7 @@ class CustomWorkoutList extends StatelessWidget {
         for (int i = 0; i < customWorkouts.length; i++) ...[
           if (i > 0) ...[
             Divider(
-              color: Colors.grey.shade600,
+              color: themeService.isDarkMode ? Colors.grey.shade700 : Colors.grey.shade600,
               thickness: 0.5,
               indent: 16,
               endIndent: 16,
@@ -106,26 +115,27 @@ class CustomWorkoutList extends StatelessWidget {
                   color: Colors.transparent,
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: const FaIcon(
+                child: FaIcon(
                   FontAwesomeIcons.dumbbell,
-                  color: Colors.black,
+                  color: themeService.isDarkMode ? Colors.grey.shade300 : Colors.black,
                   size: 20,
                 ),
               ),
               title: Text(
                 customWorkouts[i].name,
-                style: const TextStyle(
+                style: TextStyle(
                   fontWeight: FontWeight.w600,
+                  color: themeService.currentTheme.textTheme.titleMedium?.color,
                 ),
               ),
               subtitle: Text(
                 '${customWorkouts[i].exerciseNames.length} exercises',
                 style: TextStyle(
-                  color: Colors.grey.shade600,
+                  color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
                   fontSize: 12,
                 ),
               ),
-              trailing: const Icon(
+              trailing: Icon(
                 Icons.play_arrow,
                 color: Colors.green,
               ),

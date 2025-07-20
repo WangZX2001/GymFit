@@ -360,81 +360,65 @@ class _MePageState extends State<MePage> with WidgetsBindingObserver, AutomaticK
                   
                   const SizedBox(height: 24),
                   
-                  // Statistics Button
+                  // Action Buttons List
                   Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(4.0),
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.of(context, rootNavigator: true).push(
-                          MaterialPageRoute(
-                            builder: (context) => const StatisticsPage(),
-                          ),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue.shade600,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                    decoration: BoxDecoration(
+                      color: themeService.isDarkMode 
+                          ? const Color(0xFF2A2A2A)
+                          : Colors.grey.shade50,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: themeService.isDarkMode 
+                              ? Colors.black.withValues(alpha: 0.3)
+                              : Colors.grey.withValues(alpha: 0.1),
+                          spreadRadius: 1,
+                          blurRadius: 10,
+                          offset: const Offset(0, 2),
                         ),
-                        elevation: 2,
-                      ),
-                      child: const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.analytics, size: 20),
-                          SizedBox(width: 8),
-                          Text(
-                            'Statistics',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
+                      ],
                     ),
-                  ),
-                  
-                  const SizedBox(height: 12),
-                  
-                  // Friends Button
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(4.0),
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.of(context, rootNavigator: true).push(
-                          MaterialPageRoute(
-                            builder: (context) => const FriendsPage(),
-                          ),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green.shade600,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                    child: Column(
+                      children: [
+                        // Statistics Button
+                        _buildActionButton(
+                          title: 'Statistics',
+                          icon: Icons.analytics,
+                          color: Colors.blue.shade600,
+                          onTap: () {
+                            Navigator.of(context, rootNavigator: true).push(
+                              MaterialPageRoute(
+                                builder: (context) => const StatisticsPage(),
+                              ),
+                            );
+                          },
+                          isFirst: true,
                         ),
-                        elevation: 2,
-                      ),
-                      child: const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.group, size: 20),
-                          SizedBox(width: 8),
-                          Text(
-                            'Friends',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
+                        // Divider
+                        Divider(
+                          height: 1,
+                          thickness: 1,
+                          color: themeService.isDarkMode 
+                              ? Colors.grey.shade700
+                              : Colors.grey.shade300,
+                          indent: 16,
+                          endIndent: 16,
+                        ),
+                        // Friends Button
+                        _buildActionButton(
+                          title: 'Friends',
+                          icon: Icons.group,
+                          color: Colors.green.shade600,
+                          onTap: () {
+                            Navigator.of(context, rootNavigator: true).push(
+                              MaterialPageRoute(
+                                builder: (context) => const FriendsPage(),
+                              ),
+                            );
+                          },
+                          isFirst: false,
+                        ),
+                      ],
                     ),
                   ),
                 ] else ...[
@@ -481,6 +465,62 @@ class _MePageState extends State<MePage> with WidgetsBindingObserver, AutomaticK
                 color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
               ),
               textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionButton({
+    required String title,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+    required bool isFirst,
+  }) {
+    final themeService = Provider.of<ThemeService>(context, listen: false);
+    
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.only(
+        topLeft: isFirst ? const Radius.circular(16) : Radius.zero,
+        topRight: isFirst ? const Radius.circular(16) : Radius.zero,
+        bottomLeft: !isFirst ? const Radius.circular(16) : Radius.zero,
+        bottomRight: !isFirst ? const Radius.circular(16) : Radius.zero,
+      ),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                icon,
+                color: color,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                title,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: themeService.currentTheme.textTheme.titleLarge?.color,
+                ),
+              ),
+            ),
+            Icon(
+              Icons.arrow_forward_ios,
+              size: 16,
+              color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
             ),
           ],
         ),
