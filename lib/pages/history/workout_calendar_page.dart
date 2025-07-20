@@ -496,311 +496,112 @@ class _WorkoutCalendarPageState extends State<WorkoutCalendarPage> {
   }
 
   void _showWorkoutPreview(BuildContext context, Workout workout) {
-    final dateFormat = DateFormat('EEEE, MMM dd, yyyy');
-    final timeFormat = DateFormat('h:mm a');
+    final themeService = Provider.of<ThemeService>(context, listen: false);
 
     showDialog(
       context: context,
-      barrierDismissible: true,
-      builder:
-          (context) => Dialog(
-            backgroundColor: Colors.grey.shade200,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
+      builder: (BuildContext context) {
+        return Dialog(
+          backgroundColor: themeService.currentTheme.dialogBackgroundColor,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.8,
+              maxWidth: MediaQuery.of(context).size.width * 0.9,
+              minWidth: 300,
             ),
-            elevation: 8,
-            child: Container(
-              constraints: const BoxConstraints(maxWidth: 800, maxHeight: 1200),
+            child: IntrinsicHeight(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Header with close button
-                  Container(
-                    padding: const EdgeInsets.fromLTRB(20, 16, 8, 0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              if (workout.name.isNotEmpty) ...[
-                                Text(
-                                  workout.name,
-                                  style: const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.purple,
-                                  ),
-                                ),
-                                const Text(
-                                  'Workout Preview',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.grey,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ] else
-                                const Text(
-                                  'Workout Preview',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                        IconButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          icon: const Icon(Icons.close, size: 20),
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Content
+                  // Sets and Reps List
                   Flexible(
                     child: SingleChildScrollView(
-                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+                      padding: const EdgeInsets.all(16),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Date and Time
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Colors.blue.shade50,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Row(
-                              children: [
-                                const FaIcon(
-                                  FontAwesomeIcons.calendar,
-                                  color: Colors.blue,
-                                  size: 16,
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    '${dateFormat.format(workout.date)} at ${timeFormat.format(workout.date)}',
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          const SizedBox(height: 16),
-
-                          // Quick Stats
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: workout.exercises.map((exercise) {
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              _buildPreviewStat(
-                                FontAwesomeIcons.stopwatch,
-                                Colors.blue,
-                                _formatDuration(workout.duration),
-                                'Duration',
+                              Text(
+                                exercise.title,
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: themeService.currentTheme.textTheme.titleLarge?.color,
+                                ),
                               ),
-                              _buildPreviewStat(
-                                FontAwesomeIcons.dumbbell,
-                                Colors.green,
-                                '${workout.exercises.length}',
-                                'Exercises',
-                              ),
-                              _buildPreviewStat(
-                                FontAwesomeIcons.check,
-                                Colors.orange,
-                                '${workout.completedSets}',
-                                'Sets',
-                              ),
-                              _buildPreviewStat(
-                                FontAwesomeIcons.fire,
-                                workout.calories > 0 ? Colors.red : Colors.grey,
-                                workout.calories > 0
-                                    ? '${workout.calories.round()}'
-                                    : 'N/A',
-                                'Calories',
-                              ),
-                            ],
-                          ),
-
-                          const SizedBox(height: 16),
-
-                          // Exercise Summary
-                          const Text(
-                            'Exercises',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-
-                          const SizedBox(height: 8),
-
-                          ...workout.exercises.map((exercise) {
-                            return Container(
-                              margin: const EdgeInsets.only(bottom: 12),
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: Colors.grey.shade50,
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: Colors.grey.shade200),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  // Exercise Title and Summary
-                                  Row(
+                              const SizedBox(height: 6),
+                              ...exercise.sets.map((set) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 4, left: 12),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
-                                      Container(
-                                        width: 8,
-                                        height: 8,
-                                        decoration: BoxDecoration(
-                                          color:
-                                              exercise.completedSets > 0
-                                                  ? Colors.green
-                                                  : Colors.grey.shade400,
-                                          shape: BoxShape.circle,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 12),
                                       Expanded(
                                         child: Text(
-                                          exercise.title,
-                                          style: const TextStyle(
-                                            fontSize: 14,
+                                          '${exercise.sets.indexOf(set) + 1}: ${set.weight.toInt() == set.weight ? set.weight.toInt() : set.weight}kg × ${set.reps}',
+                                          style: TextStyle(
+                                            fontSize: 16,
                                             fontWeight: FontWeight.w600,
+                                            color: themeService.isDarkMode ? Colors.grey.shade300 : Colors.grey.shade700,
                                           ),
                                         ),
                                       ),
-                                      Text(
-                                        '${exercise.completedSets}/${exercise.totalSets}',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: Colors.grey.shade600,
-                                          fontWeight: FontWeight.w500,
-                                        ),
+                                      Icon(
+                                        set.isCompleted ? Icons.check_circle : Icons.radio_button_unchecked,
+                                        size: 20,
+                                        color: set.isCompleted ? Colors.green : (themeService.isDarkMode ? Colors.grey.shade600 : Colors.grey.shade400),
                                       ),
                                     ],
                                   ),
-
-                                  const SizedBox(height: 8),
-
-                                  // All Sets Details
-                                  ...exercise.sets.asMap().entries.map((entry) {
-                                    final int setIndex = entry.key;
-                                    final set = entry.value;
-
-                                    return Container(
-                                      margin: const EdgeInsets.only(top: 4),
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 20,
-                                        vertical: 6,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color:
-                                            set.isCompleted
-                                                ? Colors.green.shade50
-                                                : Colors.grey.shade100,
-                                        borderRadius: BorderRadius.circular(6),
-                                        border: Border.all(
-                                          color:
-                                              set.isCompleted
-                                                  ? Colors.green.shade200
-                                                  : Colors.grey.shade300,
-                                          width: 1,
-                                        ),
-                                      ),
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Text(
-                                            'Set ${setIndex + 1}',
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w500,
-                                              color:
-                                                  set.isCompleted
-                                                      ? Colors.green.shade700
-                                                      : Colors.grey.shade600,
-                                            ),
-                                          ),
-                                          Text(
-                                            '${(set.weight % 1 == 0 ? set.weight.toInt() : set.weight)} kg × ${set.reps} reps',
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w500,
-                                              color:
-                                                  set.isCompleted
-                                                      ? Colors.green.shade700
-                                                      : Colors.grey.shade500,
-                                            ),
-                                          ),
-                                          Icon(
-                                            set.isCompleted
-                                                ? Icons.check_circle
-                                                : Icons.radio_button_unchecked,
-                                            size: 16,
-                                            color:
-                                                set.isCompleted
-                                                    ? Colors.green
-                                                    : Colors.grey.shade400,
-                                          ),
-                                        ],
-                                      ),
-                                    );
-                                  }),
-                                ],
-                              ),
-                            );
-                          }),
-
-                          const SizedBox(height: 16),
-
-                          // View Details Button
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                                Navigator.of(context, rootNavigator: true).push(
-                                  MaterialPageRoute(
-                                    builder: (context) => WorkoutDetailsPage(
-                                      workout: workout,
-                                      isOwnWorkout: true,
-                                    ),
-                                  ),
                                 );
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.black,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 12,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              child: const Text(
-                                'View Full Details',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                              }),
+                              const SizedBox(height: 16),
+                            ],
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ),
+
+                  // View Details Button
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          Navigator.of(context, rootNavigator: true).push(
+                            MaterialPageRoute(
+                              builder: (context) => WorkoutDetailsPage(
+                                workout: workout,
+                                isOwnWorkout: true,
                               ),
                             ),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: themeService.isDarkMode ? Colors.grey.shade800 : Colors.black,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 12,
                           ),
-                        ],
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: const Text(
+                          'View Full Details',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -808,6 +609,8 @@ class _WorkoutCalendarPageState extends State<WorkoutCalendarPage> {
               ),
             ),
           ),
+        );
+      },
     );
   }
 

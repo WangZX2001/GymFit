@@ -82,187 +82,157 @@ class WorkoutDetailsPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Workout Name Card
-            if (workout.name.isNotEmpty)
-              Card(
-                color: themeService.currentTheme.cardTheme.color,
-                elevation: 2,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(20.0),
-                  child: Row(
-                    children: [
-                      const FaIcon(
-                        FontAwesomeIcons.tag,
+            // Workout Name
+            if (workout.name.isNotEmpty) ...[
+              Row(
+                children: [
+                  const FaIcon(
+                    FontAwesomeIcons.tag,
+                    color: Colors.purple,
+                    size: 24,
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Text(
+                      workout.name,
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
                         color: Colors.purple,
-                        size: 24,
                       ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Text(
-                          workout.name,
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.purple,
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+            ],
+
+            // Date and Time
+            Row(
+              children: [
+                const FaIcon(
+                  FontAwesomeIcons.calendar,
+                  color: Colors.blue,
+                  size: 20,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    '${dateFormat.format(workout.date)} at ${timeFormat.format(workout.date)}',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
-              ),
+              ],
+            ),
 
-            if (workout.name.isNotEmpty) const SizedBox(height: 16),
+            const SizedBox(height: 24),
 
-            // Date and Time Card
-            Card(
-              color: themeService.currentTheme.cardTheme.color,
-              elevation: 2,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Row(
+            // Summary Stats
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                Column(
                   children: [
                     const FaIcon(
-                      FontAwesomeIcons.calendar,
+                      FontAwesomeIcons.stopwatch,
                       color: Colors.blue,
-                      size: 20,
+                      size: 24,
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        '${dateFormat.format(workout.date)} at ${timeFormat.format(workout.date)}',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                        ),
+                    const SizedBox(height: 8),
+                    Text(
+                      _formatDuration(workout.duration),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    Text(
+                      'Duration',
+                      style: TextStyle(
+                        fontSize: 12, 
+                        color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey,
                       ),
                     ),
                   ],
                 ),
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            // Summary Stats Card
-            Card(
-              color: themeService.currentTheme.cardTheme.color,
-              elevation: 2,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                Column(
                   children: [
-                    Column(
-                      children: [
-                        const FaIcon(
-                          FontAwesomeIcons.stopwatch,
-                          color: Colors.blue,
-                          size: 24,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          _formatDuration(workout.duration),
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                        Text(
-                          'Duration',
-                          style: TextStyle(
-                            fontSize: 12, 
-                            color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey,
-                          ),
-                        ),
-                      ],
+                    const FaIcon(
+                      FontAwesomeIcons.dumbbell,
+                      color: Colors.green,
+                      size: 24,
                     ),
-                    Column(
-                      children: [
-                        const FaIcon(
-                          FontAwesomeIcons.dumbbell,
-                          color: Colors.green,
-                          size: 24,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          '${workout.exercises.length}',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                        Text(
-                          'Exercises',
-                          style: TextStyle(
-                            fontSize: 12, 
-                            color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey,
-                          ),
-                        ),
-                      ],
+                    const SizedBox(height: 8),
+                    Text(
+                      '${workout.exercises.length}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
                     ),
-                    Column(
-                      children: [
-                        const FaIcon(
-                          FontAwesomeIcons.check,
-                          color: Colors.orange,
-                          size: 24,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          '${workout.completedSets}',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                        Text(
-                          'Sets',
-                          style: TextStyle(
-                            fontSize: 12, 
-                            color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey,
-                          ),
-                        ),
-                      ],
-                    ),
-                    Column(
-                      children: [
-                        const FaIcon(
-                          FontAwesomeIcons.fire,
-                          color: Colors.red,
-                          size: 24,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          workout.calories > 0
-                              ? '${workout.calories.round()}'
-                              : 'N/A',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                        Text(
-                          'Calories',
-                          style: TextStyle(
-                            fontSize: 12, 
-                            color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey,
-                          ),
-                        ),
-                      ],
+                    Text(
+                      'Exercises',
+                      style: TextStyle(
+                        fontSize: 12, 
+                        color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey,
+                      ),
                     ),
                   ],
                 ),
-              ),
+                Column(
+                  children: [
+                    const FaIcon(
+                      FontAwesomeIcons.check,
+                      color: Colors.orange,
+                      size: 24,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '${workout.completedSets}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    Text(
+                      'Sets',
+                      style: TextStyle(
+                        fontSize: 12, 
+                        color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey,
+                      ),
+                    ),
+                  ],
+                ),
+                Column(
+                  children: [
+                    const FaIcon(
+                      FontAwesomeIcons.fire,
+                      color: Colors.red,
+                      size: 24,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      workout.calories > 0
+                          ? '${workout.calories.round()}'
+                          : 'N/A',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    Text(
+                      'Calories',
+                      style: TextStyle(
+                        fontSize: 12, 
+                        color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
 
             const SizedBox(height: 24),
@@ -281,118 +251,108 @@ class WorkoutDetailsPage extends StatelessWidget {
 
             // Exercise List
             ...workout.exercises.map(
-              (exercise) => Card(
-                color: themeService.currentTheme.cardTheme.color,
-                elevation: 2,
-                margin: const EdgeInsets.only(bottom: 12.0),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+              (exercise) => Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Exercise Title and Summary
+                  Row(
                     children: [
-                      // Exercise Title and Summary
-                      Row(
+                      Expanded(
+                        child: Text(
+                          exercise.title,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                            color: themeService.currentTheme.textTheme.titleMedium?.color,
+                          ),
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color:
+                              exercise.completedSets > 0
+                                  ? (themeService.isDarkMode ? Colors.green.shade900 : Colors.green.shade100)
+                                  : (themeService.isDarkMode ? Colors.grey.shade800 : Colors.grey.shade100),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          '${exercise.completedSets}/${exercise.totalSets} sets',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color:
+                                exercise.completedSets > 0
+                                    ? (themeService.isDarkMode ? Colors.green.shade300 : Colors.green.shade700)
+                                    : (themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // Individual Sets Details
+                  ...exercise.sets.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final set = entry.value;
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8.0),
+                      child: Row(
                         children: [
-                          Expanded(
-                            child: Text(
-                              exercise.title,
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 18,
-                                color: themeService.currentTheme.textTheme.titleMedium?.color,
+                          Container(
+                            width: 32,
+                            height: 32,
+                            decoration: BoxDecoration(
+                              color:
+                                  set.isCompleted
+                                      ? Colors.green
+                                      : (themeService.isDarkMode ? Colors.grey.shade600 : Colors.grey.shade300),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Center(
+                              child: Text(
+                                '${index + 1}',
+                                style: TextStyle(
+                                  color:
+                                      set.isCompleted
+                                          ? Colors.white
+                                          : (themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600),
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                           ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color:
-                                  exercise.completedSets > 0
-                                      ? (themeService.isDarkMode ? Colors.green.shade900 : Colors.green.shade100)
-                                      : (themeService.isDarkMode ? Colors.grey.shade800 : Colors.grey.shade100),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
+                          const SizedBox(width: 16),
+                          Expanded(
                             child: Text(
-                              '${exercise.completedSets}/${exercise.totalSets} sets',
+                              set.isCompleted
+                                  ? '${(set.weight % 1 == 0 ? set.weight.toInt() : set.weight)} kg × ${set.reps} reps'
+                                  : 'Not completed',
                               style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
                                 color:
-                                    exercise.completedSets > 0
-                                        ? (themeService.isDarkMode ? Colors.green.shade300 : Colors.green.shade700)
-                                        : (themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600),
+                                    set.isCompleted
+                                        ? (themeService.isDarkMode ? Colors.white : Colors.black87)
+                                        : (themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade500),
+                                fontWeight:
+                                    set.isCompleted
+                                        ? FontWeight.w500
+                                        : FontWeight.normal,
                               ),
                             ),
                           ),
                         ],
                       ),
-
-                      const SizedBox(height: 12),
-
-                      // Individual Sets Details
-                      ...exercise.sets.asMap().entries.map((entry) {
-                        final index = entry.key;
-                        final set = entry.value;
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 8.0),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 32,
-                                height: 32,
-                                decoration: BoxDecoration(
-                                  color:
-                                      set.isCompleted
-                                          ? Colors.green
-                                          : (themeService.isDarkMode ? Colors.grey.shade600 : Colors.grey.shade300),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    '${index + 1}',
-                                    style: TextStyle(
-                                      color:
-                                          set.isCompleted
-                                              ? Colors.white
-                                              : (themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600),
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Text(
-                                  set.isCompleted
-                                      ? '${(set.weight % 1 == 0 ? set.weight.toInt() : set.weight)} kg × ${set.reps} reps'
-                                      : 'Not completed',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color:
-                                        set.isCompleted
-                                            ? (themeService.isDarkMode ? Colors.white : Colors.black87)
-                                            : (themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade500),
-                                    fontWeight:
-                                        set.isCompleted
-                                            ? FontWeight.w500
-                                            : FontWeight.normal,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      }),
-                    ],
-                  ),
-                ),
+                    );
+                  }),
+                  const SizedBox(height: 20),
+                ],
               ),
             ),
 
