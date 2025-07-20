@@ -6,7 +6,6 @@ import 'package:gymfit/components/quick_start_overlay.dart';
 import 'package:provider/provider.dart';
 import 'package:gymfit/services/theme_service.dart';
 import 'package:gymfit/services/workout_service.dart';
-import 'package:gymfit/models/workout.dart';
 import 'package:fl_chart/fl_chart.dart';
 
 import 'package:gymfit/pages/workout/quick_start_page_optimized.dart';
@@ -181,7 +180,7 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> with 
       
       return oneRMData;
     } catch (e) {
-      print('Error fetching 1RM data: $e');
+      // Error fetching 1RM data: $e
       return [];
     }
   }
@@ -1130,8 +1129,8 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> with 
                                         show: true,
                                         gradient: LinearGradient(
                                           colors: [
-                                            Colors.purple.shade400.withOpacity(0.3),
-                                            Colors.purple.shade600.withOpacity(0.1),
+                                            Colors.purple.shade400.withValues(alpha: 0.3),
+                                            Colors.purple.shade600.withValues(alpha: 0.1),
                                           ],
                                           begin: Alignment.topCenter,
                                           end: Alignment.bottomCenter,
@@ -1331,8 +1330,8 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> with 
                                         show: true,
                                         gradient: LinearGradient(
                                           colors: [
-                                            Colors.orange.shade400.withOpacity(0.3),
-                                            Colors.orange.shade600.withOpacity(0.1),
+                                            Colors.orange.shade400.withValues(alpha: 0.3),
+                                            Colors.orange.shade600.withValues(alpha: 0.1),
                                           ],
                                           begin: Alignment.topCenter,
                                           end: Alignment.bottomCenter,
@@ -1532,8 +1531,8 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> with 
                                         show: true,
                                         gradient: LinearGradient(
                                           colors: [
-                                            Colors.green.shade400.withOpacity(0.3),
-                                            Colors.green.shade600.withOpacity(0.1),
+                                            Colors.green.shade400.withValues(alpha: 0.3),
+                                            Colors.green.shade600.withValues(alpha: 0.1),
                                           ],
                                           begin: Alignment.topCenter,
                                           end: Alignment.bottomCenter,

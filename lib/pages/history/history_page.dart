@@ -516,7 +516,7 @@ class _HistoryPageState extends State<HistoryPage> with SingleTickerProviderStat
       context: context,
       builder: (BuildContext context) {
         return Dialog(
-          backgroundColor: themeService.currentTheme.dialogBackgroundColor,
+          backgroundColor: themeService.currentTheme.dialogTheme.backgroundColor,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
@@ -621,30 +621,5 @@ class _HistoryPageState extends State<HistoryPage> with SingleTickerProviderStat
     );
   }
 
-  Widget _buildPreviewStat(
-    IconData icon,
-    Color color,
-    String value,
-    String label,
-  ) {
-    final themeService = Provider.of<ThemeService>(context);
-    
-    return Column(
-      children: [
-        FaIcon(icon, color: color, size: 18),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-        ),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 11,
-            color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey,
-          ),
-        ),
-      ],
-    );
-  }
+
 }

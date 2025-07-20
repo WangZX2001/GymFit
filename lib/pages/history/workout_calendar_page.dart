@@ -502,7 +502,7 @@ class _WorkoutCalendarPageState extends State<WorkoutCalendarPage> {
       context: context,
       builder: (BuildContext context) {
         return Dialog(
-          backgroundColor: themeService.currentTheme.dialogBackgroundColor,
+          backgroundColor: themeService.currentTheme.dialogTheme.backgroundColor,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
@@ -614,22 +614,5 @@ class _WorkoutCalendarPageState extends State<WorkoutCalendarPage> {
     );
   }
 
-  Widget _buildPreviewStat(
-    IconData icon,
-    Color color,
-    String value,
-    String label,
-  ) {
-    return Column(
-      children: [
-        FaIcon(icon, color: color, size: 18),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-        ),
-        Text(label, style: const TextStyle(fontSize: 11, color: Colors.grey)),
-      ],
-    );
-  }
+
 }
