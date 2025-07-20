@@ -4,6 +4,8 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:gymfit/models/exercise_set.dart';
 import 'package:gymfit/models/quick_start_exercise.dart';
 import 'package:gymfit/components/exercise_set_row.dart';
+import 'package:provider/provider.dart';
+import 'package:gymfit/services/theme_service.dart';
 
 class ExerciseCard extends StatefulWidget {
   final QuickStartExercise exercise;
@@ -216,327 +218,344 @@ class _ExerciseCardState extends State<ExerciseCard>
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         curve: Curves.easeInOut,
-        child: Card(
-          color: widget.isCollapsed ? Colors.grey.shade50 : Colors.white,
-          margin: const EdgeInsets.symmetric(vertical: 4),
-          elevation: widget.isCollapsed ? 2 : 1,
-          shadowColor:
-              widget.isCollapsed ? Colors.grey.shade400 : Colors.grey.shade300,
-          child: Column(
-            children: [
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  final isSmallScreen = constraints.maxWidth < 350;
-                  final cardPadding = isSmallScreen ? 6.0 : 8.0;
+        child: Builder(
+          builder: (context) {
+            final themeService = Provider.of<ThemeService>(context);
+            return Card(
+              color: widget.isCollapsed 
+                  ? (themeService.isDarkMode ? const Color(0xFF2A2A2A) : Colors.grey.shade50)
+                  : themeService.currentTheme.cardTheme.color,
+              margin: const EdgeInsets.symmetric(vertical: 4),
+              elevation: widget.isCollapsed ? 2 : 1,
+              shadowColor:
+                  widget.isCollapsed ? Colors.grey.shade400 : Colors.grey.shade300,
+              child: Column(
+                children: [
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final isSmallScreen = constraints.maxWidth < 350;
+                      final cardPadding = isSmallScreen ? 6.0 : 8.0;
 
-                  return Padding(
-                    padding: EdgeInsets.all(cardPadding),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Title row - always visible
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      return Padding(
+                        padding: EdgeInsets.all(cardPadding),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              widget.exercise.title,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            if (widget.isCollapsed)
-                              // Drag handle for reorder mode
-                              Container(
-                                padding: const EdgeInsets.all(8),
-                                child: const Icon(
-                                  Icons.drag_handle,
-                                  color: Colors.grey,
-                                  size: 20,
+                            // Title row - always visible
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  widget.exercise.title,
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                              )
-                            else
-                              // 3-dots menu for normal mode
-                              PopupMenuButton<String>(
-                                icon: const Icon(Icons.more_horiz),
-                                onSelected: (value) {
-                                  if (value == 'reorder') {
-                                    widget.onRequestReorderMode();
-                                  }
-                                },
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                color: Colors.grey[100],
-                                elevation: 8,
-                                shadowColor: Colors.black.withValues(
-                                  alpha: 0.2,
-                                ),
-                                itemBuilder:
-                                    (context) => [
-                                      PopupMenuItem<String>(
-                                        value: 'reorder',
-                                        height: 48,
-                                        child: Row(
-                                          children: [
-                                            Icon(
-                                              Icons.drag_handle,
-                                              color: Colors.grey[700],
-                                              size: 20,
-                                            ),
-                                            const SizedBox(width: 12),
-                                            Text(
-                                              'Reorder',
-                                              style: TextStyle(
-                                                color: Colors.grey[900],
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.w500,
-                                              ),
-                                            ),
-                                          ],
+                                if (widget.isCollapsed)
+                                  // Drag handle for reorder mode
+                                  Container(
+                                    padding: const EdgeInsets.all(8),
+                                    child: const Icon(
+                                      Icons.drag_handle,
+                                      color: Colors.grey,
+                                      size: 20,
+                                    ),
+                                  )
+                                else
+                                  // 3-dots menu for normal mode
+                                  Builder(
+                                    builder: (context) {
+                                      final themeService = Provider.of<ThemeService>(context);
+                                      return PopupMenuButton<String>(
+                                        icon: const Icon(Icons.more_horiz),
+                                        onSelected: (value) {
+                                          if (value == 'reorder') {
+                                            widget.onRequestReorderMode();
+                                          }
+                                        },
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(12),
                                         ),
-                                      ),
-                                    ],
-                              ),
-                          ],
-                        ),
-                        // Animated content that unfolds/folds
-                        if (!widget.isCollapsed || _isAnimatingToCollapsed) ...[
-                          if (_contentHeightAnimation != null)
-                            SizeTransition(
-                              sizeFactor:
-                                  _isUnfolding
-                                      ? _unfoldContentHeightAnimation!
-                                      : _contentHeightAnimation!,
-                              child: Column(
-                                children: [
-                                  LayoutBuilder(
-                                    builder: (context, constraints) {
-                                      final availableWidth =
-                                          constraints.maxWidth;
-                                      final isSmallScreen =
-                                          availableWidth < 350;
-                                      final spacing = isSmallScreen ? 6.0 : 8.0;
-                                      final minCheckboxSize = 48.0;
-
-                                      return Row(
-                                        children: [
-                                          // Set number - fixed small width
-                                          SizedBox(
-                                            width: isSmallScreen ? 35 : 45,
-                                            child: Center(
-                                              child: Text(
-                                                'Set',
-                                                style: TextStyle(
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize:
-                                                      isSmallScreen ? 14 : 16,
-                                                ),
-                                                textAlign: TextAlign.center,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                            ),
-                                          ),
-                                          SizedBox(width: spacing),
-                                          // Previous - flexible
-                                          Expanded(
-                                            flex: 2,
-                                            child: Center(
-                                              child: Text(
-                                                'Previous',
-                                                style: TextStyle(
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize:
-                                                      isSmallScreen ? 14 : 16,
-                                                ),
-                                                textAlign: TextAlign.center,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                            ),
-                                          ),
-                                          SizedBox(width: spacing),
-                                          // Weight - flexible
-                                          Expanded(
-                                            flex: 2,
-                                            child: Center(
-                                              child: ConstrainedBox(
-                                                constraints: BoxConstraints(
-                                                  maxWidth:
-                                                      isSmallScreen ? 45 : 60,
-                                                  minWidth: 40,
-                                                ),
-                                                child: Text(
-                                                  'Kg',
-                                                  style: TextStyle(
-                                                    fontWeight: FontWeight.bold,
-                                                    fontSize:
-                                                        isSmallScreen ? 14 : 16,
-                                                  ),
-                                                  textAlign: TextAlign.center,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                          SizedBox(width: spacing),
-                                          // Reps - flexible
-                                          Expanded(
-                                            flex: 2,
-                                            child: Center(
-                                              child: ConstrainedBox(
-                                                constraints: BoxConstraints(
-                                                  maxWidth:
-                                                      isSmallScreen ? 45 : 60,
-                                                  minWidth: 40,
-                                                ),
-                                                child: Text(
-                                                  'Reps',
-                                                  style: TextStyle(
-                                                    fontWeight: FontWeight.bold,
-                                                    fontSize:
-                                                        isSmallScreen ? 14 : 16,
-                                                  ),
-                                                  textAlign: TextAlign.center,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                          SizedBox(width: spacing),
-                                          // Checkbox - fixed minimum size
-                                          SizedBox(
-                                            width: minCheckboxSize,
-                                            height: minCheckboxSize,
-                                            child: Center(
-                                              child: Checkbox(
-                                                value: widget.exercise.sets
-                                                    .every(
-                                                      (set) => set.isChecked,
+                                        color: themeService.currentTheme.cardTheme.color,
+                                        elevation: 8,
+                                        shadowColor: Colors.black.withValues(
+                                          alpha: 0.2,
+                                        ),
+                                        itemBuilder:
+                                            (context) => [
+                                              PopupMenuItem<String>(
+                                                value: 'reorder',
+                                                height: 48,
+                                                child: Row(
+                                                  children: [
+                                                    Icon(
+                                                      Icons.drag_handle,
+                                                      color: themeService.isDarkMode ? Colors.grey.shade300 : Colors.grey[700],
+                                                      size: 20,
                                                     ),
-                                                tristate: true,
-                                                fillColor:
-                                                    WidgetStateProperty.resolveWith<
-                                                      Color
-                                                    >((
-                                                      Set<WidgetState> states,
-                                                    ) {
-                                                      if (states.contains(
-                                                        WidgetState.selected,
-                                                      )) {
-                                                        return Colors.green;
-                                                      }
-                                                      return Colors
-                                                          .grey
-                                                          .shade300;
-                                                    }),
-                                                onChanged: (val) {
-                                                  HapticFeedback.lightImpact();
-                                                  widget
-                                                      .onAllSetsCheckedChanged(
-                                                        widget.exercise,
-                                                        val ?? false,
-                                                      );
-                                                },
+                                                    const SizedBox(width: 12),
+                                                    Text(
+                                                      'Reorder',
+                                                      style: TextStyle(
+                                                        color: themeService.currentTheme.textTheme.titleMedium?.color,
+                                                        fontSize: 16,
+                                                        fontWeight: FontWeight.w500,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
                                               ),
-                                            ),
-                                          ),
-                                        ],
+                                            ],
                                       );
                                     },
                                   ),
-                                  Divider(
-                                    height: 1,
-                                    thickness: 1,
-                                    color: Colors.grey.shade300,
-                                  ),
-                                ],
-                              ),
+                              ],
                             ),
-                          // Exercise sets - also animated
-                          if (_contentHeightAnimation != null)
-                            SizeTransition(
-                              sizeFactor: _contentHeightAnimation!,
-                              child: Column(
-                                children:
-                                    widget.exercise.sets.asMap().entries.map((
-                                      entry,
-                                    ) {
-                                      int setIndex = entry.key;
-                                      ExerciseSet exerciseSet = entry.value;
-                                      return ExerciseSetRow(
-                                        exerciseSet: exerciseSet,
-                                        setIndex: setIndex,
-                                        preventAutoFocus:
-                                            widget.preventAutoFocus,
-                                        onWeightChanged:
-                                            (weight) => widget.onWeightChanged(
-                                              widget.exercise,
-                                              exerciseSet,
-                                              weight,
-                                            ),
-                                        onRepsChanged:
-                                            (reps) => widget.onRepsChanged(
-                                              widget.exercise,
-                                              exerciseSet,
-                                              reps,
-                                            ),
-                                        onCheckedChanged:
-                                            (checked) =>
-                                                widget.onSetCheckedChanged(
+                            // Animated content that unfolds/folds
+                            if (!widget.isCollapsed || _isAnimatingToCollapsed) ...[
+                              if (_contentHeightAnimation != null)
+                                SizeTransition(
+                                  sizeFactor:
+                                      _isUnfolding
+                                          ? _unfoldContentHeightAnimation!
+                                          : _contentHeightAnimation!,
+                                  child: Column(
+                                    children: [
+                                      LayoutBuilder(
+                                        builder: (context, constraints) {
+                                          final availableWidth =
+                                              constraints.maxWidth;
+                                          final isSmallScreen =
+                                              availableWidth < 350;
+                                          final spacing = isSmallScreen ? 6.0 : 8.0;
+                                          final minCheckboxSize = 48.0;
+
+                                          return Row(
+                                            children: [
+                                              // Set number - fixed small width
+                                              SizedBox(
+                                                width: isSmallScreen ? 35 : 45,
+                                                child: Center(
+                                                  child: Text(
+                                                    'Set',
+                                                    style: TextStyle(
+                                                      fontWeight: FontWeight.bold,
+                                                      fontSize:
+                                                          isSmallScreen ? 14 : 16,
+                                                    ),
+                                                    textAlign: TextAlign.center,
+                                                    overflow: TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                              ),
+                                              SizedBox(width: spacing),
+                                              // Previous - flexible
+                                              Expanded(
+                                                flex: 2,
+                                                child: Center(
+                                                  child: Text(
+                                                    'Previous',
+                                                    style: TextStyle(
+                                                      fontWeight: FontWeight.bold,
+                                                      fontSize:
+                                                          isSmallScreen ? 14 : 16,
+                                                    ),
+                                                    textAlign: TextAlign.center,
+                                                    overflow: TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                              ),
+                                              SizedBox(width: spacing),
+                                              // Weight - flexible
+                                              Expanded(
+                                                flex: 2,
+                                                child: Center(
+                                                  child: ConstrainedBox(
+                                                    constraints: BoxConstraints(
+                                                      maxWidth:
+                                                          isSmallScreen ? 45 : 60,
+                                                      minWidth: 40,
+                                                    ),
+                                                    child: Text(
+                                                      'Kg',
+                                                      style: TextStyle(
+                                                        fontWeight: FontWeight.bold,
+                                                        fontSize:
+                                                            isSmallScreen ? 14 : 16,
+                                                      ),
+                                                      textAlign: TextAlign.center,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                              SizedBox(width: spacing),
+                                              // Reps - flexible
+                                              Expanded(
+                                                flex: 2,
+                                                child: Center(
+                                                  child: ConstrainedBox(
+                                                    constraints: BoxConstraints(
+                                                      maxWidth:
+                                                          isSmallScreen ? 45 : 60,
+                                                      minWidth: 40,
+                                                    ),
+                                                    child: Text(
+                                                      'Reps',
+                                                      style: TextStyle(
+                                                        fontWeight: FontWeight.bold,
+                                                        fontSize:
+                                                            isSmallScreen ? 14 : 16,
+                                                      ),
+                                                      textAlign: TextAlign.center,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                              SizedBox(width: spacing),
+                                              // Checkbox - fixed minimum size
+                                              SizedBox(
+                                                width: minCheckboxSize,
+                                                height: minCheckboxSize,
+                                                child: Center(
+                                                  child: Checkbox(
+                                                    value: widget.exercise.sets
+                                                        .every(
+                                                          (set) => set.isChecked,
+                                                        ),
+                                                    tristate: true,
+                                                    fillColor:
+                                                        WidgetStateProperty.resolveWith<
+                                                          Color
+                                                        >((
+                                                          Set<WidgetState> states,
+                                                        ) {
+                                                          if (states.contains(
+                                                            WidgetState.selected,
+                                                          )) {
+                                                            return Colors.green;
+                                                          }
+                                                          return Colors
+                                                              .grey
+                                                              .shade300;
+                                                        }),
+                                                    onChanged: (val) {
+                                                      HapticFeedback.lightImpact();
+                                                      widget
+                                                          .onAllSetsCheckedChanged(
+                                                            widget.exercise,
+                                                            val ?? false,
+                                                          );
+                                                    },
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          );
+                                        },
+                                      ),
+                                      Divider(
+                                        height: 1,
+                                        thickness: 1,
+                                        color: themeService.isDarkMode ? Colors.grey.shade700 : Colors.grey.shade300,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              // Exercise sets - also animated
+                              if (_contentHeightAnimation != null)
+                                SizeTransition(
+                                  sizeFactor: _contentHeightAnimation!,
+                                  child: Column(
+                                    children:
+                                        widget.exercise.sets.asMap().entries.map((
+                                          entry,
+                                        ) {
+                                          int setIndex = entry.key;
+                                          ExerciseSet exerciseSet = entry.value;
+                                          return ExerciseSetRow(
+                                            exerciseSet: exerciseSet,
+                                            setIndex: setIndex,
+                                            preventAutoFocus:
+                                                widget.preventAutoFocus,
+                                            onWeightChanged:
+                                                (weight) => widget.onWeightChanged(
                                                   widget.exercise,
                                                   exerciseSet,
-                                                  checked,
+                                                  weight,
                                                 ),
-                                        onDismissed:
-                                            () => widget.onRemoveSet(
-                                              widget.exercise,
-                                              exerciseSet,
-                                            ),
-                                      );
-                                    }).toList(),
+                                            onRepsChanged:
+                                                (reps) => widget.onRepsChanged(
+                                                  widget.exercise,
+                                                  exerciseSet,
+                                                  reps,
+                                                ),
+                                            onCheckedChanged:
+                                                (checked) =>
+                                                    widget.onSetCheckedChanged(
+                                                      widget.exercise,
+                                                      exerciseSet,
+                                                      checked,
+                                                    ),
+                                            onDismissed:
+                                                () => widget.onRemoveSet(
+                                                  widget.exercise,
+                                                  exerciseSet,
+                                                ),
+                                          );
+                                        }).toList(),
+                                  ),
+                                ),
+                            ],
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                  // Add set button - also animated
+                  if ((!widget.isCollapsed || _isAnimatingToCollapsed) &&
+                      _contentHeightAnimation != null)
+                    SizeTransition(
+                      sizeFactor: _contentHeightAnimation!,
+                      child: Builder(
+                        builder: (context) {
+                          final themeService = Provider.of<ThemeService>(context);
+                          return SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: widget.onAddSet,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: themeService.isDarkMode ? Colors.grey.shade800 : Colors.grey.shade200,
+                                foregroundColor: themeService.isDarkMode ? Colors.white : Colors.grey.shade600,
+                                elevation: 0,
+                                padding: const EdgeInsets.symmetric(vertical: 8),
+                                side: BorderSide.none,
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                shape: const RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.only(
+                                    bottomLeft: Radius.circular(12),
+                                    bottomRight: Radius.circular(12),
+                                  ),
+                                  side: BorderSide.none,
+                                ),
+                              ),
+                              child: FaIcon(
+                                FontAwesomeIcons.plus,
+                                color: themeService.isDarkMode ? Colors.white : Colors.grey,
                               ),
                             ),
-                        ],
-                      ],
+                          );
+                        },
+                      ),
                     ),
-                  );
-                },
+                ],
               ),
-              // Add set button - also animated
-              if ((!widget.isCollapsed || _isAnimatingToCollapsed) &&
-                  _contentHeightAnimation != null)
-                SizeTransition(
-                  sizeFactor: _contentHeightAnimation!,
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: widget.onAddSet,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.grey.shade200,
-                        foregroundColor: Colors.grey.shade600,
-                        elevation: 0,
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        side: BorderSide.none,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        shape: const RoundedRectangleBorder(
-                          borderRadius: BorderRadius.only(
-                            bottomLeft: Radius.circular(12),
-                            bottomRight: Radius.circular(12),
-                          ),
-                          side: BorderSide.none,
-                        ),
-                      ),
-                      child: const FaIcon(
-                        FontAwesomeIcons.plus,
-                        color: Colors.grey,
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );

@@ -6,6 +6,8 @@ import 'package:gymfit/services/workout_service.dart';
 import 'package:gymfit/pages/history/workout_details_page.dart';
 import 'package:gymfit/pages/history/workout_calendar_page.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import 'package:gymfit/services/theme_service.dart';
 
 class HistoryPage extends StatefulWidget {
   const HistoryPage({super.key});
@@ -57,19 +59,24 @@ class _HistoryPageState extends State<HistoryPage> with SingleTickerProviderStat
 
   @override
   Widget build(BuildContext context) {
+    final themeService = Provider.of<ThemeService>(context);
+    
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: themeService.currentTheme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: themeService.currentTheme.appBarTheme.backgroundColor,
         elevation: 0,
-        title: const Text(
+        title: Text(
           'Workout History',
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+          style: themeService.currentTheme.appBarTheme.titleTextStyle,
         ),
         centerTitle: true,
         actions: [
           IconButton(
-            icon: const FaIcon(FontAwesomeIcons.calendar, color: Colors.black),
+            icon: FaIcon(
+              FontAwesomeIcons.calendar,
+              color: themeService.currentTheme.appBarTheme.foregroundColor,
+            ),
             onPressed: () {
               Navigator.of(context, rootNavigator: true).push(
                 MaterialPageRoute(builder: (context) => WorkoutCalendarPage()),
@@ -81,7 +88,7 @@ class _HistoryPageState extends State<HistoryPage> with SingleTickerProviderStat
           controller: _tabController,
           indicatorColor: Colors.purple,
           labelColor: Colors.purple,
-          unselectedLabelColor: Colors.grey,
+          unselectedLabelColor: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey,
           labelStyle: const TextStyle(fontWeight: FontWeight.bold),
           tabs: const [
             Tab(text: 'Me'),
@@ -250,6 +257,8 @@ class _HistoryPageState extends State<HistoryPage> with SingleTickerProviderStat
   }
 
   Widget _buildWorkoutsList(List<Workout> workouts, {required bool showUserInfo}) {
+    final themeService = Provider.of<ThemeService>(context);
+    
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: ListView.builder(
@@ -261,7 +270,7 @@ class _HistoryPageState extends State<HistoryPage> with SingleTickerProviderStat
 
           return Card(
             margin: const EdgeInsets.only(bottom: 12.0),
-            color: Colors.white,
+            color: themeService.currentTheme.cardTheme.color,
             elevation: 2,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
@@ -326,7 +335,7 @@ class _HistoryPageState extends State<HistoryPage> with SingleTickerProviderStat
                           style: TextStyle(
                             fontSize: showUserInfo ? 18 : 20,
                             fontWeight: FontWeight.bold,
-                            color: showUserInfo ? Colors.black : Colors.purple,
+                            color: showUserInfo ? themeService.currentTheme.textTheme.titleLarge?.color : Colors.purple,
                           ),
                         ),
                       ),
@@ -345,15 +354,15 @@ class _HistoryPageState extends State<HistoryPage> with SingleTickerProviderStat
                                     : FontWeight.bold,
                             color:
                                 workout.name.isNotEmpty
-                                    ? Colors.grey[700]
-                                    : Colors.black,
+                                    ? (themeService.isDarkMode ? Colors.grey.shade300 : Colors.grey[700])
+                                    : themeService.currentTheme.textTheme.titleLarge?.color,
                           ),
                         ),
                         Text(
                           timeFormat.format(workout.date),
                           style: TextStyle(
                             fontSize: 14,
-                            color: Colors.grey[600],
+                            color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey[600],
                           ),
                         ),
                       ],
@@ -432,34 +441,6 @@ class _HistoryPageState extends State<HistoryPage> with SingleTickerProviderStat
                       ],
                     ),
 
-                    // Calories Row
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8.0),
-                      child: Row(
-                        children: [
-                          const FaIcon(
-                            FontAwesomeIcons.fire,
-                            size: 16,
-                            color: Colors.red,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            workout.calories > 0
-                                ? '${workout.calories.round()} cal'
-                                : 'Not calculated',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color:
-                                  workout.calories > 0
-                                      ? Colors.red
-                                      : Colors.grey,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
                     const SizedBox(height: 12),
 
                     // Exercise List Preview
@@ -476,7 +457,7 @@ class _HistoryPageState extends State<HistoryPage> with SingleTickerProviderStat
                                     '${exercise.completedSets} x ${exercise.title}',
                                     style: TextStyle(
                                       fontSize: 13,
-                                      color: Colors.grey[800],
+                                      color: themeService.isDarkMode ? Colors.grey.shade300 : Colors.grey[800],
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
@@ -495,7 +476,7 @@ class _HistoryPageState extends State<HistoryPage> with SingleTickerProviderStat
                           'Tap for details',
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.grey[500],
+                            color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey[500],
                             fontStyle: FontStyle.italic,
                           ),
                         ),
@@ -503,7 +484,7 @@ class _HistoryPageState extends State<HistoryPage> with SingleTickerProviderStat
                         Icon(
                           Icons.arrow_forward_ios,
                           size: 12,
-                          color: Colors.grey[500],
+                          color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey[500],
                         ),
                       ],
                     ),
@@ -529,239 +510,230 @@ class _HistoryPageState extends State<HistoryPage> with SingleTickerProviderStat
   }
 
   void _showWorkoutPreview(BuildContext context, Workout workout, {bool isOwnWorkout = true}) {
-    final dateFormat = DateFormat('EEEE, MMM dd, yyyy');
+    final themeService = Provider.of<ThemeService>(context, listen: false);
+    final dateFormat = DateFormat('MMM dd, yyyy');
     final timeFormat = DateFormat('h:mm a');
 
     showDialog(
       context: context,
-      barrierDismissible: true,
-      builder:
-          (context) => Dialog(
-            backgroundColor: Colors.grey.shade200,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-            elevation: 8,
-            child: Container(
-              constraints: const BoxConstraints(maxWidth: 800, maxHeight: 1200),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Header with close button
-                  Container(
-                    padding: const EdgeInsets.fromLTRB(20, 16, 8, 0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              if (workout.name.isNotEmpty) ...[
-                                Text(
-                                  workout.name,
-                                  style: const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.purple,
-                                  ),
-                                ),
-                                const Text(
-                                  'Workout Preview',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                              ] else ...[
-                                const Text(
-                                  'Workout Preview',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.purple,
-                                  ),
-                                ),
-                              ],
-                              const SizedBox(height: 4),
-                              Text(
-                                '${dateFormat.format(workout.date)} at ${timeFormat.format(workout.date)}',
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        IconButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          icon: const Icon(Icons.close, size: 20),
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(),
-                        ),
-                      ],
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Container(
+            constraints: const BoxConstraints(maxHeight: 600),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Header
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.purple,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(16),
+                      topRight: Radius.circular(16),
                     ),
                   ),
-
-                  // Stats row
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        _buildPreviewStat(
-                          FontAwesomeIcons.stopwatch,
-                          Colors.blue,
-                          _formatDuration(workout.duration),
-                          'Duration',
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              workout.name.isNotEmpty ? workout.name : 'Workout',
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '${dateFormat.format(workout.date)} at ${timeFormat.format(workout.date)}',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ],
                         ),
-                        _buildPreviewStat(
-                          FontAwesomeIcons.dumbbell,
-                          Colors.green,
-                          '${workout.exercises.length}',
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        icon: const Icon(Icons.close, size: 20),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Stats row
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _buildPreviewStat(
+                        FontAwesomeIcons.stopwatch,
+                        Colors.blue,
+                        _formatDuration(workout.duration),
+                        'Duration',
+                      ),
+                      _buildPreviewStat(
+                        FontAwesomeIcons.dumbbell,
+                        Colors.green,
+                        '${workout.exercises.length}',
+                        'Exercises',
+                      ),
+                      _buildPreviewStat(
+                        FontAwesomeIcons.check,
+                        Colors.orange,
+                        '${workout.completedSets}',
+                        'Sets',
+                      ),
+                      _buildPreviewStat(
+                        FontAwesomeIcons.fire,
+                        Colors.red,
+                        workout.calories > 0
+                            ? '${workout.calories.round()}'
+                            : 'N/A',
+                        'Calories',
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                // Exercise list
+                Flexible(
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 20),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: themeService.currentTheme.cardTheme.color,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
                           'Exercises',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: themeService.currentTheme.textTheme.titleLarge?.color,
+                          ),
                         ),
-                        _buildPreviewStat(
-                          FontAwesomeIcons.check,
-                          Colors.orange,
-                          '${workout.completedSets}',
-                          'Sets',
+                        const SizedBox(height: 12),
+                        
+                        // Scrollable exercise list
+                        Flexible(
+                          child: ListView.builder(
+                            shrinkWrap: true,
+                            itemCount: workout.exercises.length,
+                            itemBuilder: (context, index) {
+                              final exercise = workout.exercises[index];
+                              return Container(
+                                margin: const EdgeInsets.only(bottom: 12),
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: themeService.isDarkMode ? const Color(0xFF2A2A2A) : Colors.grey.shade50,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: themeService.isDarkMode ? Colors.grey.shade700 : Colors.grey.shade200,
+                                  ),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      exercise.title,
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                        color: themeService.currentTheme.textTheme.titleMedium?.color,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    ...exercise.sets.map((set) {
+                                      return Padding(
+                                        padding: const EdgeInsets.only(bottom: 4),
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Text(
+                                              'Set ${exercise.sets.indexOf(set) + 1}: ${set.weight}kg × ${set.reps} reps',
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: themeService.isDarkMode ? Colors.grey.shade300 : Colors.grey,
+                                              ),
+                                            ),
+                                            Icon(
+                                              set.isCompleted
+                                                  ? Icons.check_circle
+                                                  : Icons.radio_button_unchecked,
+                                              size: 16,
+                                              color:
+                                                  set.isCompleted
+                                                      ? Colors.green
+                                                      : Colors.grey.shade400,
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    }),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
                         ),
-                        _buildPreviewStat(
-                          FontAwesomeIcons.fire,
-                          Colors.red,
-                          workout.calories > 0
-                              ? '${workout.calories.round()}'
-                              : 'N/A',
-                          'Calories',
+
+                        const SizedBox(height: 16),
+
+                        // View Details Button
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                              _showWorkoutDetails(context, workout, isOwnWorkout: isOwnWorkout);
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.black,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 12,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            child: const Text(
+                              'View Full Details',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
                         ),
                       ],
                     ),
                   ),
-
-                  const SizedBox(height: 16),
-
-                  // Exercise list
-                  Flexible(
-                    child: Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 20),
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Text(
-                            'Exercises',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          
-                          // Scrollable exercise list
-                          Flexible(
-                            child: ListView.builder(
-                              shrinkWrap: true,
-                              itemCount: workout.exercises.length,
-                              itemBuilder: (context, index) {
-                                final exercise = workout.exercises[index];
-                                return Container(
-                                  margin: const EdgeInsets.only(bottom: 12),
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey.shade50,
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(color: Colors.grey.shade200),
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        exercise.title,
-                                        style: const TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 6),
-                                      ...exercise.sets.map((set) {
-                                        return Padding(
-                                          padding: const EdgeInsets.only(bottom: 4),
-                                          child: Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              Text(
-                                                'Set ${exercise.sets.indexOf(set) + 1}: ${set.weight}kg × ${set.reps} reps',
-                                                style: const TextStyle(
-                                                  fontSize: 12,
-                                                  color: Colors.grey,
-                                                ),
-                                              ),
-                                              Icon(
-                                                set.isCompleted
-                                                    ? Icons.check_circle
-                                                    : Icons.radio_button_unchecked,
-                                                size: 16,
-                                                color:
-                                                    set.isCompleted
-                                                        ? Colors.green
-                                                        : Colors.grey.shade400,
-                                              ),
-                                            ],
-                                          ),
-                                        );
-                                      }),
-                                    ],
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-
-                          const SizedBox(height: 16),
-
-                          // View Details Button
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                                _showWorkoutDetails(context, workout, isOwnWorkout: isOwnWorkout);
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.black,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 12,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              child: const Text(
-                                'View Full Details',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
+        );
+      },
     );
   }
 
@@ -771,6 +743,8 @@ class _HistoryPageState extends State<HistoryPage> with SingleTickerProviderStat
     String value,
     String label,
   ) {
+    final themeService = Provider.of<ThemeService>(context);
+    
     return Column(
       children: [
         FaIcon(icon, color: color, size: 18),
@@ -779,7 +753,13 @@ class _HistoryPageState extends State<HistoryPage> with SingleTickerProviderStat
           value,
           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
         ),
-        Text(label, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey,
+          ),
+        ),
       ],
     );
   }

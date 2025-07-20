@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:provider/provider.dart';
 import 'package:gymfit/models/workout.dart';
 import 'package:gymfit/services/workout_service.dart';
 import 'package:gymfit/packages/exercise_information_repository/exercise_information_repository.dart';
 import 'package:gymfit/pages/workout/exercise_description_page.dart';
+import 'package:gymfit/services/theme_service.dart';
 
 class MainExercisesPage extends StatefulWidget {
   const MainExercisesPage({super.key});
@@ -73,14 +75,22 @@ class _MainExercisesPageState extends State<MainExercisesPage> {
 
   @override
   Widget build(BuildContext context) {
+    final themeService = Provider.of<ThemeService>(context);
+    
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: themeService.currentTheme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: themeService.currentTheme.appBarTheme.backgroundColor,
         elevation: 0,
-        title: const Text('Main Exercises', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+        title: Text(
+          'Main Exercises', 
+          style: themeService.currentTheme.appBarTheme.titleTextStyle,
+        ),
         leading: IconButton(
-          icon: const FaIcon(FontAwesomeIcons.arrowLeft, color: Colors.black),
+          icon: FaIcon(
+            FontAwesomeIcons.arrowLeft, 
+            color: themeService.currentTheme.appBarTheme.foregroundColor,
+          ),
           onPressed: () {
             Navigator.of(context, rootNavigator: true).pop();
           },
@@ -97,6 +107,8 @@ class _MainExercisesPageState extends State<MainExercisesPage> {
   }
 
   Widget _buildEmptyState() {
+    final themeService = Provider.of<ThemeService>(context, listen: false);
+    
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -104,7 +116,7 @@ class _MainExercisesPageState extends State<MainExercisesPage> {
           FaIcon(
             FontAwesomeIcons.dumbbell,
             size: 64,
-            color: Colors.grey.shade400,
+            color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade400,
           ),
           const SizedBox(height: 16),
           Text(
@@ -112,7 +124,7 @@ class _MainExercisesPageState extends State<MainExercisesPage> {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: Colors.grey.shade600,
+              color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
             ),
           ),
           const SizedBox(height: 8),
@@ -120,7 +132,7 @@ class _MainExercisesPageState extends State<MainExercisesPage> {
             'Start working out to see your exercise statistics!',
             style: TextStyle(
               fontSize: 14,
-              color: Colors.grey.shade500,
+              color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade500,
             ),
             textAlign: TextAlign.center,
           ),
@@ -130,6 +142,8 @@ class _MainExercisesPageState extends State<MainExercisesPage> {
   }
 
   Widget _buildExercisesList() {
+    final themeService = Provider.of<ThemeService>(context, listen: false);
+    
     return Column(
       children: [
         // Header
@@ -138,10 +152,14 @@ class _MainExercisesPageState extends State<MainExercisesPage> {
           margin: const EdgeInsets.all(16.0),
           padding: const EdgeInsets.all(20.0),
           decoration: BoxDecoration(
-            color: Colors.green.shade50,
+            color: themeService.isDarkMode 
+                ? const Color(0xFF2A2A2A)
+                : Colors.green.shade50,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: Colors.green.shade200,
+              color: themeService.isDarkMode 
+                  ? Colors.green.shade600
+                  : Colors.green.shade200,
               width: 1,
             ),
           ),
@@ -158,7 +176,7 @@ class _MainExercisesPageState extends State<MainExercisesPage> {
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: Colors.green.shade800,
+                  color: themeService.isDarkMode ? Colors.white : Colors.green.shade800,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -167,7 +185,7 @@ class _MainExercisesPageState extends State<MainExercisesPage> {
                 'Ranked by frequency',
                 style: TextStyle(
                   fontSize: 14,
-                  color: Colors.green.shade600,
+                  color: themeService.isDarkMode ? Colors.green.shade300 : Colors.green.shade600,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -190,11 +208,15 @@ class _MainExercisesPageState extends State<MainExercisesPage> {
                   margin: const EdgeInsets.only(bottom: 12.0),
                   padding: const EdgeInsets.all(16.0),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: themeService.isDarkMode 
+                        ? const Color(0xFF2A2A2A)
+                        : Colors.grey.shade50,
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.grey.withValues(alpha: 0.1),
+                        color: themeService.isDarkMode 
+                            ? Colors.black.withValues(alpha: 0.3)
+                            : Colors.grey.withValues(alpha: 0.1),
                         spreadRadius: 1,
                         blurRadius: 6,
                         offset: const Offset(0, 2),

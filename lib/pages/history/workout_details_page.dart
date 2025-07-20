@@ -4,6 +4,8 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:gymfit/models/workout.dart';
 import 'package:gymfit/services/workout_service.dart';
 import 'package:gymfit/pages/history/workout_edit_page.dart';
+import 'package:provider/provider.dart';
+import 'package:gymfit/services/theme_service.dart';
 
 import 'package:intl/intl.dart';
 
@@ -32,26 +34,33 @@ class WorkoutDetailsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeService = Provider.of<ThemeService>(context);
     final dateFormat = DateFormat('EEEE, MMM dd, yyyy');
     final timeFormat = DateFormat('h:mm a');
 
     return Scaffold(
-      backgroundColor: Colors.grey.shade200,
+      backgroundColor: themeService.currentTheme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.grey.shade200,
+        backgroundColor: themeService.currentTheme.appBarTheme.backgroundColor,
         elevation: 0,
-        title: const Text(
+        title: Text(
           'Workout Details',
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+          style: themeService.currentTheme.appBarTheme.titleTextStyle,
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: Icon(
+            Icons.arrow_back, 
+            color: themeService.currentTheme.appBarTheme.foregroundColor,
+          ),
           onPressed: () => Navigator.of(context).pop(),
         ),
         actions: [
           if (isOwnWorkout)
             IconButton(
-              icon: const Icon(Icons.edit, color: Colors.black),
+              icon: Icon(
+                Icons.edit, 
+                color: themeService.currentTheme.appBarTheme.foregroundColor,
+              ),
               onPressed: () async {
                 final result = await Navigator.of(context).push(
                   MaterialPageRoute(
@@ -76,7 +85,7 @@ class WorkoutDetailsPage extends StatelessWidget {
             // Workout Name Card
             if (workout.name.isNotEmpty)
               Card(
-                color: Colors.white,
+                color: themeService.currentTheme.cardTheme.color,
                 elevation: 2,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -110,7 +119,7 @@ class WorkoutDetailsPage extends StatelessWidget {
 
             // Date and Time Card
             Card(
-              color: Colors.white,
+              color: themeService.currentTheme.cardTheme.color,
               elevation: 2,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -143,7 +152,7 @@ class WorkoutDetailsPage extends StatelessWidget {
 
             // Summary Stats Card
             Card(
-              color: Colors.white,
+              color: themeService.currentTheme.cardTheme.color,
               elevation: 2,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -168,9 +177,12 @@ class WorkoutDetailsPage extends StatelessWidget {
                             fontSize: 16,
                           ),
                         ),
-                        const Text(
+                        Text(
                           'Duration',
-                          style: TextStyle(fontSize: 12, color: Colors.grey),
+                          style: TextStyle(
+                            fontSize: 12, 
+                            color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey,
+                          ),
                         ),
                       ],
                     ),
@@ -189,9 +201,12 @@ class WorkoutDetailsPage extends StatelessWidget {
                             fontSize: 16,
                           ),
                         ),
-                        const Text(
+                        Text(
                           'Exercises',
-                          style: TextStyle(fontSize: 12, color: Colors.grey),
+                          style: TextStyle(
+                            fontSize: 12, 
+                            color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey,
+                          ),
                         ),
                       ],
                     ),
@@ -210,9 +225,12 @@ class WorkoutDetailsPage extends StatelessWidget {
                             fontSize: 16,
                           ),
                         ),
-                        const Text(
+                        Text(
                           'Sets',
-                          style: TextStyle(fontSize: 12, color: Colors.grey),
+                          style: TextStyle(
+                            fontSize: 12, 
+                            color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey,
+                          ),
                         ),
                       ],
                     ),
@@ -233,9 +251,12 @@ class WorkoutDetailsPage extends StatelessWidget {
                             fontSize: 16,
                           ),
                         ),
-                        const Text(
+                        Text(
                           'Calories',
-                          style: TextStyle(fontSize: 12, color: Colors.grey),
+                          style: TextStyle(
+                            fontSize: 12, 
+                            color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey,
+                          ),
                         ),
                       ],
                     ),
@@ -247,12 +268,12 @@ class WorkoutDetailsPage extends StatelessWidget {
             const SizedBox(height: 24),
 
             // Exercise Breakdown Section
-            const Text(
+            Text(
               'Exercise Breakdown',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: Colors.black,
+                color: themeService.currentTheme.textTheme.titleLarge?.color,
               ),
             ),
 
@@ -261,7 +282,7 @@ class WorkoutDetailsPage extends StatelessWidget {
             // Exercise List
             ...workout.exercises.map(
               (exercise) => Card(
-                color: Colors.white,
+                color: themeService.currentTheme.cardTheme.color,
                 elevation: 2,
                 margin: const EdgeInsets.only(bottom: 12.0),
                 shape: RoundedRectangleBorder(
@@ -278,9 +299,10 @@ class WorkoutDetailsPage extends StatelessWidget {
                           Expanded(
                             child: Text(
                               exercise.title,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 18,
+                                color: themeService.currentTheme.textTheme.titleMedium?.color,
                               ),
                             ),
                           ),
@@ -292,8 +314,8 @@ class WorkoutDetailsPage extends StatelessWidget {
                             decoration: BoxDecoration(
                               color:
                                   exercise.completedSets > 0
-                                      ? Colors.green.shade100
-                                      : Colors.grey.shade100,
+                                      ? (themeService.isDarkMode ? Colors.green.shade900 : Colors.green.shade100)
+                                      : (themeService.isDarkMode ? Colors.grey.shade800 : Colors.grey.shade100),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
@@ -303,8 +325,8 @@ class WorkoutDetailsPage extends StatelessWidget {
                                 fontWeight: FontWeight.bold,
                                 color:
                                     exercise.completedSets > 0
-                                        ? Colors.green.shade700
-                                        : Colors.grey.shade600,
+                                        ? (themeService.isDarkMode ? Colors.green.shade300 : Colors.green.shade700)
+                                        : (themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600),
                               ),
                             ),
                           ),
@@ -328,7 +350,7 @@ class WorkoutDetailsPage extends StatelessWidget {
                                   color:
                                       set.isCompleted
                                           ? Colors.green
-                                          : Colors.grey.shade300,
+                                          : (themeService.isDarkMode ? Colors.grey.shade600 : Colors.grey.shade300),
                                   shape: BoxShape.circle,
                                 ),
                                 child: Center(
@@ -338,7 +360,7 @@ class WorkoutDetailsPage extends StatelessWidget {
                                       color:
                                           set.isCompleted
                                               ? Colors.white
-                                              : Colors.grey.shade600,
+                                              : (themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600),
                                       fontSize: 14,
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -355,8 +377,8 @@ class WorkoutDetailsPage extends StatelessWidget {
                                     fontSize: 16,
                                     color:
                                         set.isCompleted
-                                            ? Colors.black87
-                                            : Colors.grey.shade500,
+                                            ? (themeService.isDarkMode ? Colors.white : Colors.black87)
+                                            : (themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade500),
                                     fontWeight:
                                         set.isCompleted
                                             ? FontWeight.w500
@@ -400,15 +422,17 @@ class WorkoutDetailsPage extends StatelessWidget {
                         ),
                       ),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red.shade50.withValues(
-                          alpha: 0.4,
-                        ),
+                        backgroundColor: themeService.isDarkMode 
+                            ? Colors.red.shade900.withValues(alpha: 0.4)
+                            : Colors.red.shade50.withValues(alpha: 0.4),
                         foregroundColor: Colors.red,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                           side: BorderSide(
-                            color: Colors.red.shade100.withValues(alpha: 0.6),
+                            color: themeService.isDarkMode 
+                                ? Colors.red.shade700.withValues(alpha: 0.6)
+                                : Colors.red.shade100.withValues(alpha: 0.6),
                             width: 1.5,
                           ),
                         ),

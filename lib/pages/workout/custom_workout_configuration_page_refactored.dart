@@ -8,6 +8,7 @@ import 'package:gymfit/components/custom_workout_add_button.dart';
 import 'package:gymfit/models/custom_workout.dart';
 import 'package:gymfit/pages/workout/workout_name_description_page.dart';
 import 'package:gymfit/services/custom_workout_configuration_state_manager.dart';
+import 'package:gymfit/services/theme_service.dart';
 
 class CustomWorkoutConfigurationPage extends StatefulWidget {
   final List<String> exerciseNames;
@@ -324,35 +325,41 @@ class _CustomWorkoutConfigurationPageState
                 navigator.pop();
               }
             },
-            child: Scaffold(
-              backgroundColor: Colors.grey.shade200,
-              appBar: AppBar(
-                backgroundColor: Colors.grey.shade200,
-                elevation: 0,
-                leading: IconButton(
-                  icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
-                  onPressed: () async {
-                    final navigator = Navigator.of(context);
-                    final shouldPop = await _handleBackNavigation();
-                    if (shouldPop && mounted) {
-                      navigator.pop();
-                    }
-                  },
-                ),
-                title: const Text(
-                  'Configure Workout',
-                  style: TextStyle(
-                    color: Colors.black,
-                    fontWeight: FontWeight.bold,
+            child: Consumer<ThemeService>(
+              builder: (context, themeService, child) {
+                return Scaffold(
+                  backgroundColor: themeService.currentTheme.scaffoldBackgroundColor,
+                  appBar: AppBar(
+                    backgroundColor: themeService.currentTheme.appBarTheme.backgroundColor,
+                    elevation: 0,
+                    leading: IconButton(
+                      icon: Icon(
+                        Icons.arrow_back_ios, 
+                        color: themeService.currentTheme.appBarTheme.foregroundColor,
+                      ),
+                      onPressed: () async {
+                        final navigator = Navigator.of(context);
+                        final shouldPop = await _handleBackNavigation();
+                        if (shouldPop && mounted) {
+                          navigator.pop();
+                        }
+                      },
+                    ),
+                    title: Text(
+                      'Configure Workout',
+                      style: themeService.currentTheme.appBarTheme.titleTextStyle,
+                    ),
+                    actions: [
+                      IconButton(
+                        onPressed: _proceedToNameDescription,
+                        icon: Icon(
+                          Icons.done, 
+                          color: themeService.currentTheme.appBarTheme.foregroundColor, 
+                          size: 24,
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-                actions: [
-                  IconButton(
-                    onPressed: _proceedToNameDescription,
-                    icon: const Icon(Icons.done, color: Colors.black, size: 24),
-                  ),
-                ],
-              ),
               body: GestureDetector(
                 onTap: () {
                   // Dismiss keyboard when tapping outside text fields
@@ -368,6 +375,7 @@ class _CustomWorkoutConfigurationPageState
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 16.0,
                                 ),
+                                physics: const AlwaysScrollableScrollPhysics(),
                                 itemCount: stateManager.exercises.length,
                                 onReorder: (int oldIndex, int newIndex) {
                                   // Provide haptic feedback when reordering
@@ -389,7 +397,7 @@ class _CustomWorkoutConfigurationPageState
                                       stateManager.exercises[index];
                                   return Card(
                                     key: Key('card_${exercise.id}'),
-                                    color: Colors.white,
+                                    color: themeService.currentTheme.cardTheme.color,
                                     margin: const EdgeInsets.symmetric(
                                       vertical: 4,
                                     ),
@@ -435,7 +443,7 @@ class _CustomWorkoutConfigurationPageState
                                                 vertical: 4,
                                               ),
                                               decoration: BoxDecoration(
-                                                color: Colors.red,
+                                                color: themeService.isDarkMode ? Colors.red.shade700 : Colors.red,
                                                 borderRadius: BorderRadius.circular(12),
                                               ),
                                               child: const FaIcon(
@@ -449,7 +457,7 @@ class _CustomWorkoutConfigurationPageState
                                             },
                                             child: Card(
                                               key: cardKey,
-                                              color: Colors.white,
+                                              color: themeService.currentTheme.cardTheme.color,
                                               margin: const EdgeInsets.symmetric(
                                                 vertical: 4,
                                               ),
@@ -491,6 +499,8 @@ class _CustomWorkoutConfigurationPageState
                   ],
                 ),
               ),
+                );
+              },
             ),
           );
         },

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:gymfit/pages/workout/filter/muscle_group_selection_page.dart';
 import 'package:gymfit/pages/workout/filter/experience_level_selection_page.dart';
 import 'package:gymfit/pages/workout/filter/equipment_selection_page.dart';
+import 'package:gymfit/services/theme_service.dart';
 
 class ExerciseFilterPage extends StatefulWidget {
   final Map<String, dynamic>? initialFilters;
@@ -47,24 +49,43 @@ class _ExerciseFilterPageState extends State<ExerciseFilterPage> {
   }
 
   Widget _buildMuscleGroupSection(String title, List<String> options, Set<String> selected, Function(List<String>) onSelectionChanged) {
+    final themeService = Provider.of<ThemeService>(context, listen: false);
+    
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: themeService.isDarkMode 
+            ? const Color(0xFF2A2A2A)
+            : Colors.grey.shade50,
         borderRadius: BorderRadius.circular(12),
       ),
       margin: const EdgeInsets.only(bottom: 8.0),
       child: ListTile(
         title: Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
+            color: themeService.currentTheme.textTheme.titleMedium?.color,
           ),
         ),
         subtitle: selected.isEmpty 
-            ? const Text('None selected')
-            : Text('${selected.length} selected: ${selected.take(2).join(', ')}${selected.length > 2 ? '...' : ''}'),
-        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+            ? Text(
+                'None selected',
+                style: TextStyle(
+                  color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
+                ),
+              )
+            : Text(
+                '${selected.length} selected: ${selected.take(2).join(', ')}${selected.length > 2 ? '...' : ''}',
+                style: TextStyle(
+                  color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
+                ),
+              ),
+        trailing: Icon(
+          Icons.arrow_forward_ios, 
+          size: 16,
+          color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
+        ),
         onTap: () async {
           final result = await Navigator.push<List<String>>(
             context,
@@ -87,24 +108,43 @@ class _ExerciseFilterPageState extends State<ExerciseFilterPage> {
   }
 
   Widget _buildExperienceSection() {
+    final themeService = Provider.of<ThemeService>(context, listen: false);
+    
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: themeService.isDarkMode 
+            ? const Color(0xFF2A2A2A)
+            : Colors.grey.shade50,
         borderRadius: BorderRadius.circular(12),
       ),
       margin: const EdgeInsets.only(bottom: 8.0),
       child: ListTile(
-        title: const Text(
+        title: Text(
           'Experience Level',
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
+            color: themeService.currentTheme.textTheme.titleMedium?.color,
           ),
         ),
         subtitle: selectedExperienceLevels.isEmpty 
-            ? const Text('None selected')
-            : Text('${selectedExperienceLevels.length} selected: ${selectedExperienceLevels.join(', ')}'),
-        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+            ? Text(
+                'None selected',
+                style: TextStyle(
+                  color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
+                ),
+              )
+            : Text(
+                '${selectedExperienceLevels.length} selected: ${selectedExperienceLevels.join(', ')}',
+                style: TextStyle(
+                  color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
+                ),
+              ),
+        trailing: Icon(
+          Icons.arrow_forward_ios, 
+          size: 16,
+          color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
+        ),
         onTap: () async {
           final result = await Navigator.push<List<String>>(
             context,
@@ -126,24 +166,43 @@ class _ExerciseFilterPageState extends State<ExerciseFilterPage> {
   }
 
   Widget _buildEquipmentSection() {
+    final themeService = Provider.of<ThemeService>(context, listen: false);
+    
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: themeService.isDarkMode 
+            ? const Color(0xFF2A2A2A)
+            : Colors.grey.shade50,
         borderRadius: BorderRadius.circular(12),
       ),
       margin: const EdgeInsets.only(bottom: 8.0),
       child: ListTile(
-        title: const Text(
+        title: Text(
           'Equipment',
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
+            color: themeService.currentTheme.textTheme.titleMedium?.color,
           ),
         ),
         subtitle: selectedEquipment.isEmpty 
-            ? const Text('None selected')
-            : Text('${selectedEquipment.length} selected: ${selectedEquipment.take(2).join(', ')}${selectedEquipment.length > 2 ? '...' : ''}'),
-        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+            ? Text(
+                'None selected',
+                style: TextStyle(
+                  color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
+                ),
+              )
+            : Text(
+                '${selectedEquipment.length} selected: ${selectedEquipment.take(2).join(', ')}${selectedEquipment.length > 2 ? '...' : ''}',
+                style: TextStyle(
+                  color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
+                ),
+              ),
+        trailing: Icon(
+          Icons.arrow_forward_ios, 
+          size: 16,
+          color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
+        ),
         onTap: () async {
           final result = await Navigator.push<List<String>>(
             context,
@@ -182,26 +241,28 @@ class _ExerciseFilterPageState extends State<ExerciseFilterPage> {
 
   @override
   Widget build(BuildContext context) {
+    final themeService = Provider.of<ThemeService>(context);
+    
     return Scaffold(
-      backgroundColor: Colors.grey.shade200,
+      backgroundColor: themeService.currentTheme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.grey.shade200,
+        backgroundColor: themeService.currentTheme.appBarTheme.backgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.close, color: Colors.black),
+          icon: Icon(
+            Icons.close, 
+            color: themeService.currentTheme.appBarTheme.foregroundColor,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Filter Exercises',
-          style: TextStyle(
-            color: Colors.black,
-            fontWeight: FontWeight.bold,
-          ),
+          style: themeService.currentTheme.appBarTheme.titleTextStyle,
         ),
         actions: [
           TextButton(
             onPressed: _clearAllFilters,
-            child: const Text(
+            child: Text(
               'Clear',
               style: TextStyle(
                 color: Colors.red,
@@ -213,7 +274,7 @@ class _ExerciseFilterPageState extends State<ExerciseFilterPage> {
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1.0),
           child: Container(
-            color: Colors.grey[300],
+            color: themeService.isDarkMode ? Colors.grey.shade700 : Colors.grey[300],
             height: 1.0,
           ),
         ),
@@ -248,23 +309,27 @@ class _ExerciseFilterPageState extends State<ExerciseFilterPage> {
             padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 32.0),
             child: SizedBox(
               width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context, _getFilterResults());
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+                              child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context, _getFilterResults());
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: themeService.isDarkMode ? Colors.white : Colors.black,
+                    foregroundColor: themeService.isDarkMode ? Colors.black : Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: Text(
+                    'Apply Filters',
+                    style: TextStyle(
+                      fontSize: 16, 
+                      fontWeight: FontWeight.bold,
+                      color: themeService.isDarkMode ? Colors.black : Colors.white,
+                    ),
                   ),
                 ),
-                child: const Text(
-                  'Apply Filters',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-              ),
             ),
           ),
         ],

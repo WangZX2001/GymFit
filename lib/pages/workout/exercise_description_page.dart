@@ -3,7 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:gymfit/components/quick_start_overlay.dart';
-import 'package:gymfit/pages/workout/quick_start_page_refactored.dart';
+import 'package:provider/provider.dart';
+import 'package:gymfit/services/theme_service.dart';
+
+import 'package:gymfit/pages/workout/quick_start_page_optimized.dart';
 import 'package:gymfit/models/quick_start_exercise.dart';
 import 'package:gymfit/models/exercise_set.dart';
 import 'package:gymfit/models/custom_workout.dart';
@@ -88,15 +91,17 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> {
   }
 
   void _showAddExerciseMenu(BuildContext context) {
+    final themeService = Provider.of<ThemeService>(context, listen: false);
+    
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (context) {
         return Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          decoration: BoxDecoration(
+            color: themeService.currentTheme.cardTheme.color,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           ),
           padding: const EdgeInsets.all(20),
           child: Column(
@@ -106,25 +111,49 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey[300],
+                  color: themeService.isDarkMode ? Colors.grey.shade600 : Colors.grey[300],
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
               const SizedBox(height: 20),
               ListTile(
                 leading: const FaIcon(FontAwesomeIcons.bolt, color: Colors.orange),
-                title: const Text('Add to Quick Start', style: TextStyle(fontWeight: FontWeight.bold)),
-                subtitle: const Text('Start or add to current quick workout'),
+                title: Text(
+                  'Add to Quick Start', 
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: themeService.currentTheme.textTheme.titleMedium?.color,
+                  )
+                ),
+                subtitle: Text(
+                  'Start or add to current quick workout',
+                  style: TextStyle(
+                    color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey[600],
+                  ),
+                ),
                 onTap: () {
                   Navigator.pop(context);
                   _addToQuickStart();
                 },
               ),
-              const Divider(),
+              Divider(
+                color: themeService.isDarkMode ? Colors.grey.shade700 : Colors.grey.shade300,
+              ),
               ListTile(
                 leading: const FaIcon(FontAwesomeIcons.dumbbell, color: Colors.blue),
-                title: const Text('Add to Custom Workouts', style: TextStyle(fontWeight: FontWeight.bold)),
-                subtitle: const Text('Add to a saved workout plan'),
+                title: Text(
+                  'Add to Custom Workouts', 
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: themeService.currentTheme.textTheme.titleMedium?.color,
+                  )
+                ),
+                subtitle: Text(
+                  'Add to a saved workout plan',
+                  style: TextStyle(
+                    color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey[600],
+                  ),
+                ),
                 onTap: () {
                   Navigator.pop(context);
                   _showCustomWorkoutSelection(context);
@@ -161,7 +190,7 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> {
     // Navigate to the Quick Start page with sliding animation
     Navigator.of(context, rootNavigator: true).push(
       PageRouteBuilder(
-        pageBuilder: (ctx, animation, secondaryAnimation) => QuickStartPage(
+        pageBuilder: (ctx, animation, secondaryAnimation) => QuickStartPageOptimized(
           initialSelectedExercises: QuickStartOverlay.selectedExercises,
           showMinibarOnMinimize: true, // Show integrated minibar when minimizing
         ),
@@ -179,6 +208,7 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> {
   }
 
   void _showCustomWorkoutSelection(BuildContext context) {
+    final themeService = Provider.of<ThemeService>(context, listen: false);
     final scaffoldMessenger = ScaffoldMessenger.of(context);
     
     CustomWorkoutService.getSavedCustomWorkouts().then((customWorkouts) {
@@ -192,7 +222,7 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> {
         builder: (context) {
           return Container(
             decoration: BoxDecoration(
-              color: Colors.grey.shade200,
+              color: themeService.currentTheme.cardTheme.color,
               borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
             ),
             padding: const EdgeInsets.all(20),
@@ -203,7 +233,7 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.grey[300],
+                    color: themeService.isDarkMode ? Colors.grey.shade600 : Colors.grey[300],
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -212,16 +242,20 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> {
                   children: [
                     IconButton(
                       onPressed: () => Navigator.pop(context),
-                      icon: const FaIcon(FontAwesomeIcons.xmark, color: Colors.black),
+                      icon: FaIcon(
+                        FontAwesomeIcons.xmark, 
+                        color: themeService.currentTheme.textTheme.titleMedium?.color,
+                      ),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
                     ),
                     Expanded(
                       child: Text(
                         customWorkouts.isEmpty ? 'Create Custom Workout' : 'Select Custom Workout',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
+                          color: themeService.currentTheme.textTheme.titleMedium?.color,
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -233,41 +267,60 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> {
                 // Create New option - always shown first
                 ListTile(
                   leading: const FaIcon(FontAwesomeIcons.plus, color: Colors.green),
-                  title: const Text(
+                  title: Text(
                     'Create New',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: themeService.currentTheme.textTheme.titleMedium?.color,
+                    ),
                   ),
-                  subtitle: const Text('Start a new custom workout with this exercise'),
+                  subtitle: Text(
+                    'Start a new custom workout with this exercise',
+                    style: TextStyle(
+                      color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey[600],
+                    ),
+                  ),
                   onTap: () {
                     Navigator.pop(context);
                     _createNewCustomWorkout();
                   },
                 ),
                 if (customWorkouts.isNotEmpty) ...[
-                  const Divider(
+                  Divider(
                     height: 1,
                     thickness: 1,
-                    color: Colors.grey,
+                    color: themeService.isDarkMode ? Colors.grey.shade700 : Colors.grey,
                   ),
                                      Flexible(
                      child: ListView.separated(
                        controller: _customWorkoutScrollController,
                        shrinkWrap: true,
                        itemCount: customWorkouts.length,
-                       separatorBuilder: (context, index) => const Divider(
+                       separatorBuilder: (context, index) => Divider(
                          height: 1,
                          thickness: 1,
-                         color: Colors.grey,
+                         color: themeService.isDarkMode ? Colors.grey.shade700 : Colors.grey,
                        ),
                        itemBuilder: (context, index) {
                          final workout = customWorkouts[index];
                          return ListTile(
-                           leading: const FaIcon(FontAwesomeIcons.dumbbell, color: Colors.black),
+                           leading: FaIcon(
+                             FontAwesomeIcons.dumbbell, 
+                             color: themeService.currentTheme.textTheme.titleMedium?.color,
+                           ),
                            title: Text(
                              workout.name,
-                             style: const TextStyle(fontWeight: FontWeight.bold),
+                             style: TextStyle(
+                               fontWeight: FontWeight.bold,
+                               color: themeService.currentTheme.textTheme.titleMedium?.color,
+                             ),
                            ),
-                           subtitle: Text('${workout.exercises.length} exercises'),
+                           subtitle: Text(
+                             '${workout.exercises.length} exercises',
+                             style: TextStyle(
+                               color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey[600],
+                             ),
+                           ),
                            onTap: () {
                              Navigator.pop(context);
                              _addToCustomWorkout(workout);
@@ -387,13 +440,15 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> {
 
   @override
   Widget build(BuildContext context) {
+    final themeService = Provider.of<ThemeService>(context);
+    
     return Scaffold(
-        backgroundColor: Colors.grey.shade200,
+        backgroundColor: themeService.currentTheme.scaffoldBackgroundColor,
         appBar: AppBar(
-          backgroundColor: Colors.grey.shade200,
+          backgroundColor: themeService.currentTheme.appBarTheme.backgroundColor,
           elevation: 0,
           leading: IconButton(
-            icon: const FaIcon(FontAwesomeIcons.arrowLeft, color: Colors.black),
+            icon: FaIcon(FontAwesomeIcons.arrowLeft, color: themeService.currentTheme.appBarTheme.foregroundColor),
             onPressed: () {
               Navigator.of(context).pop();
             },
@@ -404,10 +459,7 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> {
             duration: const Duration(milliseconds: 200),
             child: Text(
               widget.title,
-              style: const TextStyle(
-                color: Colors.black,
-                fontWeight: FontWeight.bold,
-              ),
+              style: themeService.currentTheme.appBarTheme.titleTextStyle,
             ),
           ),
         ),
@@ -437,15 +489,16 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> {
                       width: double.infinity,
                       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: themeService.currentTheme.cardTheme.color,
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: Colors.grey.shade300),
+                        border: Border.all(color: themeService.isDarkMode ? Colors.grey.shade600 : Colors.grey.shade300),
                       ),
                       child: Text(
                         widget.title,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
+                          color: themeService.currentTheme.textTheme.titleLarge?.color,
                         ),
                       ),
                     ),
@@ -457,10 +510,10 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> {
                         children: [
                           Text(
                             'Primary: ${widget.mainMuscle}',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
-                              color: Colors.grey,
+                              color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey,
                             ),
                           ),
                           Container(
@@ -485,31 +538,43 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> {
                       padding: const EdgeInsets.only(top: 4.0),
                       child: Text(
                         'Secondary: ${widget.secondaryMuscle}',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
-                          color: Colors.grey,
+                          color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey,
                         ),
                       ),
                     ),
                     const SizedBox(height: 24),
 
                     // Description Section
-                    const Text(
+                    Text(
                       'Description',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 16, 
+                        fontWeight: FontWeight.bold,
+                        color: themeService.currentTheme.textTheme.titleMedium?.color,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       widget.description,
-                      style: const TextStyle(fontSize: 14, height: 1.5),
+                      style: TextStyle(
+                        fontSize: 14, 
+                        height: 1.5,
+                        color: themeService.currentTheme.textTheme.bodyLarge?.color,
+                      ),
                     ),
                     const SizedBox(height: 24),
 
                     // Video Demonstration
-                    const Text(
+                    Text(
                       'Video Demonstration',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 16, 
+                        fontWeight: FontWeight.bold,
+                        color: themeService.currentTheme.textTheme.titleMedium?.color,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     // Video player or placeholder image
@@ -562,9 +627,13 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> {
                       ),
                     const SizedBox(height: 16),
                     // How to do it section
-                    const Text(
+                    Text(
                       'How to perform',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 16, 
+                        fontWeight: FontWeight.bold,
+                        color: themeService.currentTheme.textTheme.titleMedium?.color,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     // Numbered steps for howTo
@@ -577,7 +646,11 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> {
                           padding: const EdgeInsets.only(bottom: 16.0),
                           child: Text.rich(
                             TextSpan(
-                              style: const TextStyle(fontSize: 14, height: 1.5),
+                              style: TextStyle(
+                                fontSize: 14, 
+                                height: 1.5,
+                                color: themeService.currentTheme.textTheme.bodyLarge?.color,
+                              ),
                               children: [
                                 TextSpan(text: '$idx. ', style: const TextStyle(fontWeight: FontWeight.bold)),
                                 TextSpan(text: text),
@@ -591,12 +664,16 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> {
 
                     // Safety and Precautions
                     Row(
-                      children: const [
-                        FaIcon(FontAwesomeIcons.lightbulb, color: Colors.amber),
-                        SizedBox(width: 8),
+                      children: [
+                        const FaIcon(FontAwesomeIcons.lightbulb, color: Colors.amber),
+                        const SizedBox(width: 8),
                         Text(
                           'Pro Tips',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            fontSize: 16, 
+                            fontWeight: FontWeight.bold,
+                            color: themeService.currentTheme.textTheme.titleMedium?.color,
+                          ),
                         ),
                       ],
                     ),
@@ -618,7 +695,11 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> {
                               padding: const EdgeInsets.only(bottom: 16.0),
                               child: Text.rich(
                                 TextSpan(
-                                  style: const TextStyle(fontSize: 14, height: 1.5),
+                                  style: TextStyle(
+                                    fontSize: 14, 
+                                    height: 1.5,
+                                    color: themeService.currentTheme.textTheme.bodyLarge?.color,
+                                  ),
                                   children: [
                                     TextSpan(text: '$idx. ', style: const TextStyle(fontWeight: FontWeight.bold)),
                                     TextSpan(text: text),
@@ -636,7 +717,8 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> {
                       child: ElevatedButton(
                         onPressed: () => _showAddExerciseMenu(context),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.black,
+                          backgroundColor: themeService.isDarkMode ? Colors.white : Colors.black,
+                          foregroundColor: themeService.isDarkMode ? Colors.black : Colors.white,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(30),
                           ),
@@ -644,12 +726,19 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> {
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
-                          children: const [
-                            FaIcon(FontAwesomeIcons.plus, color: Colors.white),
-                            SizedBox(width: 8),
+                          children: [
+                            FaIcon(
+                              FontAwesomeIcons.plus, 
+                              color: themeService.isDarkMode ? Colors.black : Colors.white,
+                            ),
+                            const SizedBox(width: 8),
                             Text(
                               'Add This Exercise to Workout Plan',
-                              style: TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold),
+                              style: TextStyle(
+                                fontSize: 16, 
+                                color: themeService.isDarkMode ? Colors.black : Colors.white, 
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ],
                         ),

@@ -14,13 +14,14 @@ import 'package:gymfit/models/quick_start_exercise.dart';
 import 'package:gymfit/services/quick_start_state_manager.dart';
 import 'package:gymfit/utils/workout_name_generator.dart';
 import 'package:gymfit/utils/duration_formatter.dart';
+import 'package:gymfit/services/theme_service.dart';
 
-class QuickStartPage extends StatefulWidget {
+class QuickStartPageOptimized extends StatefulWidget {
   final List<QuickStartExercise> initialSelectedExercises;
   final String? initialWorkoutName;
   final bool showMinibarOnMinimize;
 
-  const QuickStartPage({
+  const QuickStartPageOptimized({
     super.key,
     this.initialSelectedExercises = const <QuickStartExercise>[],
     this.initialWorkoutName,
@@ -28,13 +29,16 @@ class QuickStartPage extends StatefulWidget {
   });
 
   @override
-  State<QuickStartPage> createState() => _QuickStartPageState();
+  State<QuickStartPageOptimized> createState() => _QuickStartPageOptimizedState();
 }
 
-class _QuickStartPageState extends State<QuickStartPage> {
+class _QuickStartPageOptimizedState extends State<QuickStartPageOptimized> {
   late ScrollController _scrollController;
   late QuickStartStateManager _stateManager;
   final Map<QuickStartExercise, GlobalKey> _exerciseKeys = {};
+  String? _cachedWorkoutName;
+  bool _isWorkoutNameStable = false;
+
 
   @override
   void initState() {
@@ -47,9 +51,17 @@ class _QuickStartPageState extends State<QuickStartPage> {
       initialWorkoutName: widget.initialWorkoutName,
     );
 
+    // Cache the initial workout name if provided
+    if (widget.initialWorkoutName != null) {
+      _cachedWorkoutName = widget.initialWorkoutName;
+      _isWorkoutNameStable = true;
+    }
+
     // Initialize scroll controller
     _scrollController = ScrollController();
     _scrollController.addListener(_onScroll);
+
+
 
     // Start the shared timer in overlay if not already started
     QuickStartOverlay.startTimer();
@@ -60,6 +72,8 @@ class _QuickStartPageState extends State<QuickStartPage> {
         setState(() {});
       }
     });
+
+
   }
 
   void _onScroll() {
@@ -73,6 +87,12 @@ class _QuickStartPageState extends State<QuickStartPage> {
     bool shouldShow = _scrollController.offset > threshold;
 
     if (shouldShow != _stateManager.showWorkoutNameInAppBar) {
+      // Ensure workout name is stable before transition
+      if (shouldShow && _stateManager.customWorkoutName != null) {
+        _cachedWorkoutName = _stateManager.customWorkoutName;
+        _isWorkoutNameStable = true;
+      }
+      
       // Auto-save workout name when it slides into the app bar during editing
       if (shouldShow && _stateManager.isEditingWorkoutName) {
         _stateManager.setEditingWorkoutName(false);
@@ -88,6 +108,16 @@ class _QuickStartPageState extends State<QuickStartPage> {
       }
 
       _stateManager.setShowWorkoutNameInAppBar(shouldShow);
+      
+      // Ensure workout name is cached when app bar becomes visible
+      if (shouldShow && _cachedWorkoutName == null) {
+        _cachedWorkoutName = _stateManager.customWorkoutName ?? 
+            WorkoutNameGenerator.generateWorkoutName(
+              customWorkoutName: _stateManager.customWorkoutName,
+              selectedExercises: _stateManager.selectedExercises,
+            );
+        _isWorkoutNameStable = true;
+      }
     }
   }
 
@@ -107,10 +137,19 @@ class _QuickStartPageState extends State<QuickStartPage> {
 
   void _handleWorkoutNameChanged(String name) {
     _stateManager.setCustomWorkoutName(name);
+    // Cache the workout name to prevent shifting
+    _cachedWorkoutName = name;
+    _isWorkoutNameStable = true;
   }
 
   void _handleWorkoutNameToggle() {
     _stateManager.setEditingWorkoutName(!_stateManager.isEditingWorkoutName);
+    
+    // Reset cached name when starting to edit to allow dynamic updates
+    if (_stateManager.isEditingWorkoutName) {
+      _isWorkoutNameStable = false;
+      _cachedWorkoutName = null;
+    }
   }
 
   void _handleWorkoutNameSubmitted() {
@@ -128,6 +167,10 @@ class _QuickStartPageState extends State<QuickStartPage> {
 
   void _handleCustomWorkoutSelected(dynamic customWorkout) {
     _stateManager.loadCustomWorkout(customWorkout);
+    
+    // Cache the workout name immediately when loading a custom workout
+    _cachedWorkoutName = customWorkout.name;
+    _isWorkoutNameStable = true;
     
     // Scroll to the newly loaded exercises after the UI has been updated
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -314,28 +357,67 @@ class _QuickStartPageState extends State<QuickStartPage> {
     super.dispose();
   }
 
+  String _getStableWorkoutName() {
+    // If we have a cached stable name, use it
+    if (_isWorkoutNameStable && _cachedWorkoutName != null) {
+      return _cachedWorkoutName!;
+    }
+    
+    // Otherwise generate a new name and cache it
+    final generatedName = WorkoutNameGenerator.generateWorkoutName(
+      customWorkoutName: _stateManager.customWorkoutName,
+      selectedExercises: _stateManager.selectedExercises,
+    );
+    
+    // Cache the generated name if it's from a custom workout
+    if (_stateManager.customWorkoutName != null) {
+      _cachedWorkoutName = generatedName;
+      _isWorkoutNameStable = true;
+    }
+    
+    return generatedName;
+  }
+
+  // Get workout name specifically for app bar to prevent shifting
+  String _getAppBarWorkoutName() {
+    // For saved workouts, always use the custom workout name directly
+    if (_stateManager.customWorkoutName != null) {
+      return _stateManager.customWorkoutName!;
+    }
+    
+    // For generated names, use cached version if available
+    if (_cachedWorkoutName != null) {
+      return _cachedWorkoutName!;
+    }
+    
+    // Fallback to stable name
+    return _getStableWorkoutName();
+  }
+
   @override
   Widget build(BuildContext context) {
+    final themeService = Provider.of<ThemeService>(context);
+    
     return ChangeNotifierProvider.value(
       value: _stateManager,
       child: Consumer<QuickStartStateManager>(
         builder: (context, stateManager, child) {
           return Scaffold(
-            backgroundColor: Colors.grey.shade200,
+            backgroundColor: themeService.currentTheme.scaffoldBackgroundColor,
             resizeToAvoidBottomInset: true,
             appBar: AppBar(
-              backgroundColor: Colors.grey.shade200,
+              backgroundColor: themeService.currentTheme.appBarTheme.backgroundColor,
               elevation: 0,
               leading: IconButton(
-                icon: const FaIcon(
+                icon: FaIcon(
                   FontAwesomeIcons.chevronDown,
-                  color: Colors.black,
+                  color: themeService.currentTheme.appBarTheme.foregroundColor,
                   size: 20,
                 ),
                 onPressed: _handleMinimize,
               ),
               title: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 500),
+                duration: const Duration(milliseconds: 300),
                 switchInCurve: Curves.easeOutQuart,
                 switchOutCurve: Curves.easeInQuart,
                 transitionBuilder: (Widget child, Animation<double> animation) {
@@ -355,14 +437,8 @@ class _QuickStartPageState extends State<QuickStartPage> {
                 child:
                     stateManager.showWorkoutNameInAppBar
                         ? WorkoutNameEditor(
-                          key: const ValueKey('workout-name'),
-                          currentWorkoutName:
-                              WorkoutNameGenerator.generateWorkoutName(
-                                customWorkoutName:
-                                    stateManager.customWorkoutName,
-                                selectedExercises:
-                                    stateManager.selectedExercises,
-                              ),
+                          key: const ValueKey('workout-name-app-bar'),
+                          currentWorkoutName: _getAppBarWorkoutName(),
                           isEditing: stateManager.isEditingWorkoutName,
                           showInAppBar: true,
                           onToggleEditing: _handleWorkoutNameToggle,
@@ -373,9 +449,9 @@ class _QuickStartPageState extends State<QuickStartPage> {
                           key: const ValueKey('timer'),
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const FaIcon(
+                            FaIcon(
                               FontAwesomeIcons.stopwatch,
-                              color: Colors.black,
+                              color: themeService.currentTheme.appBarTheme.foregroundColor,
                               size: 20,
                             ),
                             const SizedBox(width: 8),
@@ -383,8 +459,8 @@ class _QuickStartPageState extends State<QuickStartPage> {
                               DurationFormatter.formatDuration(
                                 QuickStartOverlay.elapsedTime,
                               ),
-                              style: const TextStyle(
-                                color: Colors.black,
+                              style: TextStyle(
+                                color: themeService.currentTheme.appBarTheme.foregroundColor,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -399,9 +475,9 @@ class _QuickStartPageState extends State<QuickStartPage> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const FaIcon(
+                        FaIcon(
                           FontAwesomeIcons.stopwatch,
-                          color: Colors.black54,
+                          color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.black54,
                           size: 16,
                         ),
                         const SizedBox(width: 4),
@@ -409,8 +485,8 @@ class _QuickStartPageState extends State<QuickStartPage> {
                           DurationFormatter.formatDuration(
                             QuickStartOverlay.elapsedTime,
                           ),
-                          style: const TextStyle(
-                            color: Colors.black54,
+                          style: TextStyle(
+                            color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.black54,
                             fontWeight: FontWeight.w600,
                             fontSize: 16,
                           ),
@@ -427,13 +503,13 @@ class _QuickStartPageState extends State<QuickStartPage> {
                         onTap: _handleTogglePause,
                         child: Container(
                           padding: const EdgeInsets.all(8),
-                          child: FaIcon(
-                            QuickStartOverlay.isPaused
-                                ? FontAwesomeIcons.play
-                                : FontAwesomeIcons.pause,
-                            color: Colors.black,
-                            size: 20,
-                          ),
+                                                  child: FaIcon(
+                          QuickStartOverlay.isPaused
+                              ? FontAwesomeIcons.play
+                              : FontAwesomeIcons.pause,
+                          color: themeService.currentTheme.appBarTheme.foregroundColor,
+                          size: 20,
+                        ),
                         ),
                       ),
                       const SizedBox(width: 4),
@@ -441,11 +517,11 @@ class _QuickStartPageState extends State<QuickStartPage> {
                         onTap: _handleCancel,
                         child: Container(
                           padding: const EdgeInsets.all(8),
-                          child: const FaIcon(
-                            FontAwesomeIcons.xmark,
-                            color: Colors.black,
-                            size: 20,
-                          ),
+                                                  child: FaIcon(
+                          FontAwesomeIcons.xmark,
+                          color: themeService.currentTheme.appBarTheme.foregroundColor,
+                          size: 20,
+                        ),
                         ),
                       ),
                     ],
@@ -487,13 +563,8 @@ class _QuickStartPageState extends State<QuickStartPage> {
                                 stateManager.showWorkoutNameInAppBar
                                     ? const SizedBox.shrink()
                                     : WorkoutNameEditor(
-                                      currentWorkoutName:
-                                          WorkoutNameGenerator.generateWorkoutName(
-                                            customWorkoutName:
-                                                stateManager.customWorkoutName,
-                                            selectedExercises:
-                                                stateManager.selectedExercises,
-                                          ),
+                                      key: const ValueKey('workout-name-body'),
+                                      currentWorkoutName: _getStableWorkoutName(),
                                       isEditing:
                                           stateManager.isEditingWorkoutName,
                                       showInAppBar: false,
@@ -510,16 +581,16 @@ class _QuickStartPageState extends State<QuickStartPage> {
                                       child: Column(
                                         children: [
                                           const SizedBox(height: 120),
-                                          const FaIcon(
+                                          FaIcon(
                                             FontAwesomeIcons.dumbbell,
                                             size: 48,
-                                            color: Colors.black,
+                                            color: themeService.currentTheme.textTheme.titleLarge?.color,
                                           ),
                                           const SizedBox(height: 16),
-                                          const Text(
+                                          Text(
                                             'Let\'s get moving!',
                                             style: TextStyle(
-                                              color: Colors.black,
+                                              color: themeService.currentTheme.textTheme.titleLarge?.color,
                                               fontSize: 20,
                                               fontWeight: FontWeight.bold,
                                             ),
@@ -528,7 +599,7 @@ class _QuickStartPageState extends State<QuickStartPage> {
                                           Text(
                                             'Add an exercise to get started',
                                             style: TextStyle(
-                                              color: Colors.grey[600],
+                                              color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey[600],
                                               fontSize: 14,
                                               fontWeight: FontWeight.bold,
                                             ),
@@ -553,146 +624,143 @@ class _QuickStartPageState extends State<QuickStartPage> {
                                         ],
                                       ),
                                     )
-                                    : SingleChildScrollView(
-                                      controller: _scrollController,
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.center,
-                                        children: [
-                                                                                        stateManager.isInReorderMode
-                                              ? ReorderableListView(
-                                                shrinkWrap: true,
-                                                physics:
-                                                    const NeverScrollableScrollPhysics(),
-                                                onReorder: (
-                                                  int oldIndex,
-                                                  int newIndex,
-                                                ) {
-                                                  // Provide haptic feedback when reordering
-                                                  HapticFeedback.lightImpact();
-                                                  
-                                                  _stateManager
-                                                      .reorderExercises(
-                                                        oldIndex,
-                                                        newIndex,
-                                                      );
-                                                  QuickStartOverlay
-                                                          .selectedExercises =
-                                                      _stateManager
-                                                          .selectedExercises;
-                                                },
-                                                onReorderStart: (int index) {
-                                                  _handleReorderStart(index);
-                                                },
-                                                onReorderEnd: (int index) {
-                                                  _handleReorderEnd(index);
-                                                },
-                                                children:
-                                                    stateManager.selectedExercises.asMap().entries.map((
-                                                      entry,
-                                                    ) {
-                                                      final index = entry.key;
-                                                      final exercise =
-                                                          entry.value;
-                                                      return ExerciseCard(
-                                                        key: Key(
-                                                          'exercise_${exercise.title}_$index',
-                                                        ),
-                                                        exercise: exercise,
-                                                        exerciseIndex: index,
-                                                        preventAutoFocus:
-                                                            stateManager
-                                                                .preventAutoFocus,
-                                                        isCollapsed:
-                                                            stateManager
-                                                                .isInReorderMode,
-                                                        isNewlyAdded:
-                                                            stateManager.isExerciseNewlyAdded(exercise),
-                                                        onRemoveExercise:
-                                                            _handleRemoveExercise,
-                                                        onRemoveSet:
-                                                            _handleRemoveSet,
-                                                        onWeightChanged:
-                                                            _handleWeightChanged,
-                                                        onRepsChanged:
-                                                            _handleRepsChanged,
-                                                        onSetCheckedChanged:
-                                                            _handleSetCheckedChanged,
-                                                        onAllSetsCheckedChanged:
-                                                            _handleAllSetsCheckedChanged,
-                                                        onAddSet:
-                                                            () => _handleAddSet(
-                                                              exercise,
-                                                            ),
-                                                        onRequestReorderMode:
-                                                            () => _stateManager
-                                                                .setReorderMode(
-                                                                  true,
-                                                                ),
-                                                      );
-                                                    }).toList(),
-                                              )
-                                              : Column(
-                                                children:
-                                                    stateManager.selectedExercises.asMap().entries.map((
-                                                      entry,
-                                                    ) {
-                                                      final index = entry.key;
-                                                      final exercise =
-                                                          entry.value;
-                                                      final cardKey = _exerciseKeys.putIfAbsent(exercise, () => GlobalKey());
-                                                      return ExerciseCard(
-                                                        key: cardKey,
-                                                        exercise: exercise,
-                                                        exerciseIndex: index,
-                                                        preventAutoFocus:
-                                                            stateManager
-                                                                .preventAutoFocus,
-                                                        isCollapsed:
-                                                            stateManager
-                                                                .isInReorderMode,
-                                                        isNewlyAdded:
-                                                            stateManager.isExerciseNewlyAdded(exercise),
-                                                        onRemoveExercise:
-                                                            _handleRemoveExercise,
-                                                        onRemoveSet:
-                                                            _handleRemoveSet,
-                                                        onWeightChanged:
-                                                            _handleWeightChanged,
-                                                        onRepsChanged:
-                                                            _handleRepsChanged,
-                                                        onSetCheckedChanged:
-                                                            _handleSetCheckedChanged,
-                                                        onAllSetsCheckedChanged:
-                                                            _handleAllSetsCheckedChanged,
-                                                        onAddSet:
-                                                            () => _handleAddSet(
-                                                              exercise,
-                                                            ),
-                                                        onRequestReorderMode:
-                                                            () => _stateManager
-                                                                .setReorderMode(
-                                                                  true,
-                                                                ),
-                                                      );
-                                                    }).toList(),
-                                              ),
-                                          const SizedBox(height: 16),
-                                          if (!stateManager.isInReorderMode)
-                                            FinishWorkoutButton(
-                                              completedExercises:
-                                                  stateManager
-                                                      .selectedExercises,
-                                              workoutDuration:
-                                                  QuickStartOverlay.elapsedTime,
-                                              customWorkoutName:
-                                                  stateManager
-                                                      .customWorkoutName,
-                                            ),
-                                          const SizedBox(height: 100),
-                                        ],
-                                      ),
-                                    ),
+                                    : stateManager.isInReorderMode
+                                        ? ReorderableListView(
+                                          shrinkWrap: true,
+                                          physics:
+                                              const AlwaysScrollableScrollPhysics(),
+                                          onReorder: (
+                                            int oldIndex,
+                                            int newIndex,
+                                          ) {
+                                            // Provide haptic feedback when reordering
+                                            HapticFeedback.lightImpact();
+                                            
+                                            _stateManager
+                                                .reorderExercises(
+                                                  oldIndex,
+                                                  newIndex,
+                                                );
+                                            QuickStartOverlay
+                                                    .selectedExercises =
+                                                _stateManager
+                                                    .selectedExercises;
+                                          },
+                                          onReorderStart: (int index) {
+                                            _handleReorderStart(index);
+                                          },
+                                          onReorderEnd: (int index) {
+                                            _handleReorderEnd(index);
+                                          },
+                                          children:
+                                              stateManager.selectedExercises.asMap().entries.map((
+                                                entry,
+                                              ) {
+                                                final index = entry.key;
+                                                final exercise =
+                                                    entry.value;
+                                                return ExerciseCard(
+                                                  key: Key(
+                                                    'exercise_${exercise.title}_$index',
+                                                  ),
+                                                  exercise: exercise,
+                                                  exerciseIndex: index,
+                                                  preventAutoFocus:
+                                                      stateManager
+                                                          .preventAutoFocus,
+                                                  isCollapsed:
+                                                      stateManager
+                                                          .isInReorderMode,
+                                                  isNewlyAdded:
+                                                      stateManager.isExerciseNewlyAdded(exercise),
+                                                  onRemoveExercise:
+                                                      _handleRemoveExercise,
+                                                  onRemoveSet:
+                                                      _handleRemoveSet,
+                                                  onWeightChanged:
+                                                      _handleWeightChanged,
+                                                  onRepsChanged:
+                                                      _handleRepsChanged,
+                                                  onSetCheckedChanged:
+                                                      _handleSetCheckedChanged,
+                                                  onAllSetsCheckedChanged:
+                                                      _handleAllSetsCheckedChanged,
+                                                  onAddSet:
+                                                      () => _handleAddSet(
+                                                        exercise,
+                                                      ),
+                                                  onRequestReorderMode:
+                                                      () => _stateManager
+                                                          .setReorderMode(
+                                                            true,
+                                                          ),
+                                                );
+                                              }).toList(),
+                                        )
+                                        : SingleChildScrollView(
+                                          controller: _scrollController,
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.center,
+                                            children: [
+                                              // Exercise cards with simple animations
+                                              ...stateManager.selectedExercises.asMap().entries.map((
+                                                entry,
+                                              ) {
+                                                final index = entry.key;
+                                                final exercise = entry.value;
+                                                final cardKey = _exerciseKeys.putIfAbsent(exercise, () => GlobalKey());
+                                                
+                                                return ExerciseCard(
+                                                  key: cardKey,
+                                                  exercise: exercise,
+                                                  exerciseIndex: index,
+                                                  preventAutoFocus:
+                                                      stateManager
+                                                          .preventAutoFocus,
+                                                  isCollapsed:
+                                                      stateManager
+                                                          .isInReorderMode,
+                                                  isNewlyAdded:
+                                                      stateManager.isExerciseNewlyAdded(exercise),
+                                                  onRemoveExercise:
+                                                      _handleRemoveExercise,
+                                                  onRemoveSet:
+                                                      _handleRemoveSet,
+                                                  onWeightChanged:
+                                                      _handleWeightChanged,
+                                                  onRepsChanged:
+                                                      _handleRepsChanged,
+                                                  onSetCheckedChanged:
+                                                      _handleSetCheckedChanged,
+                                                  onAllSetsCheckedChanged:
+                                                      _handleAllSetsCheckedChanged,
+                                                  onAddSet:
+                                                      () => _handleAddSet(
+                                                        exercise,
+                                                      ),
+                                                  onRequestReorderMode:
+                                                      () => _stateManager
+                                                          .setReorderMode(
+                                                            true,
+                                                          ),
+                                                );
+                                              }).toList(),
+                                              const SizedBox(height: 16),
+                                              if (!stateManager.isInReorderMode)
+                                                FinishWorkoutButton(
+                                                  completedExercises:
+                                                      stateManager
+                                                          .selectedExercises,
+                                                  workoutDuration:
+                                                      QuickStartOverlay.elapsedTime,
+                                                  customWorkoutName:
+                                                      stateManager
+                                                          .customWorkoutName,
+                                                ),
+                                              const SizedBox(height: 100),
+                                            ],
+                                          ),
+                                        ),
                           ),
                           // Done button with identical animation to AddExerciseButton (hide when keyboard is up)
                           AnimatedSize(
@@ -798,4 +866,4 @@ class _QuickStartPageState extends State<QuickStartPage> {
       ),
     );
   }
-}
+} 

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
+import 'package:gymfit/services/theme_service.dart';
 
 class FriendsPage extends StatefulWidget {
   const FriendsPage({super.key});
@@ -258,20 +260,22 @@ class _FriendsPageState extends State<FriendsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final themeService = Provider.of<ThemeService>(context);
+    
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: themeService.currentTheme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: themeService.currentTheme.appBarTheme.backgroundColor,
         elevation: 0,
-        title: const Text(
+        title: Text(
           'Friends',
-          style: TextStyle(
-            color: Colors.black,
-            fontWeight: FontWeight.bold,
-          ),
+          style: themeService.currentTheme.appBarTheme.titleTextStyle,
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: Icon(
+            Icons.arrow_back, 
+            color: themeService.currentTheme.appBarTheme.foregroundColor,
+          ),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
@@ -290,7 +294,10 @@ class _FriendsPageState extends State<FriendsPage> {
               controller: _searchController,
               decoration: InputDecoration(
                 hintText: 'Search friends by username...',
-                prefixIcon: const Icon(Icons.search),
+                prefixIcon: Icon(
+                  Icons.search,
+                  color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
+                ),
                 suffixIcon: _isSearching
                     ? const SizedBox(
                         width: 20,
@@ -301,9 +308,19 @@ class _FriendsPageState extends State<FriendsPage> {
                         ),
                       )
                     : null,
+                filled: true,
+                fillColor: themeService.isDarkMode ? const Color(0xFF2A2A2A) : Colors.grey.shade50,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
+                  borderSide: BorderSide(
+                    color: themeService.isDarkMode ? Colors.grey.shade600 : Colors.grey.shade300,
+                  ),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: themeService.isDarkMode ? Colors.grey.shade600 : Colors.grey.shade300,
+                  ),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -327,7 +344,7 @@ class _FriendsPageState extends State<FriendsPage> {
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Colors.grey.shade700,
+                    color: themeService.currentTheme.textTheme.titleMedium?.color,
                   ),
                 ),
               ),
@@ -346,13 +363,15 @@ class _FriendsPageState extends State<FriendsPage> {
   }
 
   Widget _buildSearchResults() {
+    final themeService = Provider.of<ThemeService>(context, listen: false);
+    
     if (_searchResults.isEmpty && !_isSearching) {
-      return const Center(
+      return Center(
         child: Text(
           'No users found',
           style: TextStyle(
             fontSize: 16,
-            color: Colors.grey,
+            color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey,
           ),
         ),
       );
@@ -366,7 +385,9 @@ class _FriendsPageState extends State<FriendsPage> {
         final isFriend = _isFriend(user['id']);
 
         return Card(
-          color: Colors.white,
+          color: themeService.isDarkMode 
+              ? const Color(0xFF2A2A2A)
+              : Colors.grey.shade50,
           elevation: 2,
           margin: const EdgeInsets.only(bottom: 12),
           shape: RoundedRectangleBorder(
@@ -385,9 +406,17 @@ class _FriendsPageState extends State<FriendsPage> {
             ),
             title: Text(
               user['name'] ?? 'Unknown',
-              style: const TextStyle(fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: themeService.currentTheme.textTheme.titleMedium?.color,
+              ),
             ),
-            subtitle: Text('@${user['username'] ?? 'unknown'}'),
+            subtitle: Text(
+              '@${user['username'] ?? 'unknown'}',
+              style: TextStyle(
+                color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
+              ),
+            ),
                          trailing: AnimatedSwitcher(
                duration: const Duration(milliseconds: 500),
                switchInCurve: Curves.elasticOut,
@@ -422,6 +451,8 @@ class _FriendsPageState extends State<FriendsPage> {
   }
 
   Widget _buildFriendsList() {
+    final themeService = Provider.of<ThemeService>(context, listen: false);
+    
     if (_isLoadingFriends) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -433,39 +464,39 @@ class _FriendsPageState extends State<FriendsPage> {
           physics: const AlwaysScrollableScrollPhysics(),
           child: SizedBox(
             height: MediaQuery.of(context).size.height * 0.6,
-            child: const Center(
+            child: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
                     Icons.group_outlined,
                     size: 64,
-                    color: Colors.grey,
+                    color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey,
                   ),
-                  SizedBox(height: 16),
+                  const SizedBox(height: 16),
                   Text(
                     'No friends yet',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: Colors.grey,
+                      color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey,
                     ),
                   ),
-                  SizedBox(height: 8),
+                  const SizedBox(height: 8),
                   Text(
                     'Search for friends using the search bar above',
                     style: TextStyle(
                       fontSize: 14,
-                      color: Colors.grey,
+                      color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey,
                     ),
                     textAlign: TextAlign.center,
                   ),
-                  SizedBox(height: 8),
+                  const SizedBox(height: 8),
                   Text(
                     'Pull down to refresh',
                     style: TextStyle(
                       fontSize: 12,
-                      color: Colors.grey,
+                      color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -486,7 +517,9 @@ class _FriendsPageState extends State<FriendsPage> {
         final friend = _friends[index];
 
         return Card(
-          color: Colors.white,
+          color: themeService.isDarkMode 
+              ? const Color(0xFF2A2A2A)
+              : Colors.grey.shade50,
           elevation: 2,
           margin: const EdgeInsets.only(bottom: 12),
           shape: RoundedRectangleBorder(
@@ -505,9 +538,17 @@ class _FriendsPageState extends State<FriendsPage> {
             ),
             title: Text(
               friend['name'] ?? 'Unknown',
-              style: const TextStyle(fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: themeService.currentTheme.textTheme.titleMedium?.color,
+              ),
             ),
-                          subtitle: Text('@${friend['username'] ?? 'unknown'}'),
+            subtitle: Text(
+              '@${friend['username'] ?? 'unknown'}',
+              style: TextStyle(
+                color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
+              ),
+            ),
                                                                               trailing: AnimatedSwitcher(
                   duration: const Duration(milliseconds: 500),
                   switchInCurve: Curves.elasticOut,
@@ -539,15 +580,29 @@ class _FriendsPageState extends State<FriendsPage> {
   }
 
   void _showRemoveFriendDialog(Map<String, dynamic> friend) {
+    final themeService = Provider.of<ThemeService>(context, listen: false);
+    
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Remove Friend'),
-        content: Text('Are you sure you want to remove ${friend['name']} from your friends?'),
+        backgroundColor: themeService.currentTheme.dialogBackgroundColor,
+        title: Text(
+          'Remove Friend',
+          style: themeService.currentTheme.textTheme.titleLarge,
+        ),
+        content: Text(
+          'Are you sure you want to remove ${friend['name']} from your friends?',
+          style: themeService.currentTheme.textTheme.bodyMedium,
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
+            child: Text(
+              'Cancel',
+              style: TextStyle(
+                color: themeService.currentTheme.colorScheme.primary,
+              ),
+            ),
           ),
           TextButton(
             onPressed: () {

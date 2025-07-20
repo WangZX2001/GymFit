@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:gymfit/packages/exercise_information_repository/exercise_information_repository.dart';
 import 'package:gymfit/pages/workout/exercise_description_page.dart';
 import 'package:gymfit/pages/workout/filter/exercise_filter_page.dart';
+import 'package:provider/provider.dart';
+import 'package:gymfit/services/theme_service.dart';
 
 class ExerciseInformationPage extends StatefulWidget {
   final bool isSelectionMode;
@@ -210,6 +212,8 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage>
   }
 
   Widget _buildIconOrImage(dynamic icon) {
+    final themeService = Provider.of<ThemeService>(context, listen: false);
+    
     // Check if icon is a string path to an image
     if (icon is String &&
         (icon.contains('.jpg') ||
@@ -226,23 +230,25 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage>
         fit: isTBarRow ? BoxFit.cover : BoxFit.contain,
         errorBuilder: (context, error, stackTrace) {
           // Fallback to default icon if image fails to load
-          return Icon(Icons.fitness_center, size: 100, color: Colors.black);
+          return Icon(Icons.fitness_center, size: 100, color: themeService.currentTheme.textTheme.titleLarge?.color);
         },
       );
     }
     // If it's an IconData, use it directly
     else if (icon is IconData) {
-      return Icon(icon, size: 100, color: Colors.black);
+      return Icon(icon, size: 100, color: themeService.currentTheme.textTheme.titleLarge?.color);
     }
     // Default fallback icon
     else {
-      return Icon(Icons.fitness_center, size: 100, color: Colors.black);
+      return Icon(Icons.fitness_center, size: 100, color: themeService.currentTheme.textTheme.titleLarge?.color);
     }
   }
 
   Widget _buildFloatingSearchBar() {
+    final themeService = Provider.of<ThemeService>(context, listen: false);
+    
     return Container(
-      color: Colors.grey.shade200, // Grey background that matches the scaffold
+      color: themeService.currentTheme.scaffoldBackgroundColor,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -250,11 +256,11 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage>
           Container(
             margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: themeService.currentTheme.cardTheme.color,
               borderRadius: BorderRadius.circular(25),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
+                  color: themeService.isDarkMode ? Colors.black.withValues(alpha: 0.3) : Colors.black.withValues(alpha: 0.1),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -273,18 +279,18 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage>
               decoration: InputDecoration(
                 hintText: 'Search exercises...',
                 hintStyle: TextStyle(
-                  color: Colors.grey[500],
+                  color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey[500],
                   fontSize: 16,
                 ),
                 prefixIcon: Icon(
                   Icons.search,
-                  color: Colors.grey[500],
+                  color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey[500],
                 ),
                 suffixIcon: _searchQuery.isNotEmpty
                     ? IconButton(
                         icon: Icon(
                           Icons.clear,
-                          color: Colors.grey[500],
+                          color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey[500],
                         ),
                         onPressed: () {
                           setState(() {
@@ -300,7 +306,10 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage>
                   vertical: 15,
                 ),
               ),
-              style: const TextStyle(fontSize: 16),
+              style: TextStyle(
+                fontSize: 16,
+                color: themeService.currentTheme.textTheme.bodyLarge?.color,
+              ),
             ),
           ),
           // Instruction text
@@ -309,7 +318,10 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage>
               padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 4),
               child: Text(
                 'Click on any exercise icon to view specific instructions.',
-                style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                style: TextStyle(
+                  color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey[600], 
+                  fontSize: 12
+                ),
                 textAlign: TextAlign.center,
               ),
             ),
@@ -324,40 +336,77 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage>
     String? mainMuscle,
     bool isSelected = false,
   }) {
+    final themeService = Provider.of<ThemeService>(context, listen: false);
+    
     return Container(
       margin: const EdgeInsets.all(4),
       constraints: const BoxConstraints.expand(),
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border.all(
-          color: isSelected ? Colors.blue : Colors.grey[300]!,
+          color: isSelected ? Colors.blue : (themeService.isDarkMode ? Colors.grey.shade600 : Colors.grey[300]!),
           width: isSelected ? 4 : 2,
         ),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Flexible(child: _buildIconOrImage(icon)),
-          const SizedBox(height: 8),
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+          // Image area with white background
+          Expanded(
+            flex: 4, // Increased flex to make image area larger
+            child: Container(
+              color: Colors.white,
+              child: _buildIconOrImage(icon),
+            ),
           ),
-          if (mainMuscle != null)
-            Padding(
-              padding: const EdgeInsets.only(top: 4.0),
-              child: Text(
-                mainMuscle,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w400,
-                  color: Colors.grey,
-                ),
+          // Text area with theme-appropriate background
+          Container(
+            width: double.infinity,
+            height: 70, // Increased height to prevent text cutoff
+            decoration: BoxDecoration(
+              color: themeService.isDarkMode ? Colors.grey.shade800 : Colors.white,
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(8),
+                bottomRight: Radius.circular(8),
               ),
             ),
+            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0), // Minimal vertical padding
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Flexible(
+                  child: Text(
+                    title,
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 14, 
+                      fontWeight: FontWeight.w500,
+                      color: themeService.isDarkMode ? Colors.white : Colors.black,
+                    ),
+                  ),
+                ),
+                if (mainMuscle != null)
+                  Flexible(
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 0.0), // No top padding
+                      child: Text(
+                        mainMuscle,
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w400,
+                          color: themeService.isDarkMode ? Colors.grey.shade300 : Colors.grey,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -365,26 +414,28 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage>
 
   @override
   Widget build(BuildContext context) {
+    final themeService = Provider.of<ThemeService>(context);
+    
     return Scaffold(
-        backgroundColor: Colors.grey.shade200,
+        backgroundColor: themeService.currentTheme.scaffoldBackgroundColor,
         appBar: AppBar(
-          backgroundColor: Colors.grey.shade200,
+          backgroundColor: themeService.currentTheme.appBarTheme.backgroundColor,
           elevation: 0,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.black),
+            icon: Icon(Icons.arrow_back, color: themeService.currentTheme.appBarTheme.foregroundColor),
             onPressed: () {
               Navigator.pop(context);
             },
           ),
-          title: const Text(
+          title: Text(
             'Exercises',
-            style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+            style: themeService.currentTheme.appBarTheme.titleTextStyle,
           ),
           actions: [
             Stack(
               children: [
                 IconButton(
-                  icon: const Icon(Icons.filter_list, color: Colors.black),
+                  icon: Icon(Icons.filter_list, color: themeService.currentTheme.appBarTheme.foregroundColor),
                   onPressed: _openFilterPage,
                 ),
                 if (_hasActiveFilters)
@@ -408,7 +459,10 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage>
           ],
           bottom: PreferredSize(
             preferredSize: const Size.fromHeight(1.0),
-            child: Container(color: Colors.grey[300], height: 1.0),
+            child: Container(
+              color: themeService.isDarkMode ? Colors.grey.shade700 : Colors.grey[300], 
+              height: 1.0
+            ),
           ),
         ),
         body: GestureDetector(
@@ -441,7 +495,7 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage>
                     duration: const Duration(milliseconds: 200),
                     padding: EdgeInsets.only(top: _isSearchBarVisible ? (widget.isSelectionMode ? 60 : 80) : 0), // Less space needed in selection mode (no instruction text)
                     child: Container(
-                      color: Colors.grey.shade200, // Ensure background matches when search bar is hidden
+                      color: themeService.currentTheme.scaffoldBackgroundColor, // Ensure background matches when search bar is hidden
                       child: Column(
                         children: [
                           if (_hasActiveFilters)
@@ -453,7 +507,7 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage>
                               child: Text(
                                 'Showing ${sortedItems.length} of ${items.length} exercises',
                                 style: TextStyle(
-                                  color: Colors.grey[600],
+                                  color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey[600],
                                   fontSize: 14,
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -571,8 +625,8 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage>
                                               () =>
                                                   Navigator.pop(context, _selectedTitles.toList()),
                                           style: ElevatedButton.styleFrom(
-                                            backgroundColor: Colors.black,
-                                            foregroundColor: Colors.white,
+                                            backgroundColor: themeService.isDarkMode ? Colors.white : Colors.black,
+                                            foregroundColor: themeService.isDarkMode ? Colors.black : Colors.white,
                                             padding: const EdgeInsets.symmetric(vertical: 16),
                                             shape: RoundedRectangleBorder(
                                               borderRadius: BorderRadius.circular(12),
@@ -581,13 +635,17 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage>
                                           child: Row(
                                             mainAxisAlignment: MainAxisAlignment.center,
                                             children: [
-                                              const Icon(Icons.check),
+                                              Icon(
+                                                Icons.check,
+                                                color: themeService.isDarkMode ? Colors.black : Colors.white,
+                                              ),
                                               const SizedBox(width: 8),
                                               Text(
                                                 'Done (${_selectedTitles.length})',
-                                                style: const TextStyle(
+                                                style: TextStyle(
                                                   fontSize: 18,
                                                   fontWeight: FontWeight.bold,
+                                                  color: themeService.isDarkMode ? Colors.black : Colors.white,
                                                 ),
                                               ),
                                             ],

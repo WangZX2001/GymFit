@@ -4,6 +4,8 @@ import 'package:gymfit/pages/workout/exercise_information_page.dart';
 import 'package:gymfit/pages/workout/custom_workout_page.dart';
 import 'package:gymfit/pages/workout/recommended_training_page.dart';
 import 'package:gymfit/components/quick_start_overlay.dart';
+import 'package:provider/provider.dart';
+import 'package:gymfit/services/theme_service.dart';
 
 class WorkoutPage extends StatelessWidget {
   const WorkoutPage({super.key});
@@ -66,8 +68,10 @@ class WorkoutPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeService = Provider.of<ThemeService>(context);
+    
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: themeService.currentTheme.scaffoldBackgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
@@ -107,7 +111,10 @@ class WorkoutPage extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 16.0),
                     child: Text(
                       'For recommended training, a personalized workout plan automatically generated based on your body info, fitness goals, and experience level.',
-                      style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                      style: TextStyle(
+                        color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey[600],
+                        fontSize: 14,
+                      ),
                     ),
                   ),
                 ],

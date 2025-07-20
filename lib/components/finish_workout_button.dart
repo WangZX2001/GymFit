@@ -4,6 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:gymfit/pages/workout/workout_summary_page.dart';
 import 'package:gymfit/models/quick_start_exercise.dart';
+import 'package:provider/provider.dart';
+import 'package:gymfit/services/theme_service.dart';
 
 class FinishWorkoutButton extends StatelessWidget {
   final List<QuickStartExercise> completedExercises;
@@ -19,6 +21,8 @@ class FinishWorkoutButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeService = Provider.of<ThemeService>(context);
+    
     return LayoutBuilder(
       builder: (context, constraints) {
         final screenWidth = MediaQuery.of(context).size.width;
@@ -36,10 +40,14 @@ class FinishWorkoutButton extends StatelessWidget {
               child: OutlinedButton.icon(
                 onPressed: () => _handleFinishWorkout(context),
                 style: OutlinedButton.styleFrom(
-                  backgroundColor: Colors.white.withValues(alpha: 0.9),
-                  foregroundColor: Colors.black,
+                  backgroundColor: themeService.isDarkMode 
+                      ? Colors.grey.shade800.withValues(alpha: 0.9)
+                      : Colors.white.withValues(alpha: 0.9),
+                  foregroundColor: themeService.isDarkMode ? Colors.white : Colors.black,
                   side: BorderSide(
-                    color: Colors.grey.shade300.withValues(alpha: 0.8),
+                    color: themeService.isDarkMode 
+                        ? Colors.grey.shade600.withValues(alpha: 0.8)
+                        : Colors.grey.shade300.withValues(alpha: 0.8),
                     width: 1.5,
                   ),
                   shape: RoundedRectangleBorder(
@@ -49,13 +57,13 @@ class FinishWorkoutButton extends StatelessWidget {
                 ),
                 icon: FaIcon(
                   FontAwesomeIcons.flagCheckered,
-                  color: Colors.black,
+                  color: themeService.isDarkMode ? Colors.white : Colors.black,
                   size: buttonFontSize * 0.8,
                 ),
                 label: Text(
                   'Finish',
                   style: TextStyle(
-                    color: Colors.black,
+                    color: themeService.isDarkMode ? Colors.white : Colors.black,
                     fontSize: buttonFontSize,
                     fontWeight: FontWeight.w900,
                   ),

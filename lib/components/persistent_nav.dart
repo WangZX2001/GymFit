@@ -6,6 +6,8 @@ import 'package:gymfit/pages/workout/workout_page.dart';
 import 'package:gymfit/pages/me/me_page.dart';
 import 'package:persistent_bottom_nav_bar_v2/components/animated_icon_wrapper.dart';
 import 'package:gymfit/components/quick_start_overlay.dart';
+import 'package:provider/provider.dart';
+import 'package:gymfit/services/theme_service.dart';
 
 class PersistentNavBar extends StatefulWidget {
   final int initialIndex;
@@ -88,9 +90,6 @@ class _NavBarWithIntegratedMinibar extends StatefulWidget {
 }
 
 class _NavBarWithIntegratedMinibarState extends State<_NavBarWithIntegratedMinibar> {
-  // Define consistent color for both navigation bar and minibar
-  static const Color _navBarColor = Colors.white;
-
   @override
   void initState() {
     super.initState();
@@ -104,16 +103,20 @@ class _NavBarWithIntegratedMinibarState extends State<_NavBarWithIntegratedMinib
 
   @override
   Widget build(BuildContext context) {
+    final themeService = Provider.of<ThemeService>(context);
     final bool showQuickStartMinibar = QuickStartOverlay.shouldShowIntegratedMinibar;
     
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
       decoration: BoxDecoration(
-        color: _navBarColor,
-        borderRadius: BorderRadius.circular(8),
+        color: themeService.currentTheme.bottomNavigationBarTheme.backgroundColor ?? themeService.currentTheme.cardTheme.color,
+        borderRadius: themeService.isDarkMode ? BorderRadius.zero : BorderRadius.circular(8),
         boxShadow: [
-          BoxShadow(color: Colors.black26, blurRadius: 10),
+          BoxShadow(
+            color: themeService.isDarkMode ? Colors.black54 : Colors.black26,
+            blurRadius: 10,
+          ),
         ],
       ),
       child: Column(
@@ -128,7 +131,7 @@ class _NavBarWithIntegratedMinibarState extends State<_NavBarWithIntegratedMinib
                   height: 44,
                   margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
                   decoration: BoxDecoration(
-                    color: _navBarColor,
+                    color: themeService.currentTheme.bottomNavigationBarTheme.backgroundColor ?? themeService.currentTheme.cardTheme.color,
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: QuickStartOverlay.buildIntegratedMinibar(context),
@@ -141,7 +144,7 @@ class _NavBarWithIntegratedMinibarState extends State<_NavBarWithIntegratedMinib
             Container(
               height: 1,
               margin: const EdgeInsets.symmetric(horizontal: 16),
-              color: Colors.grey.shade300,
+              color: themeService.isDarkMode ? Colors.grey.shade700 : Colors.grey.shade300,
             ),
           
           // Original Style2BottomNavBar
@@ -149,7 +152,7 @@ class _NavBarWithIntegratedMinibarState extends State<_NavBarWithIntegratedMinib
             navBarConfig: widget.navBarConfig,
             navBarDecoration: NavBarDecoration(
               color: Colors.transparent, // Keep transparent to avoid double background
-              borderRadius: BorderRadius.circular(0), // Match parent container
+              borderRadius: themeService.isDarkMode ? BorderRadius.zero : BorderRadius.circular(0), // Match parent container
               boxShadow: [], // Parent container handles shadow
             ),
             itemAnimationProperties: const ItemAnimation(

@@ -20,6 +20,7 @@ class WorkoutNameDescriptionPage extends StatefulWidget {
 class _WorkoutNameDescriptionPageState extends State<WorkoutNameDescriptionPage> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
   bool _isSaving = false;
 
   @override
@@ -36,6 +37,7 @@ class _WorkoutNameDescriptionPageState extends State<WorkoutNameDescriptionPage>
   void dispose() {
     _nameController.dispose();
     _descriptionController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -311,11 +313,13 @@ class _WorkoutNameDescriptionPageState extends State<WorkoutNameDescriptionPage>
                       ),
                       child: widget.exercises.length > 8
                           ? Scrollbar(
+                              controller: _scrollController,
                               thumbVisibility: true,
                               thickness: 6,
                               radius: const Radius.circular(3),
                               trackVisibility: false,
                               child: ListView.builder(
+                                controller: _scrollController,
                                 shrinkWrap: true,
                                 itemCount: widget.exercises.length,
                                 itemBuilder: (context, index) {

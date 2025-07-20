@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:provider/provider.dart';
+import 'package:gymfit/services/theme_service.dart';
 
 class WorkoutNameEditor extends StatefulWidget {
   final String? initialWorkoutName;
@@ -72,34 +74,41 @@ class _WorkoutNameEditorState extends State<WorkoutNameEditor> {
 
   @override
   Widget build(BuildContext context) {
+    final themeService = Provider.of<ThemeService>(context);
+    
     if (widget.showInAppBar) {
-      return Row(
-        key: const ValueKey('workout-name'),
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const FaIcon(
-            FontAwesomeIcons.tag,
-            color: Colors.purple,
-            size: 16,
-          ),
-          const SizedBox(width: 8),
-          Flexible(
-            child: Text(
-              widget.currentWorkoutName,
-              style: const TextStyle(
-                color: Colors.purple,
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-              overflow: TextOverflow.ellipsis,
+      return Container(
+        key: const ValueKey('workout-name-app-bar'),
+        height: 20,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            const FaIcon(
+              FontAwesomeIcons.tag,
+              color: Colors.purple,
+              size: 16,
             ),
-          ),
-        ],
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                widget.currentWorkoutName,
+                style: const TextStyle(
+                  color: Colors.purple,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.left,
+              ),
+            ),
+          ],
+        ),
       );
     }
 
     return Card(
-      color: Colors.white,
+      color: themeService.currentTheme.cardTheme.color,
       margin: const EdgeInsets.only(bottom: 16),
       child: Padding(
         padding: const EdgeInsets.all(12.0),
@@ -116,11 +125,11 @@ class _WorkoutNameEditorState extends State<WorkoutNameEditor> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Workout Name',
                     style: TextStyle(
                       fontSize: 12,
-                      color: Colors.grey,
+                      color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -147,7 +156,7 @@ class _WorkoutNameEditorState extends State<WorkoutNameEditor> {
                             ),
                             hintText: 'Enter workout name',
                             hintStyle: TextStyle(
-                              color: Colors.grey.shade400,
+                              color: themeService.isDarkMode ? Colors.grey.shade500 : Colors.grey.shade400,
                             ),
                           ),
                           style: const TextStyle(
@@ -164,13 +173,12 @@ class _WorkoutNameEditorState extends State<WorkoutNameEditor> {
                           child: Container(
                             width: double.infinity,
                             padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
                               vertical: 8,
-                              horizontal: 4,
                             ),
                             decoration: BoxDecoration(
                               border: Border.all(
                                 color: Colors.transparent,
-                                width: 1,
                               ),
                               borderRadius: BorderRadius.circular(8),
                             ),
@@ -189,12 +197,10 @@ class _WorkoutNameEditorState extends State<WorkoutNameEditor> {
             ),
             IconButton(
               onPressed: _handleToggleEditing,
-              icon: FaIcon(
-                widget.isEditing
-                    ? FontAwesomeIcons.check
-                    : FontAwesomeIcons.pen,
-                color: widget.isEditing ? Colors.green : Colors.grey,
-                size: 16,
+              icon: Icon(
+                widget.isEditing ? Icons.check : Icons.edit,
+                color: Colors.purple,
+                size: 20,
               ),
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(),

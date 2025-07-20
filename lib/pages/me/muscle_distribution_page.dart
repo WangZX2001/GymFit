@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:provider/provider.dart';
 import 'package:gymfit/models/workout.dart';
 import 'package:gymfit/services/workout_service.dart';
 import 'package:gymfit/packages/exercise_information_repository/exercise_information_repository.dart';
+import 'package:gymfit/services/theme_service.dart';
 
 class MuscleDistributionPage extends StatefulWidget {
   const MuscleDistributionPage({super.key});
@@ -125,14 +127,22 @@ class _MuscleDistributionPageState extends State<MuscleDistributionPage> {
 
   @override
   Widget build(BuildContext context) {
+    final themeService = Provider.of<ThemeService>(context);
+    
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: themeService.currentTheme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: themeService.currentTheme.appBarTheme.backgroundColor,
         elevation: 0,
-        title: const Text('Muscle Distribution', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+        title: Text(
+          'Muscle Distribution', 
+          style: themeService.currentTheme.appBarTheme.titleTextStyle,
+        ),
         leading: IconButton(
-          icon: const FaIcon(FontAwesomeIcons.arrowLeft, color: Colors.black),
+          icon: FaIcon(
+            FontAwesomeIcons.arrowLeft, 
+            color: themeService.currentTheme.appBarTheme.foregroundColor,
+          ),
           onPressed: () {
             Navigator.of(context, rootNavigator: true).pop();
           },
@@ -149,6 +159,8 @@ class _MuscleDistributionPageState extends State<MuscleDistributionPage> {
   }
 
   Widget _buildEmptyState() {
+    final themeService = Provider.of<ThemeService>(context, listen: false);
+    
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -156,7 +168,7 @@ class _MuscleDistributionPageState extends State<MuscleDistributionPage> {
           FaIcon(
             FontAwesomeIcons.chartPie,
             size: 64,
-            color: Colors.grey.shade400,
+            color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade400,
           ),
           const SizedBox(height: 16),
           Text(
@@ -164,7 +176,7 @@ class _MuscleDistributionPageState extends State<MuscleDistributionPage> {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: Colors.grey.shade600,
+              color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
             ),
           ),
           const SizedBox(height: 8),
@@ -172,7 +184,7 @@ class _MuscleDistributionPageState extends State<MuscleDistributionPage> {
             'Complete some workouts to see your muscle distribution!',
             style: TextStyle(
               fontSize: 14,
-              color: Colors.grey.shade500,
+              color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade500,
             ),
             textAlign: TextAlign.center,
           ),
@@ -182,6 +194,8 @@ class _MuscleDistributionPageState extends State<MuscleDistributionPage> {
   }
 
   Widget _buildMuscleDistribution() {
+    final themeService = Provider.of<ThemeService>(context, listen: false);
+    
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
       child: Column(
@@ -191,10 +205,14 @@ class _MuscleDistributionPageState extends State<MuscleDistributionPage> {
             width: double.infinity,
             padding: const EdgeInsets.all(20.0),
             decoration: BoxDecoration(
-              color: Colors.purple.shade50,
+              color: themeService.isDarkMode 
+                  ? const Color(0xFF2A2A2A)
+                  : Colors.purple.shade50,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: Colors.purple.shade200,
+                color: themeService.isDarkMode 
+                    ? Colors.purple.shade600
+                    : Colors.purple.shade200,
                 width: 1,
               ),
             ),
@@ -211,7 +229,7 @@ class _MuscleDistributionPageState extends State<MuscleDistributionPage> {
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: Colors.purple.shade800,
+                    color: themeService.isDarkMode ? Colors.white : Colors.purple.shade800,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -220,7 +238,7 @@ class _MuscleDistributionPageState extends State<MuscleDistributionPage> {
                   'Based on completed sets',
                   style: TextStyle(
                     fontSize: 14,
-                    color: Colors.purple.shade600,
+                    color: themeService.isDarkMode ? Colors.purple.shade300 : Colors.purple.shade600,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -235,11 +253,15 @@ class _MuscleDistributionPageState extends State<MuscleDistributionPage> {
             height: 400,
             padding: const EdgeInsets.all(20.0),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: themeService.isDarkMode 
+                  ? const Color(0xFF2A2A2A)
+                  : Colors.grey.shade50,
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.grey.withValues(alpha: 0.1),
+                  color: themeService.isDarkMode 
+                      ? Colors.black.withValues(alpha: 0.3)
+                      : Colors.grey.withValues(alpha: 0.1),
                   spreadRadius: 1,
                   blurRadius: 10,
                   offset: const Offset(0, 2),
@@ -262,8 +284,8 @@ class _MuscleDistributionPageState extends State<MuscleDistributionPage> {
                 borderData: FlBorderData(show: false),
                 radarBorderData: BorderSide(color: Colors.grey.shade300, width: 1),
                 titlePositionPercentageOffset: 0.2,
-                titleTextStyle: const TextStyle(
-                  color: Colors.black,
+                titleTextStyle: TextStyle(
+                  color: themeService.isDarkMode ? Colors.white : Colors.black,
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
                 ),
@@ -273,11 +295,17 @@ class _MuscleDistributionPageState extends State<MuscleDistributionPage> {
                 },
                 tickCount: 5,
                 ticksTextStyle: TextStyle(
-                  color: Colors.grey.shade600,
+                  color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
                   fontSize: 10,
                 ),
-                tickBorderData: BorderSide(color: Colors.grey.shade300, width: 1),
-                gridBorderData: BorderSide(color: Colors.grey.shade300, width: 1),
+                tickBorderData: BorderSide(
+                  color: themeService.isDarkMode ? Colors.grey.shade600 : Colors.grey.shade300, 
+                  width: 1,
+                ),
+                gridBorderData: BorderSide(
+                  color: themeService.isDarkMode ? Colors.grey.shade600 : Colors.grey.shade300, 
+                  width: 1,
+                ),
               ),
             ),
           ),
@@ -306,6 +334,8 @@ class _MuscleDistributionPageState extends State<MuscleDistributionPage> {
   }
 
   Widget _buildMuscleGroupCards() {
+    final themeService = Provider.of<ThemeService>(context, listen: false);
+    
     final muscleGroups = [
       {'name': 'Back', 'icon': FontAwesomeIcons.arrowUp, 'color': Colors.blue},
       {'name': 'Chest', 'icon': FontAwesomeIcons.expand, 'color': Colors.red},
@@ -333,11 +363,15 @@ class _MuscleDistributionPageState extends State<MuscleDistributionPage> {
         return Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: themeService.isDarkMode 
+                ? const Color(0xFF2A2A2A)
+                : Colors.grey.shade50,
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: Colors.grey.withValues(alpha: 0.1),
+                color: themeService.isDarkMode 
+                    ? Colors.black.withValues(alpha: 0.3)
+                    : Colors.grey.withValues(alpha: 0.1),
                 spreadRadius: 1,
                 blurRadius: 6,
                 offset: const Offset(0, 2),
@@ -355,9 +389,10 @@ class _MuscleDistributionPageState extends State<MuscleDistributionPage> {
               const SizedBox(height: 8),
               Text(
                 group['name'] as String,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
+                  color: themeService.isDarkMode ? Colors.white : Colors.black,
                 ),
               ),
               const SizedBox(height: 4),
@@ -365,7 +400,7 @@ class _MuscleDistributionPageState extends State<MuscleDistributionPage> {
                 '$sets sets',
                 style: TextStyle(
                   fontSize: 12,
-                  color: Colors.grey.shade600,
+                  color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
                 ),
               ),
               Text(

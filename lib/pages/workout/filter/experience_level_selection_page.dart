@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:provider/provider.dart';
+import 'package:gymfit/services/theme_service.dart';
 
 class ExperienceLevelSelectionPage extends StatefulWidget {
   final Set<String> initialSelected;
@@ -64,21 +66,23 @@ class _ExperienceLevelSelectionPageState extends State<ExperienceLevelSelectionP
 
   @override
   Widget build(BuildContext context) {
+    final themeService = Provider.of<ThemeService>(context);
+    
     return Scaffold(
-      backgroundColor: Colors.grey.shade200,
+      backgroundColor: themeService.currentTheme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.grey.shade200,
+        backgroundColor: themeService.currentTheme.appBarTheme.backgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: Icon(
+            Icons.arrow_back, 
+            color: themeService.currentTheme.appBarTheme.foregroundColor,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Experience Level',
-          style: TextStyle(
-            color: Colors.black,
-            fontWeight: FontWeight.bold,
-          ),
+          style: themeService.currentTheme.appBarTheme.titleTextStyle,
         ),
         actions: [
           TextButton(
@@ -95,7 +99,7 @@ class _ExperienceLevelSelectionPageState extends State<ExperienceLevelSelectionP
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1.0),
           child: Container(
-            color: Colors.grey[300],
+            color: themeService.isDarkMode ? Colors.grey.shade700 : Colors.grey[300],
             height: 1.0,
           ),
         ),
@@ -104,13 +108,23 @@ class _ExperienceLevelSelectionPageState extends State<ExperienceLevelSelectionP
         children: [
           // Select All option
           Container(
-            color: Colors.white,
+            color: themeService.isDarkMode 
+                ? const Color(0xFF2A2A2A)
+                : Colors.grey.shade50,
             child: CheckboxListTile(
-              title: const Text(
+              title: Text(
                 'All Levels',
-                style: TextStyle(fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: themeService.currentTheme.textTheme.titleMedium?.color,
+                ),
               ),
-              subtitle: const Text('Include exercises for all experience levels'),
+              subtitle: Text(
+                'Include exercises for all experience levels',
+                style: TextStyle(
+                  color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
+                ),
+              ),
               value: selectedLevels.length == experienceLevels.length,
               tristate: true,
               onChanged: (bool? value) {
@@ -134,22 +148,25 @@ class _ExperienceLevelSelectionPageState extends State<ExperienceLevelSelectionP
                 final isSelected = selectedLevels.contains(level);
                 
                 return Container(
-                  color: Colors.white,
+                  color: themeService.isDarkMode 
+                      ? const Color(0xFF2A2A2A)
+                      : Colors.grey.shade50,
                   child: ListTile(
                     leading: FaIcon(
                       levelIcons[level],
-                      color: isSelected ? Colors.blue : Colors.grey,
+                      color: isSelected ? Colors.blue : (themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey),
                     ),
                     title: Text(
                       level,
                       style: TextStyle(
                         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        color: themeService.currentTheme.textTheme.titleMedium?.color,
                       ),
                     ),
                     subtitle: Text(
                       levelDescriptions[level] ?? '',
                       style: TextStyle(
-                        color: Colors.grey[600],
+                        color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey[600],
                         fontSize: 12,
                       ),
                     ),
@@ -170,7 +187,9 @@ class _ExperienceLevelSelectionPageState extends State<ExperienceLevelSelectionP
           ),
           // Selected count and Apply button
           Container(
-            color: Colors.white,
+            color: themeService.isDarkMode 
+                ? Colors.black
+                : Colors.grey.shade50,
             padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 32.0),
             child: Column(
               children: [
@@ -180,7 +199,7 @@ class _ExperienceLevelSelectionPageState extends State<ExperienceLevelSelectionP
                     child: Text(
                       '${selectedLevels.length} level${selectedLevels.length == 1 ? '' : 's'} selected',
                       style: TextStyle(
-                        color: Colors.grey[600],
+                        color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey[600],
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
                       ),
@@ -193,16 +212,20 @@ class _ExperienceLevelSelectionPageState extends State<ExperienceLevelSelectionP
                       Navigator.pop(context, selectedLevels.toList());
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.black,
-                      foregroundColor: Colors.white,
+                      backgroundColor: themeService.isDarkMode ? Colors.white : Colors.black,
+                      foregroundColor: themeService.isDarkMode ? Colors.black : Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
-                    child: const Text(
+                    child: Text(
                       'Apply Selection',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 16, 
+                        fontWeight: FontWeight.bold,
+                        color: themeService.isDarkMode ? Colors.black : Colors.white,
+                      ),
                     ),
                   ),
                 ),

@@ -2,6 +2,27 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:gymfit/models/exercise_set.dart';
+import 'package:provider/provider.dart';
+import 'package:gymfit/services/theme_service.dart';
+
+// Formatter to limit decimal places (2 by default)
+class DecimalTextInputFormatter extends TextInputFormatter {
+  DecimalTextInputFormatter({this.decimalRange = 2}) : assert(decimalRange > 0);
+
+  final int decimalRange;
+
+  @override
+  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+    final txt = newValue.text;
+    if (txt == '.') {
+      return TextEditingValue(text: '0.', selection: const TextSelection.collapsed(offset: 2));
+    }
+    if (txt.isEmpty) return newValue;
+    final reg = RegExp(r'^\d*\.?\d{0,' + decimalRange.toString() + r'}$');
+    if (reg.hasMatch(txt)) return newValue;
+    return oldValue;
+  }
+}
 
 class ExerciseSetRow extends StatelessWidget {
   final ExerciseSet exerciseSet;
@@ -25,6 +46,8 @@ class ExerciseSetRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeService = Provider.of<ThemeService>(context);
+    
     return Dismissible(
       key: Key('set_${exerciseSet.id}'),
       direction: DismissDirection.endToStart,
@@ -41,7 +64,9 @@ class ExerciseSetRow extends StatelessWidget {
       onDismissed: (direction) => onDismissed(),
       child: Container(
         width: double.infinity,
-        color: exerciseSet.isChecked ? Colors.green.shade100 : Colors.transparent,
+        color: exerciseSet.isChecked 
+            ? (themeService.isDarkMode ? Colors.green.shade900 : Colors.green.shade100) 
+            : Colors.transparent,
         padding: const EdgeInsets.all(1),
         margin: const EdgeInsets.symmetric(vertical: 0),
         child: LayoutBuilder(
@@ -62,6 +87,7 @@ class ExerciseSetRow extends StatelessWidget {
                       style: TextStyle(
                         fontSize: isSmallScreen ? 16 : 18,
                         fontWeight: FontWeight.bold,
+                        color: themeService.currentTheme.textTheme.bodyLarge?.color,
                       ),
                     ),
                   ),
@@ -76,7 +102,7 @@ class ExerciseSetRow extends StatelessWidget {
                       style: TextStyle(
                         fontSize: isSmallScreen ? 14 : 16,
                         fontWeight: FontWeight.bold,
-                        color: Colors.grey.shade500,
+                        color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade500,
                       ),
                       textAlign: TextAlign.center,
                       overflow: TextOverflow.ellipsis,
@@ -104,10 +130,10 @@ class ExerciseSetRow extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                           fontSize: isSmallScreen ? 14 : 16,
                           color: exerciseSet.isChecked
-                              ? Colors.black
+                              ? (themeService.isDarkMode ? Colors.white : Colors.black)
                               : (exerciseSet.isWeightPrefilled
-                                  ? Colors.grey.shade500
-                                  : Colors.black),
+                                  ? (themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade500)
+                                  : (themeService.isDarkMode ? Colors.white : Colors.black)),
                         ),
                         textAlign: TextAlign.center,
                         decoration: InputDecoration(
@@ -116,7 +142,7 @@ class ExerciseSetRow extends StatelessWidget {
                             borderSide: BorderSide(
                               color: exerciseSet.isChecked
                                   ? Colors.green
-                                  : Colors.grey.shade400,
+                                  : (themeService.isDarkMode ? Colors.grey.shade600 : Colors.grey.shade400),
                               width: 1,
                             ),
                           ),
@@ -125,18 +151,19 @@ class ExerciseSetRow extends StatelessWidget {
                             borderSide: BorderSide(
                               color: exerciseSet.isChecked
                                   ? Colors.green
-                                  : Colors.grey.shade400,
+                                  : (themeService.isDarkMode ? Colors.grey.shade600 : Colors.grey.shade400),
                               width: 1,
                             ),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
-                            borderSide: const BorderSide(
-                              color: Colors.blue,
+                            borderSide: BorderSide(
+                              color: themeService.isDarkMode ? Colors.blue.shade300 : Colors.blue,
                               width: 2,
                             ),
                           ),
-                          filled: false,
+                          filled: true,
+                          fillColor: themeService.isDarkMode ? Colors.grey.shade800 : Colors.white,
                           isDense: true,
                           contentPadding: EdgeInsets.symmetric(
                             horizontal: isSmallScreen ? 3 : 4,
@@ -203,10 +230,10 @@ class ExerciseSetRow extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                           fontSize: isSmallScreen ? 14 : 16,
                           color: exerciseSet.isChecked
-                              ? Colors.black
+                              ? (themeService.isDarkMode ? Colors.white : Colors.black)
                               : (exerciseSet.isRepsPrefilled
-                                  ? Colors.grey.shade500
-                                  : Colors.black),
+                                  ? (themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade500)
+                                  : (themeService.isDarkMode ? Colors.white : Colors.black)),
                         ),
                         textAlign: TextAlign.center,
                         decoration: InputDecoration(
@@ -215,7 +242,7 @@ class ExerciseSetRow extends StatelessWidget {
                             borderSide: BorderSide(
                               color: exerciseSet.isChecked
                                   ? Colors.green
-                                  : Colors.grey.shade400,
+                                  : (themeService.isDarkMode ? Colors.grey.shade600 : Colors.grey.shade400),
                               width: 1,
                             ),
                           ),
@@ -224,18 +251,19 @@ class ExerciseSetRow extends StatelessWidget {
                             borderSide: BorderSide(
                               color: exerciseSet.isChecked
                                   ? Colors.green
-                                  : Colors.grey.shade400,
+                                  : (themeService.isDarkMode ? Colors.grey.shade600 : Colors.grey.shade400),
                               width: 1,
                             ),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
-                            borderSide: const BorderSide(
-                              color: Colors.blue,
+                            borderSide: BorderSide(
+                              color: themeService.isDarkMode ? Colors.blue.shade300 : Colors.blue,
                               width: 2,
                             ),
                           ),
-                          filled: false,
+                          filled: true,
+                          fillColor: themeService.isDarkMode ? Colors.grey.shade800 : Colors.white,
                           isDense: true,
                           contentPadding: EdgeInsets.symmetric(
                             horizontal: isSmallScreen ? 3 : 4,
@@ -243,9 +271,7 @@ class ExerciseSetRow extends StatelessWidget {
                           ),
                         ),
                         keyboardType: TextInputType.number,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly,
-                        ],
+                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                         onTap: () {
                           // Mark as manually edited when user taps
                           exerciseSet.isRepsPrefilled = false;

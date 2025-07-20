@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:gymfit/pages/workout/exercise_information_page.dart';
+import 'package:provider/provider.dart';
+import 'package:gymfit/services/theme_service.dart';
 
 class CustomWorkoutAddButton extends StatelessWidget {
   final bool isAnyFieldFocused;
@@ -91,49 +93,54 @@ class CustomWorkoutAddButton extends StatelessWidget {
                                   ? const EdgeInsets.symmetric(vertical: 12)
                                   : const EdgeInsets.symmetric(vertical: 16);
 
-                          return SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton.icon(
-                              onPressed: () async {
-                                onExercisesAdded();
+                          return Builder(
+                            builder: (context) {
+                              final themeService = Provider.of<ThemeService>(context);
+                              return SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton.icon(
+                                  onPressed: () async {
+                                    onExercisesAdded();
 
-                                final navigator = Navigator.of(
-                                  context,
-                                  rootNavigator: true,
-                                );
-                                final result = await navigator
-                                    .push<List<String>>(
-                                      MaterialPageRoute(
-                                        builder:
-                                            (ctx) =>
-                                                const ExerciseInformationPage(
-                                                  isSelectionMode: true,
-                                                ),
-                                      ),
+                                    final navigator = Navigator.of(
+                                      context,
+                                      rootNavigator: true,
                                     );
+                                    final result = await navigator
+                                        .push<List<String>>(
+                                          MaterialPageRoute(
+                                            builder:
+                                                (ctx) =>
+                                                    const ExerciseInformationPage(
+                                                      isSelectionMode: true,
+                                                    ),
+                                          ),
+                                        );
 
-                                if (result != null) {
-                                  onExercisesLoaded(result);
-                                }
-                              },
-                              icon: const FaIcon(
-                                FontAwesomeIcons.plus,
-                                color: Colors.white,
-                              ),
-                              label: Text(
-                                'Add Exercises',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: buttonFontSize,
-                                  fontWeight: FontWeight.bold,
+                                    if (result != null) {
+                                      onExercisesLoaded(result);
+                                    }
+                                  },
+                                  icon: FaIcon(
+                                    FontAwesomeIcons.plus,
+                                    color: themeService.isDarkMode ? Colors.black : Colors.white,
+                                  ),
+                                  label: Text(
+                                    'Add Exercises',
+                                    style: TextStyle(
+                                      color: themeService.isDarkMode ? Colors.black : Colors.white,
+                                      fontSize: buttonFontSize,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: themeService.isDarkMode ? Colors.white : Colors.black,
+                                    shape: const StadiumBorder(),
+                                    padding: buttonPadding,
+                                  ),
                                 ),
-                              ),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.black,
-                                shape: const StadiumBorder(),
-                                padding: buttonPadding,
-                              ),
-                            ),
+                              );
+                            },
                           );
                         },
                       ),

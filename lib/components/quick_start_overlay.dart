@@ -1,8 +1,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:gymfit/pages/workout/quick_start_page_refactored.dart';
+
+import 'package:gymfit/pages/workout/quick_start_page_optimized.dart';
 import 'package:gymfit/models/quick_start_exercise.dart';
+import 'package:provider/provider.dart';
+import 'package:gymfit/services/theme_service.dart';
 
 class QuickStartOverlay {
   static OverlayEntry? _minibarEntry;
@@ -137,33 +140,40 @@ class QuickStartOverlay {
 
   /// Widget builder for the timer display
   static Widget _buildTimerDisplay() {
-    return SizedBox(
-      width: double.infinity,
-      height: double.infinity,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const FaIcon(
-            FontAwesomeIcons.stopwatch,
-            color: Colors.black,
-            size: 22,
+    return Builder(
+      builder: (context) {
+        final themeService = Provider.of<ThemeService>(context, listen: false);
+        return SizedBox(
+          width: double.infinity,
+          height: double.infinity,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              FaIcon(
+                FontAwesomeIcons.stopwatch,
+                color: themeService.currentTheme.textTheme.titleLarge?.color ?? Colors.black,
+                size: 22,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                _formatDuration(_elapsedTime),
+                style: TextStyle(
+                  color: themeService.currentTheme.textTheme.titleLarge?.color ?? Colors.black,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 6),
-          Text(
-            _formatDuration(_elapsedTime),
-            style: const TextStyle(
-              color: Colors.black,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
   /// Build integrated minibar widget for navigation bar
   static Widget buildIntegratedMinibar(BuildContext context) {
+    final themeService = Provider.of<ThemeService>(context, listen: false);
+    
     return GestureDetector(
       behavior: HitTestBehavior.translucent,
       onTap: () {
@@ -180,9 +190,9 @@ class QuickStartOverlay {
               width: 32,
               height: 44,
               alignment: Alignment.center,
-              child: const Icon(
+              child: Icon(
                 Icons.keyboard_arrow_up,
-                color: Colors.black,
+                color: themeService.currentTheme.textTheme.titleLarge?.color ?? Colors.black,
                 size: 22,
               ),
             ),
@@ -194,16 +204,16 @@ class QuickStartOverlay {
                   mainAxisAlignment: MainAxisAlignment.center,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const FaIcon(
+                    FaIcon(
                       FontAwesomeIcons.stopwatch,
-                      color: Colors.black,
+                      color: themeService.currentTheme.textTheme.titleLarge?.color ?? Colors.black,
                       size: 18,
                     ),
                     const SizedBox(width: 6),
                     Text(
                       _formatDuration(_elapsedTime),
-                      style: const TextStyle(
-                        color: Colors.black,
+                      style: TextStyle(
+                        color: themeService.currentTheme.textTheme.titleLarge?.color ?? Colors.black,
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
@@ -227,7 +237,7 @@ class QuickStartOverlay {
                     padding: const EdgeInsets.all(6.0),
                     child: FaIcon(
                       _isPaused ? FontAwesomeIcons.play : FontAwesomeIcons.pause,
-                      color: Colors.black,
+                      color: themeService.currentTheme.textTheme.titleLarge?.color ?? Colors.black,
                       size: 18,
                     ),
                   ),
@@ -247,9 +257,9 @@ class QuickStartOverlay {
                   onTap: () => _showCancelConfirmation(context),
                   child: Container(
                     padding: const EdgeInsets.all(6.0),
-                    child: const Icon(
+                    child: Icon(
                       Icons.close,
-                      color: Colors.black,
+                      color: themeService.currentTheme.textTheme.titleLarge?.color ?? Colors.black,
                       size: 20,
                     ),
                   ),
@@ -284,7 +294,7 @@ class QuickStartOverlay {
     // Open Quick Start page without nav bar, sliding up over 200ms
     Navigator.of(context, rootNavigator: true).push(
       PageRouteBuilder(
-        pageBuilder: (ctx, animation, secondaryAnimation) => QuickStartPage(
+        pageBuilder: (ctx, animation, secondaryAnimation) => QuickStartPageOptimized(
           initialSelectedExercises: selectedExercises,
           initialWorkoutName: customWorkoutName,
         ),
@@ -348,76 +358,96 @@ class QuickStartOverlay {
         child: Material(
           elevation: 4,
           borderRadius: BorderRadius.circular(16),
-          child: Container(
-            height: 60,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: GestureDetector(
-              behavior: HitTestBehavior.translucent,
-              onTap: () {
-                hideMinibar();
-                openQuickStart(context);
-              },
-              child: Row(
-                children: [
-                  // Up arrow on the far left
-                  Padding(
-                    padding: const EdgeInsets.only(left: 8.0),
-                    child: const Icon(
-                      Icons.keyboard_arrow_up,
-                      color: Colors.black,
-                      size: 26,
-                    ),
-                  ),
-                  // Main tap area for opening Quick Start
-                  Expanded(
-                    child: _buildTimerDisplay(),
-                  ),
-                  // Pause/Resume button
-                  Padding(
-                    padding: const EdgeInsets.only(right: 4.0),
-                    child: Material(
-                      color: Colors.transparent,
-                      borderRadius: BorderRadius.circular(20),
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(20),
-                        onTap: () => togglePause(),
-                        child: Container(
-                          padding: const EdgeInsets.all(8.0),
-                          child: FaIcon(
-                            _isPaused ? FontAwesomeIcons.play : FontAwesomeIcons.pause,
-                            color: Colors.black,
-                            size: 22,
+          child: Builder(
+            builder: (context) {
+              final themeService = Provider.of<ThemeService>(context, listen: false);
+              return Container(
+                height: 60,
+                decoration: BoxDecoration(
+                  color: themeService.currentTheme.cardTheme.color,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: GestureDetector(
+                  behavior: HitTestBehavior.translucent,
+                  onTap: () {
+                    hideMinibar();
+                    openQuickStart(context);
+                  },
+                  child: Row(
+                    children: [
+                      // Up arrow on the far left
+                      Padding(
+                        padding: const EdgeInsets.only(left: 8.0),
+                        child: Builder(
+                          builder: (context) {
+                            final themeService = Provider.of<ThemeService>(context, listen: false);
+                            return Icon(
+                              Icons.keyboard_arrow_up,
+                              color: themeService.currentTheme.textTheme.titleLarge?.color ?? Colors.black,
+                              size: 26,
+                            );
+                          },
+                        ),
+                      ),
+                      // Main tap area for opening Quick Start
+                      Expanded(
+                        child: _buildTimerDisplay(),
+                      ),
+                      // Pause/Resume button
+                      Padding(
+                        padding: const EdgeInsets.only(right: 4.0),
+                        child: Material(
+                          color: Colors.transparent,
+                          borderRadius: BorderRadius.circular(20),
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(20),
+                            onTap: () => togglePause(),
+                            child: Container(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Builder(
+                                builder: (context) {
+                                  final themeService = Provider.of<ThemeService>(context, listen: false);
+                                  return FaIcon(
+                                    _isPaused ? FontAwesomeIcons.play : FontAwesomeIcons.pause,
+                                    color: themeService.currentTheme.textTheme.titleLarge?.color ?? Colors.black,
+                                    size: 22,
+                                  );
+                                },
+                              ),
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ),
-                  // Cancel button
-                  Padding(
-                    padding: const EdgeInsets.only(right: 8.0),
-                    child: Material(
-                      color: Colors.transparent,
-                      borderRadius: BorderRadius.circular(20),
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(20),
-                        onTap: () => _showCancelConfirmation(context),
-                        child: Container(
-                          padding: const EdgeInsets.all(8.0),
-                          child: const Icon(
-                            Icons.close,
-                            color: Colors.black,
-                            size: 26,
+                      // Cancel button
+                      Padding(
+                        padding: const EdgeInsets.only(right: 8.0),
+                        child: Material(
+                          color: Colors.transparent,
+                          borderRadius: BorderRadius.circular(20),
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(20),
+                            onTap: () => _showCancelConfirmation(context),
+                            child: Container(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Builder(
+                                builder: (context) {
+                                  final themeService = Provider.of<ThemeService>(context, listen: false);
+                                  return Icon(
+                                    Icons.close,
+                                    color: themeService.currentTheme.textTheme.titleLarge?.color ?? Colors.black,
+                                    size: 26,
+                                  );
+                                },
+                              ),
+                            ),
                           ),
                         ),
                       ),
-                    ),
+                    ],
                   ),
-                ],
-              ),
-            ),
+                ),
+              );
+            },
           ),
         ),
       ),

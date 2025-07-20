@@ -4,6 +4,8 @@ import 'package:gymfit/pages/workout/exercise_information_page.dart';
 import 'package:gymfit/models/exercise_set.dart';
 import 'package:gymfit/models/quick_start_exercise.dart';
 import 'package:gymfit/services/workout_service.dart';
+import 'package:provider/provider.dart';
+import 'package:gymfit/services/theme_service.dart';
 
 class AddExerciseButton extends StatelessWidget {
   final bool isAnyFieldFocused;
@@ -21,6 +23,8 @@ class AddExerciseButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeService = Provider.of<ThemeService>(context);
+    
     return AnimatedSize(
       duration: const Duration(milliseconds: 400),
       curve: Curves.easeInOutQuart,
@@ -45,20 +49,20 @@ class AddExerciseButton extends StatelessWidget {
                         width: double.infinity,
                         child: ElevatedButton.icon(
                           onPressed: () => _handleAddExercises(context),
-                          icon: const FaIcon(
+                          icon: FaIcon(
                             FontAwesomeIcons.plus,
-                            color: Colors.white,
+                            color: themeService.isDarkMode ? Colors.black : Colors.white,
                           ),
                           label: Text(
                             'Add Exercises',
                             style: TextStyle(
-                              color: Colors.white,
+                              color: themeService.isDarkMode ? Colors.black : Colors.white,
                               fontSize: buttonFontSize,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.black,
+                            backgroundColor: themeService.isDarkMode ? Colors.white : Colors.black,
                             shape: const StadiumBorder(),
                             padding: buttonPadding,
                           ),

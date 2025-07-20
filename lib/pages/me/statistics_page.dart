@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:provider/provider.dart';
 import 'package:gymfit/pages/me/main_exercises_page.dart';
 import 'package:gymfit/pages/me/muscle_distribution_page.dart';
+import 'package:gymfit/services/theme_service.dart';
 
 class StatisticsPage extends StatefulWidget {
   const StatisticsPage({super.key});
@@ -13,14 +15,22 @@ class StatisticsPage extends StatefulWidget {
 class _StatisticsPageState extends State<StatisticsPage> {
   @override
   Widget build(BuildContext context) {
+    final themeService = Provider.of<ThemeService>(context);
+    
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: themeService.currentTheme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: themeService.currentTheme.appBarTheme.backgroundColor,
         elevation: 0,
-        title: const Text('Statistics', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+        title: Text(
+          'Statistics', 
+          style: themeService.currentTheme.appBarTheme.titleTextStyle,
+        ),
         leading: IconButton(
-          icon: const FaIcon(FontAwesomeIcons.arrowLeft, color: Colors.black),
+          icon: FaIcon(
+            FontAwesomeIcons.arrowLeft, 
+            color: themeService.currentTheme.appBarTheme.foregroundColor,
+          ),
           onPressed: () {
             Navigator.of(context, rootNavigator: true).pop();
           },
@@ -37,11 +47,15 @@ class _StatisticsPageState extends State<StatisticsPage> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(24.0),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: themeService.isDarkMode 
+                      ? const Color(0xFF2A2A2A)
+                      : Colors.grey.shade50,
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.grey.withValues(alpha: 0.1),
+                      color: themeService.isDarkMode 
+                          ? Colors.black.withValues(alpha: 0.3)
+                          : Colors.grey.withValues(alpha: 0.1),
                       spreadRadius: 1,
                       blurRadius: 10,
                       offset: const Offset(0, 2),
@@ -56,11 +70,12 @@ class _StatisticsPageState extends State<StatisticsPage> {
                       color: Colors.blue.shade600,
                     ),
                     const SizedBox(height: 16),
-                    const Text(
+                    Text(
                       'Workout Statistics',
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
+                        color: themeService.currentTheme.textTheme.titleLarge?.color,
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -69,7 +84,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
                       'Analyze your workout patterns and progress',
                       style: TextStyle(
                         fontSize: 14,
-                        color: Colors.grey.shade600,
+                        color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -127,17 +142,23 @@ class _StatisticsPageState extends State<StatisticsPage> {
     required Color color,
     required VoidCallback onTap,
   }) {
+    final themeService = Provider.of<ThemeService>(context, listen: false);
+    
     return GestureDetector(
       onTap: onTap,
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.all(20.0),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: themeService.isDarkMode 
+              ? const Color(0xFF2A2A2A)
+              : Colors.grey.shade50,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withValues(alpha: 0.1),
+              color: themeService.isDarkMode 
+                  ? Colors.black.withValues(alpha: 0.3)
+                  : Colors.grey.withValues(alpha: 0.1),
               spreadRadius: 1,
               blurRadius: 10,
               offset: const Offset(0, 2),
@@ -172,7 +193,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: Colors.grey.shade800,
+                      color: themeService.currentTheme.textTheme.titleMedium?.color,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -180,7 +201,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
                     description,
                     style: TextStyle(
                       fontSize: 14,
-                      color: Colors.grey.shade600,
+                      color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
                     ),
                   ),
                 ],
@@ -188,7 +209,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
             ),
             FaIcon(
               FontAwesomeIcons.chevronRight,
-              color: Colors.grey.shade400,
+              color: themeService.isDarkMode ? Colors.grey.shade500 : Colors.grey.shade400,
               size: 20,
             ),
           ],

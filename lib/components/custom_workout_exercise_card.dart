@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:gymfit/components/custom_workout_set_row.dart';
 import 'package:gymfit/services/custom_workout_configuration_state_manager.dart';
+import 'package:provider/provider.dart';
+import 'package:gymfit/services/theme_service.dart';
 
 class CustomWorkoutExerciseCard extends StatefulWidget {
   final ConfigExercise exercise;
@@ -202,12 +204,18 @@ class _CustomWorkoutExerciseCardState extends State<CustomWorkoutExerciseCard>
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        widget.exercise.title,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      Builder(
+                        builder: (context) {
+                          final themeService = Provider.of<ThemeService>(context);
+                          return Text(
+                            widget.exercise.title,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: themeService.currentTheme.textTheme.titleMedium?.color,
+                            ),
+                          );
+                        },
                       ),
                       if (widget.isCollapsed)
                         // Drag handle for reorder mode
@@ -221,43 +229,48 @@ class _CustomWorkoutExerciseCardState extends State<CustomWorkoutExerciseCard>
                         )
                       else
                         // 3-dots menu for normal mode
-                        PopupMenuButton<String>(
-                          icon: const Icon(Icons.more_horiz),
-                          onSelected: (value) {
-                            if (value == 'reorder') {
-                              widget.onRequestReorderMode();
-                            }
-                          },
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          color: Colors.grey[100],
-                          elevation: 8,
-                          shadowColor: Colors.black.withValues(alpha: 0.2),
-                          itemBuilder: (context) => [
-                            PopupMenuItem<String>(
-                              value: 'reorder',
-                              height: 48,
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.drag_handle,
-                                    color: Colors.grey[700],
-                                    size: 20,
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Text(
-                                    'Reorder',
-                                    style: TextStyle(
-                                      color: Colors.grey[900],
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ],
+                        Builder(
+                          builder: (context) {
+                            final themeService = Provider.of<ThemeService>(context);
+                            return PopupMenuButton<String>(
+                              icon: const Icon(Icons.more_horiz),
+                              onSelected: (value) {
+                                if (value == 'reorder') {
+                                  widget.onRequestReorderMode();
+                                }
+                              },
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
                               ),
-                            ),
-                          ],
+                              color: themeService.currentTheme.cardTheme.color,
+                              elevation: 8,
+                              shadowColor: Colors.black.withValues(alpha: 0.2),
+                              itemBuilder: (context) => [
+                                PopupMenuItem<String>(
+                                  value: 'reorder',
+                                  height: 48,
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.drag_handle,
+                                        color: themeService.isDarkMode ? Colors.grey.shade300 : Colors.grey[700],
+                                        size: 20,
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Text(
+                                        'Reorder',
+                                        style: TextStyle(
+                                          color: themeService.currentTheme.textTheme.titleMedium?.color,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
                         ),
                     ],
                   ),
@@ -283,14 +296,20 @@ class _CustomWorkoutExerciseCardState extends State<CustomWorkoutExerciseCard>
                                     SizedBox(
                                       width: isSmallScreen ? 35 : 45,
                                       child: Center(
-                                        child: Text(
-                                          'Set',
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: isSmallScreen ? 14 : 16,
-                                          ),
-                                          textAlign: TextAlign.center,
-                                          overflow: TextOverflow.ellipsis,
+                                        child: Builder(
+                                          builder: (context) {
+                                            final themeService = Provider.of<ThemeService>(context);
+                                            return Text(
+                                              'Set',
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: isSmallScreen ? 14 : 16,
+                                                color: themeService.currentTheme.textTheme.titleMedium?.color,
+                                              ),
+                                              textAlign: TextAlign.center,
+                                              overflow: TextOverflow.ellipsis,
+                                            );
+                                          },
                                         ),
                                       ),
                                     ),
@@ -299,14 +318,20 @@ class _CustomWorkoutExerciseCardState extends State<CustomWorkoutExerciseCard>
                                     Expanded(
                                       flex: 2,
                                       child: Center(
-                                        child: Text(
-                                          'Previous',
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: isSmallScreen ? 14 : 16,
-                                          ),
-                                          textAlign: TextAlign.center,
-                                          overflow: TextOverflow.ellipsis,
+                                        child: Builder(
+                                          builder: (context) {
+                                            final themeService = Provider.of<ThemeService>(context);
+                                            return Text(
+                                              'Previous',
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: isSmallScreen ? 14 : 16,
+                                                color: themeService.currentTheme.textTheme.titleMedium?.color,
+                                              ),
+                                              textAlign: TextAlign.center,
+                                              overflow: TextOverflow.ellipsis,
+                                            );
+                                          },
                                         ),
                                       ),
                                     ),
@@ -320,14 +345,20 @@ class _CustomWorkoutExerciseCardState extends State<CustomWorkoutExerciseCard>
                                             maxWidth: isSmallScreen ? 45 : 60,
                                             minWidth: 40,
                                           ),
-                                          child: Text(
-                                            'Kg',
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: isSmallScreen ? 14 : 16,
-                                            ),
-                                            textAlign: TextAlign.center,
-                                            overflow: TextOverflow.ellipsis,
+                                          child: Builder(
+                                            builder: (context) {
+                                              final themeService = Provider.of<ThemeService>(context);
+                                              return Text(
+                                                'Kg',
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: isSmallScreen ? 14 : 16,
+                                                  color: themeService.currentTheme.textTheme.titleMedium?.color,
+                                                ),
+                                                textAlign: TextAlign.center,
+                                                overflow: TextOverflow.ellipsis,
+                                              );
+                                            },
                                           ),
                                         ),
                                       ),
@@ -342,14 +373,20 @@ class _CustomWorkoutExerciseCardState extends State<CustomWorkoutExerciseCard>
                                             maxWidth: isSmallScreen ? 45 : 60,
                                             minWidth: 40,
                                           ),
-                                          child: Text(
-                                            'Reps',
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: isSmallScreen ? 14 : 16,
-                                            ),
-                                            textAlign: TextAlign.center,
-                                            overflow: TextOverflow.ellipsis,
+                                          child: Builder(
+                                            builder: (context) {
+                                              final themeService = Provider.of<ThemeService>(context);
+                                              return Text(
+                                                'Reps',
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: isSmallScreen ? 14 : 16,
+                                                  color: themeService.currentTheme.textTheme.titleMedium?.color,
+                                                ),
+                                                textAlign: TextAlign.center,
+                                                overflow: TextOverflow.ellipsis,
+                                              );
+                                            },
                                           ),
                                         ),
                                       ),
@@ -359,10 +396,15 @@ class _CustomWorkoutExerciseCardState extends State<CustomWorkoutExerciseCard>
                               },
                             ),
                             const SizedBox(height: 8),
-                            Divider(
-                              height: 1,
-                              thickness: 1,
-                              color: Colors.grey.shade300,
+                            Builder(
+                              builder: (context) {
+                                final themeService = Provider.of<ThemeService>(context);
+                                return Divider(
+                                  height: 1,
+                                  thickness: 1,
+                                  color: themeService.isDarkMode ? Colors.grey.shade700 : Colors.grey.shade300,
+                                );
+                              },
                             ),
                           ],
                         ),
@@ -400,24 +442,32 @@ class _CustomWorkoutExerciseCardState extends State<CustomWorkoutExerciseCard>
             sizeFactor: _contentHeightAnimation!,
             child: SizedBox(
               width: double.infinity,
-              child: ElevatedButton(
-                onPressed: widget.onAddSet,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.grey.shade200,
-                  foregroundColor: Colors.grey.shade600,
-                  elevation: 0,
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  side: BorderSide.none,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  shape: const RoundedRectangleBorder(
-                    borderRadius: BorderRadius.only(
-                      bottomLeft: Radius.circular(12),
-                      bottomRight: Radius.circular(12),
+              child: Builder(
+                builder: (context) {
+                  final themeService = Provider.of<ThemeService>(context);
+                  return ElevatedButton(
+                    onPressed: widget.onAddSet,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: themeService.isDarkMode ? Colors.grey.shade800 : Colors.grey.shade200,
+                      foregroundColor: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      side: BorderSide.none,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      shape: const RoundedRectangleBorder(
+                        borderRadius: BorderRadius.only(
+                          bottomLeft: Radius.circular(12),
+                          bottomRight: Radius.circular(12),
+                        ),
+                        side: BorderSide.none,
+                      ),
                     ),
-                    side: BorderSide.none,
-                  ),
-                ),
-                child: const FaIcon(FontAwesomeIcons.plus, color: Colors.grey),
+                    child: FaIcon(
+                      FontAwesomeIcons.plus, 
+                      color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey,
+                    ),
+                  );
+                },
               ),
             ),
           ),

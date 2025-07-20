@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
 import 'package:gymfit/pages/auth_page.dart';
 import 'package:gymfit/models/workout.dart';
 import 'package:gymfit/services/workout_service.dart';
 import 'package:gymfit/pages/me/statistics_page.dart';
 import 'package:gymfit/pages/me/friends_page.dart';
+import 'package:gymfit/pages/me/settings/settings_page.dart';
+import 'package:gymfit/services/theme_service.dart';
+import 'package:gymfit/services/user_profile_service.dart';
 
 class MePage extends StatefulWidget {
   const MePage({super.key});
@@ -34,6 +38,7 @@ class _MePageState extends State<MePage> with WidgetsBindingObserver, AutomaticK
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     WorkoutService.addWorkoutUpdateListener(_onWorkoutUpdate);
+    UserProfileService().addListener(_onProfileUpdate);
     _loadWorkouts();
     _loadUserProfile();
   }
@@ -42,6 +47,7 @@ class _MePageState extends State<MePage> with WidgetsBindingObserver, AutomaticK
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     WorkoutService.removeWorkoutUpdateListener(_onWorkoutUpdate);
+    UserProfileService().removeListener(_onProfileUpdate);
     super.dispose();
   }
 
@@ -134,6 +140,11 @@ class _MePageState extends State<MePage> with WidgetsBindingObserver, AutomaticK
     _loadUserProfile();
   }
 
+  // Callback for profile updates
+  void _onProfileUpdate() {
+    _loadUserProfile();
+  }
+
   Set<DateTime> _getWorkoutDays(List<Workout> workouts) {
     return workouts.map((workout) {
       return DateTime(workout.date.year, workout.date.month, workout.date.day);
@@ -190,26 +201,17 @@ class _MePageState extends State<MePage> with WidgetsBindingObserver, AutomaticK
   @override
   Widget build(BuildContext context) {
     super.build(context); // Required for AutomaticKeepAliveClientMixin
+    final themeService = Provider.of<ThemeService>(context);
+    
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: themeService.currentTheme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: themeService.currentTheme.appBarTheme.backgroundColor,
         elevation: 0,
-        title: const Text('Me', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout, color: Colors.black),
-            onPressed: () {
-              final nav = Navigator.of(context, rootNavigator: true);
-              FirebaseAuth.instance.signOut().then((_) {
-                nav.pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (c) => const AuthPage()),
-                  (route) => false,
-                );
-              });
-            },
-          ),
-        ],
+        title: Text(
+          'Me', 
+          style: themeService.currentTheme.appBarTheme.titleTextStyle,
+        ),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -219,55 +221,90 @@ class _MePageState extends State<MePage> with WidgetsBindingObserver, AutomaticK
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
               // User Profile Section
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(24.0),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withValues(alpha: 0.1),
-                      spreadRadius: 1,
-                      blurRadius: 10,
-                      offset: const Offset(0, 2),
+              GestureDetector(
+                onTap: () {
+                  Navigator.of(context, rootNavigator: true).push(
+                    MaterialPageRoute(
+                      builder: (context) => const SettingsPage(),
                     ),
-                  ],
-                ),
-                child: Column(
+                  );
+                },
+                child: Stack(
                   children: [
-                    Icon(
-                      Icons.person,
-                      size: 80,
-                      color: Colors.grey.shade600,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      isLoadingProfile 
-                          ? 'Loading...'
-                          : userName ?? 'No Name',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(24.0),
+                      decoration: BoxDecoration(
+                        color: themeService.isDarkMode 
+                            ? const Color(0xFF2A2A2A)
+                            : Colors.grey.shade50,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: themeService.isDarkMode 
+                                ? Colors.black.withValues(alpha: 0.3)
+                                : Colors.grey.withValues(alpha: 0.1),
+                            spreadRadius: 1,
+                            blurRadius: 10,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      isLoadingProfile
-                          ? 'Loading username...'
-                          : userUsername != null 
-                              ? '@$userUsername'
-                              : 'No Username',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey.shade600,
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.person,
+                            size: 80,
+                            color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            isLoadingProfile 
+                                ? 'Loading...'
+                                : userName ?? 'No Name',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: themeService.currentTheme.textTheme.titleLarge?.color,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            isLoadingProfile
+                                ? 'Loading username...'
+                                : userUsername != null 
+                                    ? '@$userUsername'
+                                    : 'No Username',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
                       ),
-                      textAlign: TextAlign.center,
+                    ),
+                    // Settings icon in top right corner
+                    Positioned(
+                      top: 12,
+                      right: 12,
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: themeService.isDarkMode ? Colors.grey.shade700 : Colors.grey.shade200,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.settings,
+                          size: 20,
+                          color: themeService.isDarkMode ? Colors.grey.shade300 : Colors.grey.shade600,
+                        ),
+                      ),
                     ),
                   ],
-                                  ),
                 ),
+              ),
                 
                 const SizedBox(height: 24),
                 
@@ -413,8 +450,12 @@ class _MePageState extends State<MePage> with WidgetsBindingObserver, AutomaticK
   }
 
   Widget _buildStreakCard(String title, String value, IconData icon, Color color) {
+    final themeService = Provider.of<ThemeService>(context, listen: false);
+    
     return Card(
-      color: Colors.white,
+      color: themeService.isDarkMode 
+          ? const Color(0xFF2A2A2A)
+          : Colors.grey.shade50,
       elevation: 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
@@ -437,7 +478,7 @@ class _MePageState extends State<MePage> with WidgetsBindingObserver, AutomaticK
               title,
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.grey.shade600,
+                color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
               ),
               textAlign: TextAlign.center,
             ),

@@ -6,6 +6,8 @@ import 'package:gymfit/services/workout_service.dart';
 import 'package:gymfit/pages/history/workout_details_page.dart';
 import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'package:provider/provider.dart';
+import 'package:gymfit/services/theme_service.dart';
 
 class WorkoutCalendarPage extends StatefulWidget {
   const WorkoutCalendarPage({super.key});
@@ -119,17 +121,22 @@ class _WorkoutCalendarPageState extends State<WorkoutCalendarPage> {
 
   @override
   Widget build(BuildContext context) {
+    final themeService = Provider.of<ThemeService>(context);
+    
     return Scaffold(
-      backgroundColor: Colors.grey.shade200,
+      backgroundColor: themeService.currentTheme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.grey.shade200,
+        backgroundColor: themeService.currentTheme.appBarTheme.backgroundColor,
         elevation: 0,
-        title: const Text(
+        title: Text(
           'Workout Calendar',
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+          style: themeService.currentTheme.appBarTheme.titleTextStyle,
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: Icon(
+            Icons.arrow_back, 
+            color: themeService.currentTheme.appBarTheme.foregroundColor,
+          ),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
@@ -146,7 +153,7 @@ class _WorkoutCalendarPageState extends State<WorkoutCalendarPage> {
                   children: [
                     // Calendar
                     Card(
-                      color: Colors.white,
+                      color: themeService.currentTheme.cardTheme.color,
                       elevation: 2,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -188,14 +195,14 @@ class _WorkoutCalendarPageState extends State<WorkoutCalendarPage> {
                           ),
                           calendarStyle: CalendarStyle(
                             outsideDaysVisible: false,
-                            weekendTextStyle: const TextStyle(
-                              color: Colors.black,
+                            weekendTextStyle: TextStyle(
+                              color: themeService.currentTheme.textTheme.titleMedium?.color,
                             ),
-                            holidayTextStyle: const TextStyle(
-                              color: Colors.black,
+                            holidayTextStyle: TextStyle(
+                              color: themeService.currentTheme.textTheme.titleMedium?.color,
                             ),
-                            defaultTextStyle: const TextStyle(
-                              color: Colors.black,
+                            defaultTextStyle: TextStyle(
+                              color: themeService.currentTheme.textTheme.titleMedium?.color,
                             ),
                             todayDecoration: BoxDecoration(
                               color: Colors.blue.shade300,
@@ -222,14 +229,16 @@ class _WorkoutCalendarPageState extends State<WorkoutCalendarPage> {
                             leftChevronPadding: const EdgeInsets.all(0),
                             rightChevronPadding: const EdgeInsets.all(0),
                           ),
-                          daysOfWeekStyle: const DaysOfWeekStyle(
+                          daysOfWeekStyle: DaysOfWeekStyle(
                             weekdayStyle: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
+                              color: themeService.currentTheme.textTheme.titleMedium?.color,
                             ),
                             weekendStyle: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
+                              color: themeService.currentTheme.textTheme.titleMedium?.color,
                             ),
                           ),
                           onDaySelected: _onDaySelected,
@@ -253,7 +262,7 @@ class _WorkoutCalendarPageState extends State<WorkoutCalendarPage> {
                     const SizedBox(height: 16),
 
                     // Workouts for Selected Day
-                    _buildSelectedDayWorkouts(),
+                    _buildSelectedDayWorkouts(themeService),
                   ],
                 ),
               ),
@@ -271,7 +280,7 @@ class _WorkoutCalendarPageState extends State<WorkoutCalendarPage> {
     }
   }
 
-  Widget _buildSelectedDayWorkouts() {
+  Widget _buildSelectedDayWorkouts(ThemeService themeService) {
     if (_selectedDay == null) return const SizedBox.shrink();
 
     final selectedDateWorkouts =
@@ -282,7 +291,7 @@ class _WorkoutCalendarPageState extends State<WorkoutCalendarPage> {
     final dateFormat = DateFormat('EEEE, MMM dd, yyyy');
 
     return Card(
-      color: Colors.white,
+      color: themeService.currentTheme.cardTheme.color,
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
@@ -300,9 +309,10 @@ class _WorkoutCalendarPageState extends State<WorkoutCalendarPage> {
                 const SizedBox(width: 8),
                 Text(
                   dateFormat.format(_selectedDay!),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
+                    color: themeService.currentTheme.textTheme.titleMedium?.color,
                   ),
                 ),
               ],
@@ -314,21 +324,21 @@ class _WorkoutCalendarPageState extends State<WorkoutCalendarPage> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
+                  color: themeService.isDarkMode ? Colors.grey.shade800 : Colors.grey.shade100,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Column(
                   children: [
                     Icon(
                       Icons.self_improvement,
-                      color: Colors.grey.shade500,
+                      color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade500,
                       size: 32,
                     ),
                     const SizedBox(height: 8),
                     Text(
                       'No workouts on this day',
                       style: TextStyle(
-                        color: Colors.grey.shade600,
+                        color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
                         fontSize: 14,
                       ),
                     ),
@@ -341,9 +351,11 @@ class _WorkoutCalendarPageState extends State<WorkoutCalendarPage> {
                 return Container(
                   margin: const EdgeInsets.only(bottom: 12),
                   decoration: BoxDecoration(
-                    color: Colors.green.shade50,
+                    color: themeService.isDarkMode ? Colors.green.shade900 : Colors.green.shade50,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.green.shade200),
+                    border: Border.all(
+                      color: themeService.isDarkMode ? Colors.green.shade700 : Colors.green.shade200,
+                    ),
                   ),
                   child: InkWell(
                     borderRadius: BorderRadius.circular(8),
@@ -400,7 +412,7 @@ class _WorkoutCalendarPageState extends State<WorkoutCalendarPage> {
                                 style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
-                                  color: Colors.grey.shade600,
+                                  color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
                                 ),
                               ),
                             ],

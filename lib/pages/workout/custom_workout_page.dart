@@ -8,6 +8,8 @@ import 'package:gymfit/models/exercise_set.dart';
 import 'package:gymfit/services/custom_workout_service.dart';
 import 'package:gymfit/models/custom_workout.dart';
 import 'package:gymfit/components/quick_start_overlay.dart';
+import 'package:provider/provider.dart';
+import 'package:gymfit/services/theme_service.dart';
 
 class CustomWorkoutPage extends StatefulWidget {
   const CustomWorkoutPage({super.key});
@@ -58,6 +60,8 @@ class _CustomWorkoutPageState extends State<CustomWorkoutPage> {
   }
 
   void _showWorkoutDetails(CustomWorkout workout) {
+    final themeService = Provider.of<ThemeService>(context, listen: false);
+    
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -71,7 +75,7 @@ class _CustomWorkoutPageState extends State<CustomWorkoutPage> {
               maxWidth: 400,
             ),
             decoration: BoxDecoration(
-              color: Colors.grey.shade200,
+              color: themeService.currentTheme.cardTheme.color,
               borderRadius: BorderRadius.circular(16),
             ),
             child: Column(
@@ -81,7 +85,7 @@ class _CustomWorkoutPageState extends State<CustomWorkoutPage> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade200,
+                    color: themeService.currentTheme.cardTheme.color,
                     borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(16),
                       topRight: Radius.circular(16),
@@ -89,19 +93,19 @@ class _CustomWorkoutPageState extends State<CustomWorkoutPage> {
                   ),
                   child: Row(
                     children: [
-                      const FaIcon(
+                      FaIcon(
                         FontAwesomeIcons.dumbbell,
-                        color: Colors.black,
+                        color: themeService.currentTheme.textTheme.titleMedium?.color,
                         size: 24,
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
                           workout.name,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
-                            color: Colors.black,
+                            color: themeService.currentTheme.textTheme.titleMedium?.color,
                           ),
                         ),
                       ),
@@ -110,11 +114,19 @@ class _CustomWorkoutPageState extends State<CustomWorkoutPage> {
                           Navigator.of(context).pop();
                           _editWorkout(workout);
                         },
-                        icon: const FaIcon(FontAwesomeIcons.penToSquare, color: Colors.grey, size: 20),
+                        icon: FaIcon(
+                          FontAwesomeIcons.penToSquare, 
+                          color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey, 
+                          size: 20,
+                        ),
                       ),
                       IconButton(
                         onPressed: () => Navigator.of(context).pop(),
-                        icon: const FaIcon(FontAwesomeIcons.xmark, color: Colors.grey, size: 20),
+                        icon: FaIcon(
+                          FontAwesomeIcons.xmark, 
+                          color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey, 
+                          size: 20,
+                        ),
                       ),
                     ],
                   ),
@@ -132,18 +144,18 @@ class _CustomWorkoutPageState extends State<CustomWorkoutPage> {
                           margin: const EdgeInsets.only(bottom: 16),
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                           decoration: BoxDecoration(
-                            color: Colors.grey.shade100,
+                            color: themeService.isDarkMode ? Colors.grey.shade800 : Colors.grey.shade100,
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
-                              color: Colors.black,
+                              color: themeService.isDarkMode ? Colors.grey.shade600 : Colors.black,
                               width: 1,
                             ),
                           ),
                           child: Text(
                             workout.description!,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 14,
-                              color: Colors.black,
+                              color: themeService.currentTheme.textTheme.bodyLarge?.color,
                             ),
                           ),
                         );
@@ -155,7 +167,9 @@ class _CustomWorkoutPageState extends State<CustomWorkoutPage> {
                       return Card(
                         margin: const EdgeInsets.only(bottom: 12),
                         elevation: 2,
-                        color: Colors.white,
+                        color: themeService.isDarkMode 
+                            ? const Color(0xFF2A2A2A)
+                            : Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -167,9 +181,10 @@ class _CustomWorkoutPageState extends State<CustomWorkoutPage> {
                               // Exercise name
                               Text(
                                 exercise.name,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
+                                  color: themeService.currentTheme.textTheme.titleMedium?.color,
                                 ),
                               ),
                               const SizedBox(height: 12),
@@ -185,14 +200,14 @@ class _CustomWorkoutPageState extends State<CustomWorkoutPage> {
                                         width: 28,
                                         height: 28,
                                         decoration: BoxDecoration(
-                                          color: Colors.grey.shade200,
+                                          color: themeService.isDarkMode ? Colors.grey.shade700 : Colors.grey.shade200,
                                           shape: BoxShape.circle,
                                         ),
                                         child: Center(
                                           child: Text(
                                             '${setIndex + 1}',
                                             style: TextStyle(
-                                              color: Colors.grey.shade700,
+                                              color: themeService.isDarkMode ? Colors.grey.shade300 : Colors.grey.shade700,
                                               fontSize: 12,
                                               fontWeight: FontWeight.bold,
                                             ),
@@ -203,9 +218,10 @@ class _CustomWorkoutPageState extends State<CustomWorkoutPage> {
                                       Expanded(
                                         child: Text(
                                           '${(set.weight % 1 == 0 ? set.weight.toInt() : set.weight)} kg × ${set.reps} reps',
-                                          style: const TextStyle(
+                                          style: TextStyle(
                                             fontSize: 14,
                                             fontWeight: FontWeight.w500,
+                                            color: themeService.currentTheme.textTheme.bodyLarge?.color,
                                           ),
                                         ),
                                       ),
@@ -231,16 +247,17 @@ class _CustomWorkoutPageState extends State<CustomWorkoutPage> {
                         _startCustomWorkout(workout);
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.black,
+                        backgroundColor: themeService.isDarkMode ? Colors.white : Colors.black,
+                        foregroundColor: themeService.isDarkMode ? Colors.black : Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: const Text(
+                      child: Text(
                         'Start Workout',
                         style: TextStyle(
-                          color: Colors.white,
+                          color: themeService.isDarkMode ? Colors.black : Colors.white,
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
@@ -447,19 +464,18 @@ class _CustomWorkoutPageState extends State<CustomWorkoutPage> {
 
   @override
   Widget build(BuildContext context) {
+    final themeService = Provider.of<ThemeService>(context);
+    
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: themeService.currentTheme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'Custom Workouts',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.black,
-          ),
+          style: themeService.currentTheme.appBarTheme.titleTextStyle,
         ),
-        backgroundColor: Colors.transparent,
+        backgroundColor: themeService.currentTheme.appBarTheme.backgroundColor,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black),
+        iconTheme: IconThemeData(color: themeService.currentTheme.appBarTheme.foregroundColor),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -474,17 +490,22 @@ class _CustomWorkoutPageState extends State<CustomWorkoutPage> {
                       width: double.infinity,
                       child: ElevatedButton.icon(
                         onPressed: _browseExercises,
-                        icon: const FaIcon(FontAwesomeIcons.plus, color: Colors.white, size: 18),
-                        label: const Text(
+                        icon: FaIcon(
+                          FontAwesomeIcons.plus, 
+                          color: themeService.isDarkMode ? Colors.black : Colors.white, 
+                          size: 18,
+                        ),
+                        label: Text(
                           'Create New Workout',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w900,
-                            color: Colors.white,
+                            color: themeService.isDarkMode ? Colors.black : Colors.white,
                           ),
                         ),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.black,
+                          backgroundColor: themeService.isDarkMode ? Colors.white : Colors.black,
+                          foregroundColor: themeService.isDarkMode ? Colors.black : Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -503,7 +524,7 @@ class _CustomWorkoutPageState extends State<CustomWorkoutPage> {
                           FaIcon(
                             FontAwesomeIcons.dumbbell,
                             size: 80,
-                            color: Colors.grey[400],
+                            color: themeService.isDarkMode ? Colors.grey.shade600 : Colors.grey[400],
                           ),
                           const SizedBox(height: 16),
                           Text(
@@ -511,7 +532,7 @@ class _CustomWorkoutPageState extends State<CustomWorkoutPage> {
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w600,
-                              color: Colors.grey[600],
+                              color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey[600],
                             ),
                           ),
                           const SizedBox(height: 8),
@@ -519,7 +540,7 @@ class _CustomWorkoutPageState extends State<CustomWorkoutPage> {
                             'Create your first custom workout to get started',
                             style: TextStyle(
                               fontSize: 14,
-                              color: Colors.grey[500],
+                              color: themeService.isDarkMode ? Colors.grey.shade500 : Colors.grey[500],
                             ),
                             textAlign: TextAlign.center,
                           ),
@@ -570,11 +591,15 @@ class _CustomWorkoutPageState extends State<CustomWorkoutPage> {
                                     transform: Matrix4.translationValues(-80, 0, 0),
                                     child: Container(
                                       decoration: BoxDecoration(
-                                        color: Colors.white,
+                                        color: themeService.isDarkMode 
+                                            ? const Color(0xFF2A2A2A)
+                                            : Colors.white,
                                         borderRadius: BorderRadius.circular(15),
                                         boxShadow: [
                                           BoxShadow(
-                                            color: Colors.black.withValues(alpha: 0.05),
+                                            color: themeService.isDarkMode 
+                                                ? Colors.black.withValues(alpha: 0.3)
+                                                : Colors.black.withValues(alpha: 0.05),
                                             blurRadius: 10,
                                             offset: const Offset(0, 2),
                                           ),
@@ -606,9 +631,9 @@ class _CustomWorkoutPageState extends State<CustomWorkoutPage> {
                                                   color: Colors.transparent,
                                                   borderRadius: BorderRadius.circular(25),
                                                 ),
-                                                child: const FaIcon(
+                                                child: FaIcon(
                                                   FontAwesomeIcons.dumbbell,
-                                                  color: Colors.black,
+                                                  color: themeService.currentTheme.textTheme.titleMedium?.color,
                                                   size: 24,
                                                 ),
                                               ),
@@ -625,9 +650,10 @@ class _CustomWorkoutPageState extends State<CustomWorkoutPage> {
                                                         Expanded(
                                                           child: Text(
                                                             workout.name,
-                                                            style: const TextStyle(
+                                                            style: TextStyle(
                                                               fontWeight: FontWeight.bold,
                                                               fontSize: 16,
+                                                              color: themeService.currentTheme.textTheme.titleMedium?.color,
                                                             ),
                                                             overflow: TextOverflow.ellipsis,
                                                           ),
@@ -635,7 +661,7 @@ class _CustomWorkoutPageState extends State<CustomWorkoutPage> {
                                                         Text(
                                                           '${workout.exerciseNames.length} exercises',
                                                           style: TextStyle(
-                                                            color: Colors.grey.shade600,
+                                                            color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
                                                             fontSize: 12,
                                                             fontWeight: FontWeight.w500,
                                                           ),
@@ -654,14 +680,14 @@ class _CustomWorkoutPageState extends State<CustomWorkoutPage> {
                                                               vertical: 2,
                                                             ),
                                                             decoration: BoxDecoration(
-                                                              color: Colors.grey.shade200,
+                                                              color: themeService.isDarkMode ? Colors.grey.shade700 : Colors.grey.shade200,
                                                               borderRadius: BorderRadius.circular(8),
                                                             ),
                                                             child: Text(
                                                               exercise,
                                                               style: TextStyle(
                                                                 fontSize: 10,
-                                                                color: Colors.grey.shade700,
+                                                                color: themeService.isDarkMode ? Colors.grey.shade300 : Colors.grey.shade700,
                                                               ),
                                                             ),
                                                           );
@@ -673,14 +699,14 @@ class _CustomWorkoutPageState extends State<CustomWorkoutPage> {
                                                                   vertical: 2,
                                                                 ),
                                                                 decoration: BoxDecoration(
-                                                                  color: Colors.grey.shade300,
+                                                                  color: themeService.isDarkMode ? Colors.grey.shade600 : Colors.grey.shade300,
                                                                   borderRadius: BorderRadius.circular(8),
                                                                 ),
                                                                 child: Text(
                                                                   '+${workout.exerciseNames.length - 3} more',
                                                                   style: TextStyle(
                                                                     fontSize: 10,
-                                                                    color: Colors.grey.shade700,
+                                                                    color: themeService.isDarkMode ? Colors.grey.shade300 : Colors.grey.shade700,
                                                                   ),
                                                                 ),
                                                               )]
@@ -768,7 +794,9 @@ class _CustomWorkoutPageState extends State<CustomWorkoutPage> {
                                                     workout.pinned 
                                                         ? Icons.push_pin 
                                                         : Icons.push_pin_outlined,
-                                                    color: workout.pinned ? Colors.black : Colors.grey,
+                                                    color: workout.pinned 
+                                                        ? themeService.currentTheme.textTheme.titleMedium?.color
+                                                        : (themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey),
                                                     size: 24,
                                                   ),
                                                 ),
@@ -826,11 +854,15 @@ class _CustomWorkoutPageState extends State<CustomWorkoutPage> {
                           child: Container(
                             margin: const EdgeInsets.only(bottom: 12),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: themeService.isDarkMode 
+                                  ? const Color(0xFF2A2A2A)
+                                  : Colors.white,
                               borderRadius: BorderRadius.circular(15),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.05),
+                                  color: themeService.isDarkMode 
+                                      ? Colors.black.withValues(alpha: 0.3)
+                                      : Colors.black.withValues(alpha: 0.05),
                                   blurRadius: 10,
                                   offset: const Offset(0, 2),
                                 ),
@@ -852,9 +884,9 @@ class _CustomWorkoutPageState extends State<CustomWorkoutPage> {
                                         color: Colors.transparent,
                                         borderRadius: BorderRadius.circular(25),
                                       ),
-                                      child: const FaIcon(
+                                      child: FaIcon(
                                         FontAwesomeIcons.dumbbell,
-                                        color: Colors.black,
+                                        color: themeService.currentTheme.textTheme.titleMedium?.color,
                                         size: 24,
                                       ),
                                     ),
@@ -870,16 +902,17 @@ class _CustomWorkoutPageState extends State<CustomWorkoutPage> {
                                               Expanded(
                                                 child: Text(
                                                   workout.name,
-                                                  style: const TextStyle(
+                                                  style: TextStyle(
                                                     fontWeight: FontWeight.bold,
                                                     fontSize: 16,
+                                                    color: themeService.currentTheme.textTheme.titleMedium?.color,
                                                   ),
                                                 ),
                                               ),
                                               Text(
                                                 '${workout.exerciseNames.length} exercises',
                                                 style: TextStyle(
-                                                  color: Colors.grey.shade600,
+                                                  color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
                                                   fontSize: 12,
                                                   fontWeight: FontWeight.w500,
                                                 ),
@@ -897,14 +930,14 @@ class _CustomWorkoutPageState extends State<CustomWorkoutPage> {
                                                   vertical: 2,
                                                 ),
                                                 decoration: BoxDecoration(
-                                                  color: Colors.grey.shade200,
+                                                  color: themeService.isDarkMode ? Colors.grey.shade700 : Colors.grey.shade200,
                                                   borderRadius: BorderRadius.circular(8),
                                                 ),
                                                 child: Text(
                                                   exercise,
                                                   style: TextStyle(
                                                     fontSize: 10,
-                                                    color: Colors.grey.shade700,
+                                                    color: themeService.isDarkMode ? Colors.grey.shade300 : Colors.grey.shade700,
                                                   ),
                                                 ),
                                               );
@@ -916,14 +949,14 @@ class _CustomWorkoutPageState extends State<CustomWorkoutPage> {
                                                       vertical: 2,
                                                     ),
                                                     decoration: BoxDecoration(
-                                                      color: Colors.grey.shade300,
+                                                      color: themeService.isDarkMode ? Colors.grey.shade600 : Colors.grey.shade300,
                                                       borderRadius: BorderRadius.circular(8),
                                                     ),
                                                     child: Text(
                                                       '+${workout.exerciseNames.length - 3} more',
                                                       style: TextStyle(
                                                         fontSize: 10,
-                                                        color: Colors.grey.shade700,
+                                                        color: themeService.isDarkMode ? Colors.grey.shade300 : Colors.grey.shade700,
                                                       ),
                                                     ),
                                                   )]
@@ -1010,7 +1043,9 @@ class _CustomWorkoutPageState extends State<CustomWorkoutPage> {
                                           workout.pinned 
                                               ? Icons.push_pin 
                                               : Icons.push_pin_outlined,
-                                          color: workout.pinned ? Colors.black : Colors.grey,
+                                          color: workout.pinned 
+                                              ? themeService.currentTheme.textTheme.titleMedium?.color
+                                              : (themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey),
                                           size: 24,
                                         ),
                                       ),
