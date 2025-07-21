@@ -496,6 +496,87 @@ class _CaloriesTabState extends State<CaloriesTab> {
             ),
           ),
 
+          // Net Calories Card
+          Builder(
+            builder: (context) {
+              final netCalories = _todayTotal - _todayCaloriesBurnt;
+              Color netColor;
+              if (netCalories < 0) {
+                netColor = Colors.green;
+              } else if (netCalories > 0) {
+                netColor = Colors.red;
+              } else {
+                netColor = Colors.grey;
+              }
+              return Container(
+                width: double.infinity,
+                margin: const EdgeInsets.only(top: 12),
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.grey[800] : Colors.white,
+                  borderRadius: BorderRadius.circular(15),
+                  border: Border.all(
+                    color:
+                        isDark
+                            ? (Colors.grey[700] ?? Colors.grey)
+                            : (Colors.grey[300] ?? Colors.grey),
+                  ),
+                  boxShadow: [
+                    // ignore: deprecated_member_use
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.04),
+                      blurRadius: 6,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.equalizer, color: netColor, size: 22),
+                        const SizedBox(width: 8),
+                        Text(
+                          "Net Calories",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color:
+                                themeService
+                                    .currentTheme
+                                    .textTheme
+                                    .titleLarge
+                                    ?.color ??
+                                Colors.black,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Text(
+                          netCalories.toStringAsFixed(0),
+                          style: TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: netColor,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        const Text(
+                          'calories',
+                          style: TextStyle(fontSize: 16, color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+
           // List of today's workouts
           if (_todayWorkouts.isNotEmpty) ...[
             const SizedBox(height: 20),
