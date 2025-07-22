@@ -12,52 +12,60 @@ class FormPage5 extends StatefulWidget {
 }
 
 class _FormPage5State extends State<FormPage5> {
-  final List<double> weight = List.generate(
-    2000,
-    (index) => (index + 1) * 0.1,
-  ); // 0.1 to 200.0
+  // Separate lists for whole numbers and decimals
+  final List<int> wholeNumbers = List.generate(
+    200,
+    (index) => index + 1,
+  ); // 1 to 200
+  final List<double> decimals = [
+    0.0,
+    0.1,
+    0.2,
+    0.3,
+    0.4,
+    0.5,
+    0.6,
+    0.7,
+    0.8,
+    0.9,
+  ];
+
+  int selectedWholeNumber = 70;
+  double selectedDecimal = 0.0;
   double selectedWeight = 70.0;
   double? userHeight;
-  late ScrollController scrollController;
-  final double itemWidth = 80 + 20; // 60 width + 10px margin left & right
+
+  late FixedExtentScrollController wholeNumberController;
+  late FixedExtentScrollController decimalController;
 
   @override
   void initState() {
     super.initState();
-    scrollController = ScrollController();
+
+    // Initialize controllers with default values
+    wholeNumberController = FixedExtentScrollController(
+      initialItem: selectedWholeNumber - 1,
+    );
+    decimalController = FixedExtentScrollController(initialItem: 0);
+
     fetchUserHeight();
+  }
 
-    // Scroll to initial position after first frame
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (scrollController.hasClients) {
-        final defaultIndex = weight.indexOf(selectedWeight);
-        scrollController.jumpTo(defaultIndex * itemWidth);
-      }
-    });
-
-    // Auto-update selected weight based on center position
-    scrollController.addListener(() {
-      if (!scrollController.hasClients) return;
-
-      final screenCenter = MediaQuery.of(context).size.width / 2;
-      final centerOffset =
-          scrollController.offset + (screenCenter - itemWidth / 2);
-      int centerIndex = (centerOffset / itemWidth).round();
-      final newSelected = weight[centerIndex];
-      if (newSelected != selectedWeight) {
-        _handleWeightChange(newSelected);
-      }
+  // Handle whole number change
+  void _handleWholeNumberChange(int newWholeNumber) {
+    HapticFeedback.selectionClick();
+    setState(() {
+      selectedWholeNumber = newWholeNumber;
+      selectedWeight = selectedWholeNumber + selectedDecimal;
     });
   }
 
-  // Handle weight change with haptic feedback
-  void _handleWeightChange(double newWeight) {
-    // Haptic feedback for smooth scroll interaction
+  // Handle decimal change
+  void _handleDecimalChange(double newDecimal) {
     HapticFeedback.selectionClick();
-    
-    // Update selected weight
     setState(() {
-      selectedWeight = newWeight;
+      selectedDecimal = newDecimal;
+      selectedWeight = selectedWholeNumber + selectedDecimal;
     });
   }
 
@@ -79,7 +87,8 @@ class _FormPage5State extends State<FormPage5> {
 
   @override
   void dispose() {
-    scrollController.dispose();
+    wholeNumberController.dispose();
+    decimalController.dispose();
     super.dispose();
   }
 
@@ -259,48 +268,119 @@ class _FormPage5State extends State<FormPage5> {
                 const SizedBox(height: 20),
                 weightchatbot(),
                 const SizedBox(height: 20),
-                Stack(
-                  alignment: Alignment.center,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
+                    // Whole number picker
                     SizedBox(
-                      height: 50,
-                      child: ListView.builder(
-                        controller: scrollController,
-                        scrollDirection: Axis.horizontal,
-                        itemCount: weight.length,
-                        itemBuilder: (context, index) {
-                          final weightinkg = weight[index];
-                          final isSelected = weightinkg == selectedWeight;
-
-                          return Container(
-                            width: 80,
-                            margin: const EdgeInsets.symmetric(horizontal: 10),
-                            alignment: Alignment.center,
-                            decoration:
-                                isSelected
-                                    ? BoxDecoration(
-                                      border: Border.all(
-                                        color: const Color(0xFF0070F0),
-                                        width: 3,
-                                      ),
-                                      borderRadius: BorderRadius.circular(30),
-                                      color: const Color(0x4780BBFF),
-                                    )
-                                    : null,
-                            child: Text(
-                              weightinkg.toStringAsFixed(1),
-                              style: TextStyle(
-                                fontFamily: 'DM Sans',
-                                fontSize: 20,
-                                fontWeight: FontWeight.w700,
-                                color:
-                                    isSelected
-                                        ? const Color(0xFF0070F0)
-                                        : Colors.grey,
-                              ),
-                            ),
-                          );
+                      width: 100,
+                      height: 150,
+                      child: ListWheelScrollView.useDelegate(
+                        controller: wholeNumberController,
+                        itemExtent: 50,
+                        diameterRatio: 0.7,
+                        physics: const FixedExtentScrollPhysics(),
+                        onSelectedItemChanged: (index) {
+                          _handleWholeNumberChange(wholeNumbers[index]);
                         },
+                        childDelegate: ListWheelChildBuilderDelegate(
+                          childCount: wholeNumbers.length,
+                          builder: (context, index) {
+                            final wholeNumber = wholeNumbers[index];
+                            final isSelected =
+                                wholeNumber == selectedWholeNumber;
+                            return Container(
+                              alignment: Alignment.center,
+                              decoration:
+                                  isSelected
+                                      ? BoxDecoration(
+                                        border: Border.all(
+                                          color: const Color(0xFF0070F0),
+                                          width: 3,
+                                        ),
+                                        borderRadius: BorderRadius.circular(30),
+                                        color: const Color(0x4780BBFF),
+                                      )
+                                      : null,
+                              child: Text(
+                                wholeNumber.toString(),
+                                style: TextStyle(
+                                  fontFamily: 'DM Sans',
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.w700,
+                                  color:
+                                      isSelected
+                                          ? const Color(0xFF0070F0)
+                                          : Colors.grey,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+
+                    // Decimal point
+                    Container(
+                      width: 30,
+                      height: 150,
+                      alignment: Alignment.center,
+                      child: Text(
+                        '.',
+                        style: TextStyle(
+                          fontFamily: 'DM Sans',
+                          fontSize: 32,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF0070F0),
+                        ),
+                      ),
+                    ),
+
+                    // Decimal picker
+                    SizedBox(
+                      width: 80,
+                      height: 150,
+                      child: ListWheelScrollView.useDelegate(
+                        controller: decimalController,
+                        itemExtent: 50,
+                        diameterRatio: 0.7,
+                        physics: const FixedExtentScrollPhysics(),
+                        onSelectedItemChanged: (index) {
+                          _handleDecimalChange(decimals[index]);
+                        },
+                        childDelegate: ListWheelChildBuilderDelegate(
+                          childCount: decimals.length,
+                          builder: (context, index) {
+                            final decimal = decimals[index];
+                            final isSelected = decimal == selectedDecimal;
+                            return Container(
+                              alignment: Alignment.center,
+                              decoration:
+                                  isSelected
+                                      ? BoxDecoration(
+                                        border: Border.all(
+                                          color: const Color(0xFF0070F0),
+                                          width: 3,
+                                        ),
+                                        borderRadius: BorderRadius.circular(30),
+                                        color: const Color(0x4780BBFF),
+                                      )
+                                      : null,
+                              child: Text(
+                                (decimal * 10).toInt().toString(),
+                                style: TextStyle(
+                                  fontFamily: 'DM Sans',
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.w700,
+                                  color:
+                                      isSelected
+                                          ? const Color(0xFF0070F0)
+                                          : Colors.grey,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
                       ),
                     ),
                   ],
