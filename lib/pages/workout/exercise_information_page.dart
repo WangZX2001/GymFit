@@ -357,6 +357,42 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage>
       children: [
         Hero(
           tag: 'exercise-$title',
+          flightShuttleBuilder: (
+            BuildContext flightContext,
+            Animation<double> animation,
+            HeroFlightDirection flightDirection,
+            BuildContext fromHeroContext,
+            BuildContext toHeroContext,
+          ) {
+            return AnimatedBuilder(
+              animation: animation,
+              builder: (context, child) {
+                return Material(
+                  color: Colors.transparent,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: themeService.currentTheme.cardTheme.color,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: themeService.isDarkMode ? Colors.grey.shade600 : Colors.grey.shade300,
+                      ),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                      child: Text(
+                        title,
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: themeService.currentTheme.textTheme.titleLarge?.color,
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            );
+          },
           child: Material(
             color: Colors.transparent,
             child: ClipRect(
@@ -641,11 +677,14 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage>
                                                   );
                                                 },
                                               ),
-                                              transitionDuration: const Duration(milliseconds: 500),
-                                              reverseTransitionDuration: const Duration(milliseconds: 400),
+                                              transitionDuration: const Duration(milliseconds: 350),
+                                              reverseTransitionDuration: const Duration(milliseconds: 300),
                                               transitionsBuilder: (context, animation, secondaryAnimation, child) {
                                                 return FadeTransition(
-                                                  opacity: animation,
+                                                  opacity: CurvedAnimation(
+                                                    parent: animation,
+                                                    curve: Curves.easeInOut,
+                                                  ),
                                                   child: child,
                                                 );
                                               },
@@ -653,12 +692,21 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage>
                                           );
                                         }
                                       },
+                                      onTapDown: (_) {
+                                        // Add subtle scale animation on tap down
+                                        HapticFeedback.selectionClick();
+                                      },
                                       behavior: HitTestBehavior.opaque,
-                                      child: _buildExerciseCard(
-                                        e.title,
-                                        e.icon,
-                                        mainMuscle: e.mainMuscle,
-                                        isSelected: isSelected,
+                                      child: AnimatedContainer(
+                                        duration: const Duration(milliseconds: 100),
+                                        curve: Curves.easeOut,
+                                        transform: Matrix4.identity(),
+                                        child: _buildExerciseCard(
+                                          e.title,
+                                          e.icon,
+                                          mainMuscle: e.mainMuscle,
+                                          isSelected: isSelected,
+                                        ),
                                       ),
                                     );
                                   },

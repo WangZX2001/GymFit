@@ -43,11 +43,13 @@ class ExerciseDescriptionPage extends StatefulWidget {
   State<ExerciseDescriptionPage> createState() => _ExerciseDescriptionPageState();
 }
 
-class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> with SingleTickerProviderStateMixin {
+class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> with TickerProviderStateMixin {
   YoutubePlayerController? _ytController;
   bool _showTitle = false;
   final ScrollController _customWorkoutScrollController = ScrollController();
   late TabController _tabController;
+  late AnimationController _entranceController;
+  late Animation<double> _entranceAnimation;
 
   @override
   void initState() {
@@ -58,6 +60,16 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> with 
         _showTitle = _tabController.index == 1;
       });
     });
+
+    // Initialize entrance animation
+    _entranceController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+    _entranceAnimation = CurvedAnimation(
+      parent: _entranceController,
+      curve: Curves.easeOutCubic,
+    );
 
     final url = widget.videoUrl;
     String? vidId;
@@ -75,6 +87,13 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> with 
         flags: const YoutubePlayerFlags(autoPlay: false),
       );
     }
+
+    // Start entrance animation after a short delay
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (mounted) {
+        _entranceController.forward();
+      }
+    });
   }
 
   @override
@@ -82,6 +101,7 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> with 
     _ytController?.dispose();
     _customWorkoutScrollController.dispose();
     _tabController.dispose();
+    _entranceController.dispose();
     super.dispose();
   }
 
@@ -545,6 +565,8 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> with 
           leading: IconButton(
             icon: FaIcon(FontAwesomeIcons.arrowLeft, color: themeService.currentTheme.appBarTheme.foregroundColor),
             onPressed: () {
+              // Add haptic feedback for back navigation
+              HapticFeedback.lightImpact();
               Navigator.of(context).pop();
             },
           ),
@@ -593,17 +615,27 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> with 
                 thumbVisibility: true,
                 trackVisibility: true,
                 child: SingleChildScrollView(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Title Card with Hero Animation
-                        Hero(
-                          tag: 'exercise-${widget.title}',
-                          child: Material(
-                            color: Colors.transparent,
-                            child: ClipRect(
+                  child: AnimatedBuilder(
+                    animation: _entranceAnimation,
+                    builder: (context, child) {
+                      return Transform.translate(
+                        offset: Offset(0, 20 * (1 - _entranceAnimation.value)),
+                        child: Opacity(
+                          opacity: _entranceAnimation.value,
+                          child: child,
+                        ),
+                      );
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Title Card with Hero Animation
+                          Hero(
+                            tag: 'exercise-${widget.title}',
+                            child: Material(
+                              color: Colors.transparent,
                               child: Container(
                                 width: double.infinity,
                                 padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
@@ -611,6 +643,13 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> with 
                                   color: themeService.currentTheme.cardTheme.color,
                                   borderRadius: BorderRadius.circular(10),
                                   border: Border.all(color: themeService.isDarkMode ? Colors.grey.shade600 : Colors.grey.shade300),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: themeService.isDarkMode ? Colors.black.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
                                 ),
                                 child: Text(
                                   widget.title,
@@ -623,253 +662,253 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> with 
                               ),
                             ),
                           ),
-                        ),
-                        // Main Muscle and Experience Level
-                        Padding(
-                          padding: const EdgeInsets.only(top: 8.0),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'Primary: ${widget.mainMuscle}',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey,
-                                ),
-                              ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-                                decoration: BoxDecoration(
-                                  color: _getExperienceColor(widget.experienceLevel),
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Text(
-                                  widget.experienceLevel,
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.white,
+                          // Main Muscle and Experience Level
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8.0),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'Primary: ${widget.mainMuscle}',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey,
                                   ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                                  decoration: BoxDecoration(
+                                    color: _getExperienceColor(widget.experienceLevel),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Text(
+                                    widget.experienceLevel,
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          // Secondary Muscle Label
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4.0),
+                            child: Text(
+                              'Secondary: ${widget.secondaryMuscle}',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+
+                          // Description Section
+                          Text(
+                            'Description',
+                            style: TextStyle(
+                              fontSize: 16, 
+                              fontWeight: FontWeight.w700,
+                              color: themeService.currentTheme.textTheme.titleMedium?.color,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            widget.description,
+                            style: TextStyle(
+                              fontSize: 14, 
+                              height: 1.5,
+                              fontWeight: FontWeight.w500,
+                              color: themeService.currentTheme.textTheme.bodyLarge?.color,
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+
+                          // Video Demonstration
+                          Text(
+                            'Video Demonstration',
+                            style: TextStyle(
+                              fontSize: 16, 
+                              fontWeight: FontWeight.w700,
+                              color: themeService.currentTheme.textTheme.titleMedium?.color,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          // Video player or placeholder image
+                          if (_ytController != null)
+                            YoutubePlayerBuilder(
+                              player: YoutubePlayer(
+                                controller: _ytController!,
+                                showVideoProgressIndicator: true,
+                                bottomActions: [
+                                  CurrentPosition(),
+                                  ProgressBar(isExpanded: true),
+                                  RemainingDuration(),
+                                  IconButton(
+                                    icon: const Icon(Icons.replay_10, color: Colors.white),
+                                    onPressed: () => _ytController!.seekTo(_ytController!.value.position - const Duration(seconds: 10)),
+                                  ),
+                                  IconButton(
+                                    icon: Icon(_ytController!.value.isPlaying ? Icons.pause : Icons.play_arrow, color: Colors.white),
+                                    onPressed: () {
+                                      if (_ytController!.value.isPlaying) {
+                                        _ytController!.pause();
+                                      } else {
+                                        _ytController!.play();
+                                      }
+                                    },
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.forward_10, color: Colors.white),
+                                    onPressed: () => _ytController!.seekTo(_ytController!.value.position + const Duration(seconds: 10)),
+                                  ),
+                                  FullScreenButton(),
+                                ],
+                              ),
+                              builder: (context, player) {
+                                return ClipRRect(
+                                  borderRadius: BorderRadius.circular(10),
+                                  child: player,
+                                );
+                              },
+                            )
+                          else
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(10),
+                              child: Image.asset(
+                                'lib/images/exerciseInformation.jpg',
+                                width: double.infinity,
+                                height: 200,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          const SizedBox(height: 16),
+                          // How to do it section
+                          Text(
+                            'How to perform',
+                            style: TextStyle(
+                              fontSize: 16, 
+                              fontWeight: FontWeight.w700,
+                              color: themeService.currentTheme.textTheme.titleMedium?.color,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          // Numbered steps for howTo
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: widget.howTo.split('\n').asMap().entries.map((entry) {
+                              final idx = entry.key + 1;
+                              final text = entry.value.trim();
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 16.0),
+                                child: Text.rich(
+                                  TextSpan(
+                                    style: TextStyle(
+                                      fontSize: 14, 
+                                      height: 1.5,
+                                      fontWeight: FontWeight.w500,
+                                      color: themeService.currentTheme.textTheme.bodyLarge?.color,
+                                    ),
+                                    children: [
+                                      TextSpan(text: '$idx. ', style: const TextStyle(fontWeight: FontWeight.bold)),
+                                      TextSpan(text: text),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                          const SizedBox(height: 24),
+
+                          // Safety and Precautions
+                          Row(
+                            children: [
+                              const FaIcon(FontAwesomeIcons.lightbulb, color: Colors.amber),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Pro Tips',
+                                style: TextStyle(
+                                  fontSize: 16, 
+                                  fontWeight: FontWeight.w700,
+                                  color: themeService.currentTheme.textTheme.titleMedium?.color,
                                 ),
                               ),
                             ],
                           ),
-                        ),
-                        // Secondary Muscle Label
-                        Padding(
-                          padding: const EdgeInsets.only(top: 4.0),
-                          child: Text(
-                            'Secondary: ${widget.secondaryMuscle}',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-
-                        // Description Section
-                        Text(
-                          'Description',
-                          style: TextStyle(
-                            fontSize: 16, 
-                            fontWeight: FontWeight.w700,
-                            color: themeService.currentTheme.textTheme.titleMedium?.color,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          widget.description,
-                          style: TextStyle(
-                            fontSize: 14, 
-                            height: 1.5,
-                            fontWeight: FontWeight.w500,
-                            color: themeService.currentTheme.textTheme.bodyLarge?.color,
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-
-                        // Video Demonstration
-                        Text(
-                          'Video Demonstration',
-                          style: TextStyle(
-                            fontSize: 16, 
-                            fontWeight: FontWeight.w700,
-                            color: themeService.currentTheme.textTheme.titleMedium?.color,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        // Video player or placeholder image
-                        if (_ytController != null)
-                          YoutubePlayerBuilder(
-                            player: YoutubePlayer(
-                              controller: _ytController!,
-                              showVideoProgressIndicator: true,
-                              bottomActions: [
-                                CurrentPosition(),
-                                ProgressBar(isExpanded: true),
-                                RemainingDuration(),
-                                IconButton(
-                                  icon: const Icon(Icons.replay_10, color: Colors.white),
-                                  onPressed: () => _ytController!.seekTo(_ytController!.value.position - const Duration(seconds: 10)),
-                                ),
-                                IconButton(
-                                  icon: Icon(_ytController!.value.isPlaying ? Icons.pause : Icons.play_arrow, color: Colors.white),
-                                  onPressed: () {
-                                    if (_ytController!.value.isPlaying) {
-                                      _ytController!.pause();
-                                    } else {
-                                      _ytController!.play();
-                                    }
-                                  },
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.forward_10, color: Colors.white),
-                                  onPressed: () => _ytController!.seekTo(_ytController!.value.position + const Duration(seconds: 10)),
-                                ),
-                                FullScreenButton(),
-                              ],
-                            ),
-                            builder: (context, player) {
-                              return ClipRRect(
-                                borderRadius: BorderRadius.circular(10),
-                                child: player,
-                              );
-                            },
-                          )
-                        else
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(10),
-                            child: Image.asset(
-                              'lib/images/exerciseInformation.jpg',
-                              width: double.infinity,
-                              height: 200,
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                        const SizedBox(height: 16),
-                        // How to do it section
-                        Text(
-                          'How to perform',
-                          style: TextStyle(
-                            fontSize: 16, 
-                            fontWeight: FontWeight.w700,
-                            color: themeService.currentTheme.textTheme.titleMedium?.color,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        // Numbered steps for howTo
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: widget.howTo.split('\n').asMap().entries.map((entry) {
-                            final idx = entry.key + 1;
-                            final text = entry.value.trim();
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 16.0),
-                              child: Text.rich(
-                                TextSpan(
-                                  style: TextStyle(
-                                    fontSize: 14, 
-                                    height: 1.5,
-                                    fontWeight: FontWeight.w500,
-                                    color: themeService.currentTheme.textTheme.bodyLarge?.color,
-                                  ),
-                                  children: [
-                                    TextSpan(text: '$idx. ', style: const TextStyle(fontWeight: FontWeight.bold)),
-                                    TextSpan(text: text),
-                                  ],
-                                ),
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                        const SizedBox(height: 24),
-
-                        // Safety and Precautions
-                        Row(
-                          children: [
-                            const FaIcon(FontAwesomeIcons.lightbulb, color: Colors.amber),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Pro Tips',
-                              style: TextStyle(
-                                fontSize: 16, 
-                                fontWeight: FontWeight.w700,
-                                color: themeService.currentTheme.textTheme.titleMedium?.color,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        // Pro Tips list with bolded numbered lines
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: widget.proTips
-                              .expand((tip) => tip.split('\n'))
-                              .map((line) => line.trim())
-                              .where((line) => line.isNotEmpty)
-                              .toList()
-                              .asMap()
-                              .entries
-                              .map((entry) {
-                                final idx = entry.key + 1;
-                                final text = entry.value;
-                                return Padding(
-                                  padding: const EdgeInsets.only(bottom: 16.0),
-                                  child: Text.rich(
-                                    TextSpan(
-                                      style: TextStyle(
-                                        fontSize: 14, 
-                                        height: 1.5,
-                                        fontWeight: FontWeight.w500,
-                                        color: themeService.currentTheme.textTheme.bodyLarge?.color,
+                          const SizedBox(height: 12),
+                          // Pro Tips list with bolded numbered lines
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: widget.proTips
+                                .expand((tip) => tip.split('\n'))
+                                .map((line) => line.trim())
+                                .where((line) => line.isNotEmpty)
+                                .toList()
+                                .asMap()
+                                .entries
+                                .map((entry) {
+                                  final idx = entry.key + 1;
+                                  final text = entry.value;
+                                  return Padding(
+                                    padding: const EdgeInsets.only(bottom: 16.0),
+                                    child: Text.rich(
+                                      TextSpan(
+                                        style: TextStyle(
+                                          fontSize: 14, 
+                                          height: 1.5,
+                                          fontWeight: FontWeight.w500,
+                                          color: themeService.currentTheme.textTheme.bodyLarge?.color,
+                                        ),
+                                        children: [
+                                          TextSpan(text: '$idx. ', style: const TextStyle(fontWeight: FontWeight.bold)),
+                                          TextSpan(text: text),
+                                        ],
                                       ),
-                                      children: [
-                                        TextSpan(text: '$idx. ', style: const TextStyle(fontWeight: FontWeight.bold)),
-                                        TextSpan(text: text),
-                                      ],
+                                    ),
+                                  );
+                                }).toList(),
+                          ),
+                          const SizedBox(height: 32),
+
+                          // Add Button
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: () => _showAddExerciseMenu(context),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: themeService.isDarkMode ? Colors.white : Colors.black,
+                                foregroundColor: themeService.isDarkMode ? Colors.black : Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(30),
+                                ),
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  FaIcon(
+                                    FontAwesomeIcons.plus, 
+                                    color: themeService.isDarkMode ? Colors.black : Colors.white,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Add This Exercise to Workout Plan',
+                                    style: TextStyle(
+                                      fontSize: 16, 
+                                      color: themeService.isDarkMode ? Colors.black : Colors.white, 
+                                      fontWeight: FontWeight.w700,
                                     ),
                                   ),
-                                );
-                              }).toList(),
-                        ),
-                        const SizedBox(height: 32),
-
-                        // Add Button
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: () => _showAddExerciseMenu(context),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: themeService.isDarkMode ? Colors.white : Colors.black,
-                              foregroundColor: themeService.isDarkMode ? Colors.black : Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(30),
+                                ],
                               ),
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                FaIcon(
-                                  FontAwesomeIcons.plus, 
-                                  color: themeService.isDarkMode ? Colors.black : Colors.white,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Add This Exercise to Workout Plan',
-                                  style: TextStyle(
-                                    fontSize: 16, 
-                                    color: themeService.isDarkMode ? Colors.black : Colors.white, 
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ],
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),

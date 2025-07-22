@@ -500,11 +500,22 @@ class _HistoryPageState extends State<HistoryPage> with SingleTickerProviderStat
 
   void _showWorkoutDetails(BuildContext context, Workout workout, {bool isOwnWorkout = true}) {
     Navigator.of(context, rootNavigator: true).push(
-      MaterialPageRoute(
-        builder: (context) => WorkoutDetailsPage(
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => WorkoutDetailsPage(
           workout: workout, 
           isOwnWorkout: isOwnWorkout,
         ),
+        transitionDuration: const Duration(milliseconds: 350),
+        reverseTransitionDuration: const Duration(milliseconds: 300),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(
+            opacity: CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeInOut,
+            ),
+            child: child,
+          );
+        },
       ),
     );
   }
