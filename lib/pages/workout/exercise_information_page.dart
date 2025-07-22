@@ -6,6 +6,10 @@ import 'package:gymfit/pages/workout/filter/exercise_filter_page.dart';
 import 'package:provider/provider.dart';
 import 'package:gymfit/services/theme_service.dart';
 
+
+
+
+
 class ExerciseInformationPage extends StatefulWidget {
   final bool isSelectionMode;
   final List<String> initialSelectedExercises;
@@ -289,6 +293,7 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage>
                 hintStyle: TextStyle(
                   color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey[500],
                   fontSize: 16,
+                  fontWeight: FontWeight.w500,
                 ),
                 prefixIcon: Icon(
                   Icons.search,
@@ -316,6 +321,7 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage>
               ),
               style: TextStyle(
                 fontSize: 16,
+                fontWeight: FontWeight.w500,
                 color: themeService.currentTheme.textTheme.bodyLarge?.color,
               ),
             ),
@@ -328,7 +334,8 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage>
                 'Click on any exercise icon to view specific instructions.',
                 style: TextStyle(
                   color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey[600], 
-                  fontSize: 12
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -348,103 +355,116 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage>
     
     return Column(
       children: [
-        AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
-          margin: EdgeInsets.only(
-            left: isSelected ? 24 : 16,
-            right: 16,
-            top: 8,
-            bottom: 8,
-          ),
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              // Selection bar on the left when selected
-              if (isSelected)
-                Positioned(
-                  left: -12,
-                  top: 0,
-                  bottom: 0,
-                  child: Container(
-                    width: 6,
-                    decoration: BoxDecoration(
-                      color: themeService.isDarkMode ? Colors.white : Colors.black,
-                      borderRadius: BorderRadius.circular(3),
-                    ),
-                  ),
+        Hero(
+          tag: 'exercise-$title',
+          child: Material(
+            color: Colors.transparent,
+            child: ClipRect(
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+                margin: EdgeInsets.only(
+                  left: isSelected ? 24 : 16,
+                  right: 16,
+                  top: 8,
+                  bottom: 8,
                 ),
-              // Main content
-              Row(
-                children: [
-                  // Image area
-                  SizedBox(
-                    width: 80,
-                    height: 80,
-                    child: _buildIconOrImage(icon),
-                  ),
-                  // Text area
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            title,
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: themeService.isDarkMode ? Colors.white : Colors.black,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    // Selection bar on the left when selected
+                    if (isSelected)
+                      Positioned(
+                        left: -12,
+                        top: 0,
+                        bottom: 0,
+                        child: Container(
+                          width: 6,
+                          decoration: BoxDecoration(
+                            color: themeService.isDarkMode ? Colors.white : Colors.black,
+                            borderRadius: BorderRadius.circular(3),
                           ),
-                          if (mainMuscle != null)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 4.0),
-                              child: Text(
-                                mainMuscle,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w400,
-                                  color: themeService.isDarkMode ? Colors.grey.shade300 : Colors.grey[600],
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
-                                // Selection indicator
-              if (isSelected)
-                Container(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Container(
-                    width: 24,
-                    height: 24,
-                    decoration: BoxDecoration(
-                      color: themeService.isDarkMode ? Colors.white : Colors.black,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Center(
-                      child: Text(
-                        '${_selectedTitles.toList().indexOf(title) + 1}',
-                        style: TextStyle(
-                          color: themeService.isDarkMode ? Colors.black : Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
                         ),
                       ),
+                    // Main content
+                    Row(
+                      children: [
+                        // Image area
+                        SizedBox(
+                          width: 80,
+                          height: 80,
+                          child: _buildIconOrImage(icon),
+                        ),
+                        // Text area
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    title,
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w700,
+                                      color: themeService.isDarkMode ? Colors.white : Colors.black,
+                                    ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                if (mainMuscle != null)
+                                  Flexible(
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(top: 4.0),
+                                      child: Text(
+                                        mainMuscle,
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                          color: themeService.isDarkMode ? Colors.grey.shade300 : Colors.grey[600],
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        // Selection indicator
+                        if (isSelected)
+                          Container(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Container(
+                              width: 24,
+                              height: 24,
+                              decoration: BoxDecoration(
+                                color: themeService.isDarkMode ? Colors.white : Colors.black,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  '${_selectedTitles.toList().indexOf(title) + 1}',
+                                  style: TextStyle(
+                                    color: themeService.isDarkMode ? Colors.black : Colors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
-                  ),
+                  ],
                 ),
-                ],
               ),
-            ],
+            ),
           ),
         ),
         // Divider line
@@ -599,29 +619,36 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage>
                                         } else {
                                           Navigator.push(
                                             context,
-                                            MaterialPageRoute(
-                                              builder:
-                                                  (ctx) => ExerciseDescriptionPage(
-                                                    title: e.title,
-                                                    description: e.description,
-                                                    videoUrl: e.videoUrl,
-                                                    mainMuscle: e.mainMuscle,
-                                                    secondaryMuscle: e.secondaryMuscle,
-                                                    experienceLevel: e.experienceLevel,
-                                                    howTo: e.howTo,
-                                                    proTips: e.proTips,
-                                                    onAdd: () {
-                                                      ScaffoldMessenger.of(
-                                                        ctx,
-                                                      ).showSnackBar(
-                                                        SnackBar(
-                                                          content: Text(
-                                                            '\${e.title} added to your plan',
-                                                          ),
-                                                        ),
-                                                      );
-                                                    },
-                                                  ),
+                                            PageRouteBuilder(
+                                              pageBuilder: (context, animation, secondaryAnimation) => ExerciseDescriptionPage(
+                                                title: e.title,
+                                                description: e.description,
+                                                videoUrl: e.videoUrl,
+                                                mainMuscle: e.mainMuscle,
+                                                secondaryMuscle: e.secondaryMuscle,
+                                                experienceLevel: e.experienceLevel,
+                                                howTo: e.howTo,
+                                                proTips: e.proTips,
+                                                onAdd: () {
+                                                  ScaffoldMessenger.of(
+                                                    context,
+                                                  ).showSnackBar(
+                                                    SnackBar(
+                                                      content: Text(
+                                                        '\${e.title} added to your plan',
+                                                      ),
+                                                    ),
+                                                  );
+                                                },
+                                              ),
+                                              transitionDuration: const Duration(milliseconds: 500),
+                                              reverseTransitionDuration: const Duration(milliseconds: 400),
+                                              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                                return FadeTransition(
+                                                  opacity: animation,
+                                                  child: child,
+                                                );
+                                              },
                                             ),
                                           );
                                         }

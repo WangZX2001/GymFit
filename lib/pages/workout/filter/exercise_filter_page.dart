@@ -64,20 +64,22 @@ class _ExerciseFilterPageState extends State<ExerciseFilterPage> {
           title,
           style: TextStyle(
             fontSize: 16,
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w700,
             color: themeService.currentTheme.textTheme.titleMedium?.color,
           ),
         ),
-        subtitle: selected.isEmpty 
+                    subtitle: selected.isEmpty 
             ? Text(
                 'None selected',
                 style: TextStyle(
+                  fontWeight: FontWeight.w500,
                   color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
                 ),
               )
             : Text(
                 '${selected.length} selected: ${selected.take(2).join(', ')}${selected.length > 2 ? '...' : ''}',
                 style: TextStyle(
+                  fontWeight: FontWeight.w500,
                   color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
                 ),
               ),
@@ -123,7 +125,7 @@ class _ExerciseFilterPageState extends State<ExerciseFilterPage> {
           'Experience Level',
           style: TextStyle(
             fontSize: 16,
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w700,
             color: themeService.currentTheme.textTheme.titleMedium?.color,
           ),
         ),
@@ -131,12 +133,14 @@ class _ExerciseFilterPageState extends State<ExerciseFilterPage> {
             ? Text(
                 'None selected',
                 style: TextStyle(
+                  fontWeight: FontWeight.w500,
                   color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
                 ),
               )
             : Text(
                 '${selectedExperienceLevels.length} selected: ${selectedExperienceLevels.join(', ')}',
                 style: TextStyle(
+                  fontWeight: FontWeight.w500,
                   color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
                 ),
               ),
@@ -181,7 +185,7 @@ class _ExerciseFilterPageState extends State<ExerciseFilterPage> {
           'Equipment',
           style: TextStyle(
             fontSize: 16,
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w700,
             color: themeService.currentTheme.textTheme.titleMedium?.color,
           ),
         ),
@@ -189,12 +193,14 @@ class _ExerciseFilterPageState extends State<ExerciseFilterPage> {
             ? Text(
                 'None selected',
                 style: TextStyle(
+                  fontWeight: FontWeight.w500,
                   color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
                 ),
               )
             : Text(
                 '${selectedEquipment.length} selected: ${selectedEquipment.take(2).join(', ')}${selectedEquipment.length > 2 ? '...' : ''}',
                 style: TextStyle(
+                  fontWeight: FontWeight.w500,
                   color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
                 ),
               ),
@@ -267,6 +273,7 @@ class _ExerciseFilterPageState extends State<ExerciseFilterPage> {
               style: TextStyle(
                 color: Colors.red,
                 fontSize: 20,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ),
@@ -325,7 +332,7 @@ class _ExerciseFilterPageState extends State<ExerciseFilterPage> {
                     'Apply Filters',
                     style: TextStyle(
                       fontSize: 16, 
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w700,
                       color: themeService.isDarkMode ? Colors.black : Colors.white,
                     ),
                   ),

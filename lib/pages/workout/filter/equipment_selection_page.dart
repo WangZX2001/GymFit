@@ -119,6 +119,7 @@ class _EquipmentSelectionPageState extends State<EquipmentSelectionPage> {
               style: TextStyle(
                 color: selectedEquipment.isEmpty ? Colors.grey : Colors.red,
                 fontSize: 20,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ),
@@ -139,17 +140,20 @@ class _EquipmentSelectionPageState extends State<EquipmentSelectionPage> {
                 ? const Color(0xFF2A2A2A)
                 : Colors.grey.shade50,
             child: CheckboxListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 2.0),
               title: Text(
                 'All Equipment',
                 style: TextStyle(
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w700,
                   color: themeService.currentTheme.textTheme.titleMedium?.color,
                 ),
               ),
               subtitle: Text(
                 'Include exercises for all equipment types',
                 style: TextStyle(
+                  fontWeight: FontWeight.w500,
                   color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
+                  fontSize: 11,
                 ),
               ),
               value: selectedEquipment.length == equipmentTypes.length,
@@ -178,35 +182,40 @@ class _EquipmentSelectionPageState extends State<EquipmentSelectionPage> {
                   color: themeService.isDarkMode 
                       ? const Color(0xFF2A2A2A)
                       : Colors.grey.shade50,
-                  child: ListTile(
-                    leading: FaIcon(
-                      equipmentIcons[equipment],
-                      color: isSelected ? Colors.blue : (themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey),
-                    ),
-                    title: Text(
-                      equipment,
-                      style: TextStyle(
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                        color: themeService.currentTheme.textTheme.titleMedium?.color,
-                      ),
+                  child: CheckboxListTile(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 2.0),
+                    title: Row(
+                      children: [
+                        FaIcon(
+                          equipmentIcons[equipment],
+                          color: isSelected ? Colors.blue : (themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey),
+                          size: 16,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            equipment,
+                            style: TextStyle(
+                              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                              color: themeService.currentTheme.textTheme.titleMedium?.color,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     subtitle: Text(
                       equipmentDescriptions[equipment] ?? '',
                       style: TextStyle(
+                        fontWeight: FontWeight.w500,
                         color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey[600],
-                        fontSize: 12,
+                        fontSize: 11,
                       ),
                     ),
-                    trailing: Checkbox(
-                      value: isSelected,
-                      onChanged: (bool? value) {
-                        _toggleSelection(equipment);
-                      },
-                      activeColor: Colors.blue,
-                    ),
-                    onTap: () {
+                    value: isSelected,
+                    onChanged: (bool? value) {
                       _toggleSelection(equipment);
                     },
+                    activeColor: Colors.blue,
                   ),
                 );
               },
@@ -228,7 +237,7 @@ class _EquipmentSelectionPageState extends State<EquipmentSelectionPage> {
                       style: TextStyle(
                         color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey[600],
                         fontSize: 14,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
@@ -250,7 +259,7 @@ class _EquipmentSelectionPageState extends State<EquipmentSelectionPage> {
                       'Apply Selection',
                       style: TextStyle(
                         fontSize: 16, 
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w700,
                         color: themeService.isDarkMode ? Colors.black : Colors.white,
                       ),
                     ),

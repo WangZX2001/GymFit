@@ -358,15 +358,23 @@ class _RecommendedTrainingPageState extends State<RecommendedTrainingPage> {
     QuickStartOverlay.selectedExercises = quickStartExercises;
     QuickStartOverlay.customWorkoutName = '$day Workout';
 
-    // Navigate to quick start page with pre-filled data
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => QuickStartPageOptimized(
+    // Navigate to quick start page with slide-up animation from bottom
+    Navigator.of(context, rootNavigator: true).push(
+      PageRouteBuilder(
+        pageBuilder: (ctx, animation, secondaryAnimation) => QuickStartPageOptimized(
           initialSelectedExercises: quickStartExercises,
           initialWorkoutName: '$day Workout',
           showMinibarOnMinimize: true,
         ),
+        transitionDuration: const Duration(milliseconds: 200),
+        reverseTransitionDuration: const Duration(milliseconds: 200),
+        transitionsBuilder: (ctx, animation, secAnim, child) {
+          final tween = Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero);
+          return SlideTransition(
+            position: tween.animate(animation),
+            child: child,
+          );
+        },
       ),
     );
   }
@@ -800,18 +808,21 @@ class _RecommendedTrainingPageState extends State<RecommendedTrainingPage> {
   }
 
   Widget _buildLoadingState() {
-    return const Center(
+    final themeService = Provider.of<ThemeService>(context);
+    return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          CircularProgressIndicator(),
-          SizedBox(height: 16),
+          CircularProgressIndicator(
+            color: themeService.currentTheme.colorScheme.primary,
+          ),
+          const SizedBox(height: 16),
           Text(
             'Generating your personalized workout...',
             style: TextStyle(
               fontFamily: 'DMSans',
               fontSize: 16,
-              color: Colors.black87, // This will be handled by theme
+              color: themeService.currentTheme.textTheme.bodyLarge?.color ?? Colors.black87,
             ),
           ),
         ],

@@ -115,16 +115,18 @@ class _MuscleGroupSelectionPageState extends State<MuscleGroupSelectionPage> {
     final isParent = _isParentMuscle(muscle);
     final isExpanded = expandedGroups.contains(muscle);
     
-    return Container(
-      color: themeService.isDarkMode 
-          ? const Color(0xFF2A2A2A)
-          : Colors.grey.shade50,
-      child: Column(
-        children: [
-          CheckboxListTile(
+    return Column(
+      children: [
+        Container(
+          color: themeService.isDarkMode 
+              ? const Color(0xFF2A2A2A)
+              : Colors.grey.shade50,
+          child: CheckboxListTile(
             contentPadding: EdgeInsets.only(
               left: isSubMuscle ? 48.0 : 16.0,
               right: 16.0,
+              top: 2.0,
+              bottom: 2.0,
             ),
             title: Row(
               children: [
@@ -132,6 +134,7 @@ class _MuscleGroupSelectionPageState extends State<MuscleGroupSelectionPage> {
                   child: Text(
                     muscle,
                     style: TextStyle(
+                      fontWeight: FontWeight.w600,
                       color: themeService.currentTheme.textTheme.titleMedium?.color,
                     ),
                   ),
@@ -152,12 +155,39 @@ class _MuscleGroupSelectionPageState extends State<MuscleGroupSelectionPage> {
             },
             activeColor: Colors.blue,
           ),
-          if (isParent && isExpanded && widget.subGroups != null)
-            ...widget.subGroups![muscle]!.map(
-              (subMuscle) => _buildMuscleItem(subMuscle, isSubMuscle: true),
+        ),
+                  if (isParent && isExpanded && widget.subGroups != null) ...[
+            // Divider line between parent and sub-muscles
+            Container(
+              margin: EdgeInsets.only(
+                left: isSubMuscle ? 48.0 : 16.0,
+                right: 16.0,
+              ),
+              height: 1,
+              color: themeService.isDarkMode ? Colors.grey.shade700 : Colors.grey.shade300,
             ),
-        ],
-      ),
+            // Sub-muscles with dividers between them
+            ...widget.subGroups![muscle]!.asMap().entries.map((entry) {
+              final index = entry.key;
+              final subMuscle = entry.value;
+              return Column(
+                children: [
+                  _buildMuscleItem(subMuscle, isSubMuscle: true),
+                  // Add divider after each sub-muscle except the last one
+                  if (index < widget.subGroups![muscle]!.length - 1)
+                    Container(
+                      margin: EdgeInsets.only(
+                        left: 48.0,
+                        right: 16.0,
+                      ),
+                      height: 1,
+                      color: themeService.isDarkMode ? Colors.grey.shade700 : Colors.grey.shade300,
+                    ),
+                ],
+              );
+            }),
+          ],
+      ],
     );
   }
 
@@ -190,6 +220,7 @@ class _MuscleGroupSelectionPageState extends State<MuscleGroupSelectionPage> {
               style: TextStyle(
                 color: selectedMuscles.isEmpty ? Colors.grey : Colors.red,
                 fontSize: 20,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ),
@@ -210,10 +241,11 @@ class _MuscleGroupSelectionPageState extends State<MuscleGroupSelectionPage> {
                 ? const Color(0xFF2A2A2A)
                 : Colors.grey.shade50,
             child: CheckboxListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 2.0),
               title: Text(
                 'Select All',
                 style: TextStyle(
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w700,
                   color: themeService.currentTheme.textTheme.titleMedium?.color,
                 ),
               ),
@@ -257,7 +289,7 @@ class _MuscleGroupSelectionPageState extends State<MuscleGroupSelectionPage> {
                       style: TextStyle(
                         color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey[600],
                         fontSize: 14,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
@@ -279,7 +311,7 @@ class _MuscleGroupSelectionPageState extends State<MuscleGroupSelectionPage> {
                       'Apply Selection',
                       style: TextStyle(
                         fontSize: 16, 
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w700,
                         color: themeService.isDarkMode ? Colors.black : Colors.white,
                       ),
                     ),

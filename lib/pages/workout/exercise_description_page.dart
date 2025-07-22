@@ -598,21 +598,29 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> with 
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Title Card
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-                          decoration: BoxDecoration(
-                            color: themeService.currentTheme.cardTheme.color,
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: themeService.isDarkMode ? Colors.grey.shade600 : Colors.grey.shade300),
-                          ),
-                          child: Text(
-                            widget.title,
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: themeService.currentTheme.textTheme.titleLarge?.color,
+                        // Title Card with Hero Animation
+                        Hero(
+                          tag: 'exercise-${widget.title}',
+                          child: Material(
+                            color: Colors.transparent,
+                            child: ClipRect(
+                              child: Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                                decoration: BoxDecoration(
+                                  color: themeService.currentTheme.cardTheme.color,
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(color: themeService.isDarkMode ? Colors.grey.shade600 : Colors.grey.shade300),
+                                ),
+                                child: Text(
+                                  widget.title,
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: themeService.currentTheme.textTheme.titleLarge?.color,
+                                  ),
+                                ),
+                              ),
                             ),
                           ),
                         ),
@@ -626,7 +634,7 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> with 
                                 'Primary: ${widget.mainMuscle}',
                                 style: TextStyle(
                                   fontSize: 14,
-                                  fontWeight: FontWeight.w500,
+                                  fontWeight: FontWeight.w600,
                                   color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey,
                                 ),
                               ),
@@ -654,7 +662,7 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> with 
                             'Secondary: ${widget.secondaryMuscle}',
                             style: TextStyle(
                               fontSize: 14,
-                              fontWeight: FontWeight.w500,
+                              fontWeight: FontWeight.w600,
                               color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey,
                             ),
                           ),
@@ -666,7 +674,7 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> with 
                           'Description',
                           style: TextStyle(
                             fontSize: 16, 
-                            fontWeight: FontWeight.bold,
+                            fontWeight: FontWeight.w700,
                             color: themeService.currentTheme.textTheme.titleMedium?.color,
                           ),
                         ),
@@ -676,6 +684,7 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> with 
                           style: TextStyle(
                             fontSize: 14, 
                             height: 1.5,
+                            fontWeight: FontWeight.w500,
                             color: themeService.currentTheme.textTheme.bodyLarge?.color,
                           ),
                         ),
@@ -686,7 +695,7 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> with 
                           'Video Demonstration',
                           style: TextStyle(
                             fontSize: 16, 
-                            fontWeight: FontWeight.bold,
+                            fontWeight: FontWeight.w700,
                             color: themeService.currentTheme.textTheme.titleMedium?.color,
                           ),
                         ),
@@ -745,7 +754,7 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> with 
                           'How to perform',
                           style: TextStyle(
                             fontSize: 16, 
-                            fontWeight: FontWeight.bold,
+                            fontWeight: FontWeight.w700,
                             color: themeService.currentTheme.textTheme.titleMedium?.color,
                           ),
                         ),
@@ -763,6 +772,7 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> with 
                                   style: TextStyle(
                                     fontSize: 14, 
                                     height: 1.5,
+                                    fontWeight: FontWeight.w500,
                                     color: themeService.currentTheme.textTheme.bodyLarge?.color,
                                   ),
                                   children: [
@@ -785,7 +795,7 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> with 
                               'Pro Tips',
                               style: TextStyle(
                                 fontSize: 16, 
-                                fontWeight: FontWeight.bold,
+                                fontWeight: FontWeight.w700,
                                 color: themeService.currentTheme.textTheme.titleMedium?.color,
                               ),
                             ),
@@ -812,6 +822,7 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> with 
                                       style: TextStyle(
                                         fontSize: 14, 
                                         height: 1.5,
+                                        fontWeight: FontWeight.w500,
                                         color: themeService.currentTheme.textTheme.bodyLarge?.color,
                                       ),
                                       children: [
@@ -851,7 +862,7 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> with 
                                   style: TextStyle(
                                     fontSize: 16, 
                                     color: themeService.isDarkMode ? Colors.black : Colors.white, 
-                                    fontWeight: FontWeight.bold,
+                                    fontWeight: FontWeight.w700,
                                   ),
                                 ),
                               ],
