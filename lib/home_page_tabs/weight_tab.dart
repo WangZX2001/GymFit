@@ -3,6 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:gymfit/pages/add_weight_page.dart';
 import 'package:gymfit/components/weight_trend_graph.dart'; // ensure this contains WeightTrendGraphState
+import 'package:provider/provider.dart';
+import 'package:gymfit/services/theme_service.dart';
 
 class WeightTab extends StatefulWidget {
   const WeightTab({super.key});
@@ -62,12 +64,15 @@ class _WeightTabState extends State<WeightTab> {
 
   @override
   Widget build(BuildContext context) {
+    final themeService = Provider.of<ThemeService>(context);
+    final isDark = themeService.isDarkMode;
+    
     return Column(
       children: [
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.grey[100],
+            color: isDark ? Colors.grey[800] : Colors.grey[100],
             borderRadius: BorderRadius.circular(25),
             boxShadow: [
               BoxShadow(
@@ -90,22 +95,29 @@ class _WeightTabState extends State<WeightTab> {
                 ),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(50),
-                  border: Border.all(color: Colors.grey.shade800, width: 2),
+                  border: Border.all(
+                    color: isDark ? Colors.grey.shade600 : Colors.grey.shade800, 
+                    width: 2
+                  ),
                 ),
                 child: Text(
                   currentWeight != null
                       ? '${currentWeight!.toStringAsFixed(1)} kg'
                       : '--',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
+                    color: themeService.currentTheme.textTheme.titleLarge?.color,
                   ),
                 ),
               ),
               const SizedBox(height: 5),
-              const Text(
+              Text(
                 'Current Weight',
-                style: TextStyle(color: Colors.black, fontSize: 14),
+                style: TextStyle(
+                  color: themeService.currentTheme.textTheme.bodyMedium?.color, 
+                  fontSize: 14
+                ),
               ),
               const SizedBox(height: 10),
 
@@ -121,7 +133,7 @@ class _WeightTabState extends State<WeightTab> {
                       child: SizedBox(
                         width: 200,
                         height: 100,
-                        child: CustomPaint(painter: TopArcPainter()),
+                        child: CustomPaint(painter: TopArcPainter(isDark: isDark)),
                       ),
                     ),
 
@@ -136,15 +148,16 @@ class _WeightTabState extends State<WeightTab> {
                             children: [
                               Text(
                                 '${startingWeight?.toStringAsFixed(1) ?? "--"}kg',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
+                                  color: themeService.currentTheme.textTheme.titleMedium?.color,
                                 ),
                               ),
-                              const Text(
+                              Text(
                                 'Starting Weight',
                                 style: TextStyle(
-                                  color: Colors.black,
+                                  color: themeService.currentTheme.textTheme.bodyMedium?.color,
                                   fontSize: 12,
                                 ),
                               ),
@@ -154,15 +167,16 @@ class _WeightTabState extends State<WeightTab> {
                             children: [
                               Text(
                                 '${targetWeight?.toStringAsFixed(1) ?? "--"}kg',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
+                                  color: themeService.currentTheme.textTheme.titleMedium?.color,
                                 ),
                               ),
-                              const Text(
+                              Text(
                                 'Target Weight',
                                 style: TextStyle(
-                                  color: Colors.black,
+                                  color: themeService.currentTheme.textTheme.bodyMedium?.color,
                                   fontSize: 12,
                                 ),
                               ),
@@ -223,14 +237,21 @@ class _WeightTabState extends State<WeightTab> {
           children: [
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
+              children: [
                 Text(
                   'Weight Trend',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontSize: 20, 
+                    fontWeight: FontWeight.bold,
+                    color: themeService.currentTheme.textTheme.titleLarge?.color,
+                  ),
                 ),
                 Text(
                   'For the last 7 days',
-                  style: TextStyle(fontSize: 14, color: Colors.grey),
+                  style: TextStyle(
+                    fontSize: 14, 
+                    color: themeService.currentTheme.textTheme.bodySmall?.color,
+                  ),
                 ),
               ],
             ),
@@ -281,13 +302,16 @@ class _WeightTabState extends State<WeightTab> {
 }
 
 class TopArcPainter extends CustomPainter {
+  final bool isDark;
+  
+  TopArcPainter({required this.isDark});
+  
   @override
   void paint(Canvas canvas, Size size) {
-    final paint =
-        Paint()
-          ..color = Colors.grey.shade500
-          ..strokeWidth = 2
-          ..style = PaintingStyle.stroke;
+    final paint = Paint()
+      ..color = isDark ? Colors.grey.shade600 : Colors.grey.shade500
+      ..strokeWidth = 2
+      ..style = PaintingStyle.stroke;
 
     final Rect rect = Rect.fromLTRB(0, 0, size.width, size.height * 2);
     canvas.drawArc(rect, 3.14, 3.14, false, paint);

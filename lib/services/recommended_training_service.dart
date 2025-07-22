@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:gymfit/models/custom_workout.dart';
 import 'package:gymfit/packages/exercise_information_repository/exercise_information_repository.dart';
+import 'package:gymfit/services/workout_service.dart'; // Added for WorkoutService
 
 class RecommendedTrainingService {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -29,8 +30,12 @@ class RecommendedTrainingService {
     }
   }
 
-  /// Generate recommended workout based on user body data
-  static Future<CustomWorkout> generateRecommendedWorkout() async {
+  /// Generate recommended week plan based on user body data and preferences
+  static Future<Map<String, List<CustomWorkoutExercise>>> generateRecommendedWeekPlan({
+    required int daysPerWeek,
+    required List<String> selectedDays,
+    required String trainingSplit,
+  }) async {
     final userData = await getUserBodyData();
     final exercises = await _exerciseRepo.getAllExerciseInformation();
 
@@ -53,34 +58,213 @@ class RecommendedTrainingService {
       gender: gender,
     );
 
-    // Select exercises for the workout
-    List<ExerciseInformation> selectedExercises = _selectExercisesForWorkout(
-      filteredExercises,
-      goal: goal,
-      fitnessLevel: fitnessLevel,
+    // Shuffle exercises to add variety
+    filteredExercises.shuffle();
+    
+
+
+    // Canonical muscle group mapping for splits
+    final Map<String, String> muscleToSplitGroup = {
+      // Push
+      'chest': 'push',
+      'upper chest': 'push',
+      'lower chest': 'push',
+      'shoulders': 'push',
+      'front delts': 'push',
+      'triceps': 'push',
+      // Pull
+      'back': 'pull',
+      'lats': 'pull',
+      'traps': 'pull',
+      'biceps': 'pull',
+      'rear delts': 'pull',
+      'rhomboids': 'pull',
+      'forearms': 'pull',
+      // Legs
+      'legs': 'legs',
+      'quads': 'legs',
+      'hamstrings': 'legs',
+      'glutes': 'legs',
+      'calves': 'legs',
+      'adductors': 'legs',
+      'abductors': 'legs',
+      // Core
+      'abs': 'core',
+      'core': 'core',
+      // Arms (for upper)
+      'arms': 'arms',
+    };
+
+    // Helper to get canonical group for a muscle
+    String getSplitGroup(String muscle) {
+      final m = muscle.trim().toLowerCase();
+      return muscleToSplitGroup[m] ?? m;
+    }
+
+    // Group exercises by canonical split group
+    Map<String, List<ExerciseInformation>> splitGroupExercises = {};
+    for (var exercise in filteredExercises) {
+      final group = getSplitGroup(exercise.mainMuscle);
+      splitGroupExercises.putIfAbsent(group, () => []).add(exercise);
+    }
+
+    // Define canonical muscle group lists for each split
+    // final List<String> pushMuscles = [
+    //   'chest', 'upper chest', 'lower chest', 'shoulders', 'front delts', 'triceps'
+    // ];
+    // final List<String> pullMuscles = [
+    //   'back', 'lats', 'traps', 'biceps', 'rear delts', 'rhomboids', 'forearms'
+    // ];
+    // final List<String> legsMuscles = [
+    //   'legs', 'quads', 'hamstrings', 'glutes', 'calves', 'adductors', 'abductors'
+    // ];
+    // final List<String> coreMuscles = [
+    //   'abs', 'core', 'obliques'
+    // ];
+    // final List<String> upperMuscles = [
+    //   ...pushMuscles, ...pullMuscles, 'arms'
+    // ];
+    // final List<String> lowerMuscles = [
+    //   ...legsMuscles
+    // ];
+
+    // Refined split muscle group lists (no 'arms' catch-all)
+    // final List<String> refinedPushMuscles = [
+    //   'chest', 'upper chest', 'lower chest', 'shoulders', 'front delts', 'triceps'
+    // ];
+    // final List<String> refinedPullMuscles = [
+    //   'back', 'lats', 'traps', 'biceps', 'rear delts', 'rhomboids', 'forearms'
+    // ];
+    // final List<String> refinedLegsMuscles = [
+    //   'legs', 'quads', 'hamstrings', 'glutes', 'calves', 'adductors', 'abductors', 'core', 'abs', 'obliques'
+    // ];
+    // final List<String> refinedUpperMuscles = [
+    //   'chest', 'upper chest', 'lower chest', 'back', 'lats', 'traps', 'shoulders', 'front delts', 'rear delts', 'rhomboids', 'biceps', 'triceps', 'forearms'
+    // ];
+    // final List<String> refinedLowerMuscles = [
+    //   'legs', 'quads', 'hamstrings', 'glutes', 'calves', 'adductors', 'abductors', 'core', 'abs', 'obliques'
+    // ];
+
+    // Strict split muscle group lists as specified by user
+    final List<String> strictPushMuscles = [
+      'Chest', 'Triceps', 'Shoulders'
+    ];
+    final List<String> strictPullMuscles = [
+      'Biceps', 'Back', 'Upper Back', 'Lower Back', 'Traps', 'Neck', 'Lats'
+    ];
+    final List<String> strictLegsMuscles = [
+      'Legs'
+    ];
+    final List<String> strictUpperMuscles = [
+      ...strictPushMuscles, ...strictPullMuscles
+    ];
+    final List<String> strictLowerMuscles = [
+      ...strictLegsMuscles
+    ];
+
+    // Determine training days
+    final weekDays = [
+      'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'
+    ];
+    final days = selectedDays.isNotEmpty
+        ? selectedDays
+        : weekDays.sublist(0, daysPerWeek);
+
+    // Split logic (explicit muscle group lists)
+    Map<String, List<String>> splitMuscleGroups = {};
+    if (trainingSplit == 'Full Body') {
+      for (var day in days) {
+        splitMuscleGroups[day] = [
+          ...strictPushMuscles, ...strictPullMuscles, ...strictLegsMuscles
+        ];
+      }
+    } else if (trainingSplit == 'Upper/Lower') {
+      for (int i = 0; i < days.length; i++) {
+        splitMuscleGroups[days[i]] =
+            i % 2 == 0
+                ? strictUpperMuscles
+                : strictLowerMuscles;
+      }
+    } else if (trainingSplit == 'Push/Pull/Legs') {
+      for (int i = 0; i < days.length; i++) {
+        if (i % 3 == 0) {
+          splitMuscleGroups[days[i]] = strictPushMuscles;
+        } else if (i % 3 == 1) {
+          splitMuscleGroups[days[i]] = strictPullMuscles;
+        } else {
+          splitMuscleGroups[days[i]] = strictLegsMuscles;
+        }
+      }
+    }
+
+    // For each day, select exercises for the split
+    Map<String, List<CustomWorkoutExercise>> weekPlan = {};
+    for (final day in days) {
+      final targetMuscles = splitMuscleGroups[day] ?? [];
+      List<CustomWorkoutExercise> dayExercises = [];
+      // Strict filtering: Only include exercises whose normalized primary mainMuscle is in targetMuscles
+      final normalizedTargetMuscles = targetMuscles.map((m) => m.trim().toLowerCase()).toSet();
+      final usedMuscles = <String, int>{};
+      
+      // Create a list of exercises for this day's muscle groups
+      List<ExerciseInformation> dayExercisesList = [];
+      for (final ex in filteredExercises) {
+        String main = ex.mainMuscle.split(RegExp(r'[\/,&]')).first.split('and').first.trim().toLowerCase();
+        if (normalizedTargetMuscles.contains(main)) {
+          dayExercisesList.add(ex);
+        }
+      }
+      
+      // Shuffle the exercises for this specific day
+      dayExercisesList.shuffle();
+      
+      // Select exercises with limits
+      for (final ex in dayExercisesList) {
+        String main = ex.mainMuscle.split(RegExp(r'[\/,&]')).first.split('and').first.trim().toLowerCase();
+        usedMuscles[main] = (usedMuscles[main] ?? 0) + 1;
+        if (usedMuscles[main]! <= 2) {
+          final sets = await _generateSetsForExercise(ex, goal, fitnessLevel);
+          dayExercises.add(CustomWorkoutExercise(
+            name: ex.title,
+            sets: sets,
+          ));
+        }
+      }
+      
+      weekPlan[day] = dayExercises;
+    }
+
+    return weekPlan;
+  }
+
+  /// Generate recommended workout based on user body data
+  static Future<CustomWorkout> generateRecommendedWorkout({
+    required int daysPerWeek,
+    required List<String> selectedDays,
+    required String trainingSplit,
+  }) async {
+    // Get the week plan
+    final weekPlan = await generateRecommendedWeekPlan(
+      daysPerWeek: daysPerWeek,
+      selectedDays: selectedDays,
+      trainingSplit: trainingSplit,
     );
 
-    // Convert to CustomWorkoutExercise format
-    List<CustomWorkoutExercise> workoutExercises =
-        selectedExercises.map((exercise) {
-          return CustomWorkoutExercise(
-            name: exercise.title,
-            sets: _generateSetsForExercise(exercise, goal, fitnessLevel),
-          );
-        }).toList();
-
-    // Generate workout name and description
-    String workoutName = _generateWorkoutName(goal, fitnessLevel);
-    String workoutDescription = _generateWorkoutDescription(
-      goal,
-      fitnessLevel,
-      selectedExercises,
-    );
+    // Flatten for legacy compatibility
+    List<CustomWorkoutExercise> allExercises = weekPlan.values.expand((e) => e).toList();
+    String workoutName = 'Recommended Plan ($trainingSplit, $daysPerWeek days)';
+    String workoutDescription = 'Weekly Plan:\n';
+    for (final day in weekPlan.keys) {
+      workoutDescription += '\n$day:\n';
+      for (final ex in weekPlan[day] ?? []) {
+        workoutDescription += '  - ${ex.name}\n';
+      }
+    }
 
     return CustomWorkout(
       id: 'recommended_${DateTime.now().millisecondsSinceEpoch}',
       name: workoutName,
-      exercises: workoutExercises,
+      exercises: allExercises,
       createdAt: DateTime.now(),
       userId: _auth.currentUser!.uid,
       description: workoutDescription,
@@ -192,216 +376,217 @@ class RecommendedTrainingService {
     return true;
   }
 
-  /// Select exercises for the workout based on goal
-  static List<ExerciseInformation> _selectExercisesForWorkout(
-    List<ExerciseInformation> exercises, {
-    required String goal,
-    required String fitnessLevel,
-  }) {
-    List<ExerciseInformation> selectedExercises = [];
+  // /// Select exercises for the workout based on goal
+  // static List<ExerciseInformation> _selectExercisesForWorkout(
+  //   List<ExerciseInformation> exercises, {
+  //   required String goal,
+  //   required String fitnessLevel,
+  // }) {
+  //   List<ExerciseInformation> selectedExercises = [];
 
-    // Determine number of exercises based on fitness level
-    int targetExerciseCount;
-    switch (fitnessLevel.toLowerCase()) {
-      case 'beginner':
-        targetExerciseCount = 4;
-        break;
-      case 'intermediate':
-        targetExerciseCount = 6;
-        break;
-      case 'advance':
-        targetExerciseCount = 8;
-        break;
-      default:
-        targetExerciseCount = 4;
-    }
+  //   // Determine number of exercises based on fitness level
+  //   int targetExerciseCount;
+  //   switch (fitnessLevel.toLowerCase()) {
+  //     case 'beginner':
+  //       targetExerciseCount = 4;
+  //       break;
+  //     case 'intermediate':
+  //       targetExerciseCount = 6;
+  //       break;
+  //     case 'advance':
+  //       targetExerciseCount = 8;
+  //       break;
+  //     default:
+  //       targetExerciseCount = 4;
+  //   }
 
-    // Group exercises by muscle groups
-    Map<String, List<ExerciseInformation>> muscleGroups = {};
-    for (var exercise in exercises) {
-      String muscle = exercise.mainMuscle.toLowerCase();
-      muscleGroups.putIfAbsent(muscle, () => []).add(exercise);
-    }
+  //   // Group exercises by muscle groups
+  //   Map<String, List<ExerciseInformation>> muscleGroups = {};
+  //   for (var exercise in exercises) {
+  //     String muscle = exercise.mainMuscle.toLowerCase();
+  //     muscleGroups.putIfAbsent(muscle, () => []).add(exercise);
+  //   }
 
-    // Select exercises based on goal
-    switch (goal.toLowerCase()) {
-      case 'lose weight':
-        selectedExercises = _selectWeightLossExercises(
-          muscleGroups,
-          targetExerciseCount,
-        );
-        break;
-      case 'gain muscle':
-        selectedExercises = _selectMuscleGainExercises(
-          muscleGroups,
-          targetExerciseCount,
-        );
-        break;
-      case 'endurance':
-        selectedExercises = _selectEnduranceExercises(
-          muscleGroups,
-          targetExerciseCount,
-        );
-        break;
-      case 'cardio':
-        selectedExercises = _selectCardioExercises(
-          muscleGroups,
-          targetExerciseCount,
-        );
-        break;
-      default:
-        selectedExercises = _selectMuscleGainExercises(
-          muscleGroups,
-          targetExerciseCount,
-        );
-    }
+  //   // Select exercises based on goal
+  //   switch (goal.toLowerCase()) {
+  //     case 'lose weight':
+  //       selectedExercises = _selectWeightLossExercises(
+  //         muscleGroups,
+  //         targetExerciseCount,
+  //       );
+  //       break;
+  //     case 'gain muscle':
+  //       selectedExercises = _selectMuscleGainExercises(
+  //         muscleGroups,
+  //         targetExerciseCount,
+  //       );
+  //       break;
+  //     case 'endurance':
+  //       selectedExercises = _selectEnduranceExercises(
+  //         muscleGroups,
+  //         targetExerciseCount,
+  //       );
+  //       break;
+  //     case 'cardio':
+  //       selectedExercises = _selectCardioExercises(
+  //         muscleGroups,
+  //         targetExerciseCount,
+  //       );
+  //       break;
+  //     default:
+  //       selectedExercises = _selectMuscleGainExercises(
+  //         muscleGroups,
+  //         targetExerciseCount,
+  //       );
+  //   }
 
-    return selectedExercises;
-  }
+  //   return selectedExercises;
+  // }
 
-  /// Select exercises for weight loss
-  static List<ExerciseInformation> _selectWeightLossExercises(
-    Map<String, List<ExerciseInformation>> muscleGroups,
-    int targetCount,
-  ) {
-    List<ExerciseInformation> selected = [];
+  // /// Select exercises for weight loss
+  // static List<ExerciseInformation> _selectWeightLossExercises(
+  //   Map<String, List<ExerciseInformation>> muscleGroups,
+  //   int targetCount,
+  // ) {
+  //   List<ExerciseInformation> selected = [];
 
-    // Prioritize compound movements and cardio-friendly exercises
-    List<String> priorityMuscles = ['chest', 'back', 'legs', 'shoulders'];
+  //   // Prioritize compound movements and cardio-friendly exercises
+  //   List<String> priorityMuscles = ['chest', 'back', 'legs', 'shoulders'];
 
-    for (String muscle in priorityMuscles) {
-      if (selected.length >= targetCount) break;
+  //   for (String muscle in priorityMuscles) {
+  //     if (selected.length >= targetCount) break;
 
-      var exercises = muscleGroups[muscle] ?? [];
-      if (exercises.isNotEmpty) {
-        // Select compound movements first
-        var compoundExercises =
-            exercises
-                .where(
-                  (e) =>
-                      e.title.toLowerCase().contains('press') ||
-                      e.title.toLowerCase().contains('row') ||
-                      e.title.toLowerCase().contains('squat') ||
-                      e.title.toLowerCase().contains('deadlift'),
-                )
-                .toList();
+  //     var exercises = muscleGroups[muscle] ?? [];
+  //     if (exercises.isNotEmpty) {
+  //       // Select compound movements first
+  //       var compoundExercises =
+  //           exercises
+  //               .where(
+  //                 (e) =>
+  //                     e.title.toLowerCase().contains('press') ||
+  //                     e.title.toLowerCase().contains('row') ||
+  //                     e.title.toLowerCase().contains('squat') ||
+  //                     e.title.toLowerCase().contains('deadlift'),
+  //               )
+  //               .toList();
 
-        if (compoundExercises.isNotEmpty) {
-          selected.add(compoundExercises.first);
-        } else if (exercises.isNotEmpty) {
-          selected.add(exercises.first);
-        }
-      }
-    }
+  //       if (compoundExercises.isNotEmpty) {
+  //         selected.add(compoundExercises.first);
+  //       } else if (exercises.isNotEmpty) {
+  //         selected.add(exercises.first);
+  //       }
+  //     }
+  //   }
 
-    return selected;
-  }
+  //   return selected;
+  // }
 
-  /// Select exercises for muscle gain
-  static List<ExerciseInformation> _selectMuscleGainExercises(
-    Map<String, List<ExerciseInformation>> muscleGroups,
-    int targetCount,
-  ) {
-    List<ExerciseInformation> selected = [];
+  // /// Select exercises for muscle gain
+  // static List<ExerciseInformation> _selectMuscleGainExercises(
+  //   Map<String, List<ExerciseInformation>> muscleGroups,
+  //   int targetCount,
+  // ) {
+  //   List<ExerciseInformation> selected = [];
 
-    // Target all major muscle groups
-    List<String> targetMuscles = [
-      'chest',
-      'back',
-      'legs',
-      'shoulders',
-      'arms',
-      'abs',
-    ];
+  //   // Target all major muscle groups
+  //   List<String> targetMuscles = [
+  //     'chest',
+  //     'back',
+  //     'legs',
+  //     'shoulders',
+  //     'arms',
+  //     'abs',
+  //   ];
 
-    for (String muscle in targetMuscles) {
-      if (selected.length >= targetCount) break;
+  //   for (String muscle in targetMuscles) {
+  //     if (selected.length >= targetCount) break;
 
-      var exercises = muscleGroups[muscle] ?? [];
-      if (exercises.isNotEmpty) {
-        selected.add(exercises.first);
-      }
-    }
+  //     var exercises = muscleGroups[muscle] ?? [];
+  //     if (exercises.isNotEmpty) {
+  //       selected.add(exercises.first);
+  //     }
+  //   }
 
-    return selected;
-  }
+  //   return selected;
+  // }
 
-  /// Select exercises for endurance
-  static List<ExerciseInformation> _selectEnduranceExercises(
-    Map<String, List<ExerciseInformation>> muscleGroups,
-    int targetCount,
-  ) {
-    List<ExerciseInformation> selected = [];
+  // /// Select exercises for endurance
+  // static List<ExerciseInformation> _selectEnduranceExercises(
+  //   Map<String, List<ExerciseInformation>> muscleGroups,
+  //   int targetCount,
+  // ) {
+  //   List<ExerciseInformation> selected = [];
 
-    // Focus on bodyweight and light resistance exercises
-    List<String> priorityMuscles = ['legs', 'chest', 'back', 'shoulders'];
+  //   // Focus on bodyweight and light resistance exercises
+  //   List<String> priorityMuscles = ['legs', 'chest', 'back', 'shoulders'];
 
-    for (String muscle in priorityMuscles) {
-      if (selected.length >= targetCount) break;
+  //   for (String muscle in priorityMuscles) {
+  //     if (selected.length >= targetCount) break;
 
-      var exercises = muscleGroups[muscle] ?? [];
-      var enduranceExercises =
-          exercises
-              .where(
-                (e) =>
-                    e.equipment.toLowerCase() == 'bodyweight' ||
-                    e.equipment.toLowerCase().contains('cable'),
-              )
-              .toList();
+  //     var exercises = muscleGroups[muscle] ?? [];
+  //     var enduranceExercises =
+  //           exercises
+  //               .where(
+  //                 (e) =>
+  //                     e.equipment.toLowerCase() == 'bodyweight' ||
+  //                     e.equipment.toLowerCase().contains('cable'),
+  //               )
+  //               .toList();
 
-      if (enduranceExercises.isNotEmpty) {
-        selected.add(enduranceExercises.first);
-      } else if (exercises.isNotEmpty) {
-        selected.add(exercises.first);
-      }
-    }
+  //   if (enduranceExercises.isNotEmpty) {
+  //     selected.add(enduranceExercises.first);
+  //   } else if (exercises.isNotEmpty) {
+  //     selected.add(exercises.first);
+  //   }
+  //   }
 
-    return selected;
-  }
+  //   return selected;
+  // }
 
-  /// Select exercises for cardio
-  static List<ExerciseInformation> _selectCardioExercises(
-    Map<String, List<ExerciseInformation>> muscleGroups,
-    int targetCount,
-  ) {
-    List<ExerciseInformation> selected = [];
+  // /// Select exercises for cardio
+  // static List<ExerciseInformation> _selectCardioExercises(
+  //   Map<String, List<ExerciseInformation>> muscleGroups,
+  //   int targetCount,
+  // ) {
+  //   List<ExerciseInformation> selected = [];
 
-    // Focus on full-body and leg exercises
-    List<String> priorityMuscles = ['legs', 'chest', 'back'];
+  //   // Focus on full-body and leg exercises
+  //   List<String> priorityMuscles = ['legs', 'chest', 'back'];
 
-    for (String muscle in priorityMuscles) {
-      if (selected.length >= targetCount) break;
+  //   for (String muscle in priorityMuscles) {
+  //     if (selected.length >= targetCount) break;
 
-      var exercises = muscleGroups[muscle] ?? [];
-      var cardioExercises =
-          exercises
-              .where(
-                (e) =>
-                    e.equipment.toLowerCase() == 'bodyweight' ||
-                    e.title.toLowerCase().contains('jump') ||
-                    e.title.toLowerCase().contains('burpee'),
-              )
-              .toList();
+  //     var exercises = muscleGroups[muscle] ?? [];
+  //     var cardioExercises =
+  //           exercises
+  //               .where(
+  //                 (e) =>
+  //                     e.equipment.toLowerCase() == 'bodyweight' ||
+  //                     e.title.toLowerCase().contains('jump') ||
+  //                     e.title.toLowerCase().contains('burpee'),
+  //               )
+  //               .toList();
 
-      if (cardioExercises.isNotEmpty) {
-        selected.add(cardioExercises.first);
-      } else if (exercises.isNotEmpty) {
-        selected.add(exercises.first);
-      }
-    }
+  //   if (cardioExercises.isNotEmpty) {
+  //     selected.add(cardioExercises.first);
+  //   } else if (exercises.isNotEmpty) {
+  //     selected.add(exercises.first);
+  //   }
+  //   }
 
-    return selected;
-  }
+  //   return selected;
+  // }
 
   /// Generate sets for an exercise based on goal, fitness level, and exercise type
-  static List<CustomWorkoutSet> _generateSetsForExercise(
+  static Future<List<CustomWorkoutSet>> _generateSetsForExercise(
     ExerciseInformation exercise,
     String goal,
     String fitnessLevel,
-  ) {
-    // Note: getUserBodyData() is async, so we'll use the data passed from the main method
-    // For now, we'll focus on exercise-specific recommendations
-
+  ) async {
+    // Get user's 1RM data for this exercise
+    final user1RM = await _getUser1RMForExercise(exercise.title);
+    final userBodyWeight = await _getUserBodyWeight();
+    
     int setCount;
     int reps;
     double weight;
@@ -411,173 +596,319 @@ class RecommendedTrainingService {
     final String muscleGroup = exercise.mainMuscle.toLowerCase();
     final String equipment = exercise.equipment.toLowerCase();
 
-    // Base recommendations by goal
+    // Get personalized weight based on 1RM or body weight
+    weight = await _getPersonalizedWeight(
+      exercise,
+      user1RM,
+      userBodyWeight,
+      goal,
+      fitnessLevel,
+    );
+
+    // Get reps based on goal and exercise type
+    reps = _getPersonalizedReps(
+      exerciseName,
+      muscleGroup,
+      equipment,
+      goal,
+      fitnessLevel,
+      user1RM,
+    );
+
+    // Get set count based on fitness level and goal
+    setCount = _getPersonalizedSetCount(fitnessLevel, goal);
+
+    // Create progressive sets with personalized progression
+    return _createPersonalizedProgressiveSets(
+      setCount,
+      reps,
+      weight,
+      goal,
+      fitnessLevel,
+      user1RM,
+    );
+  }
+
+  /// Get user's 1RM for a specific exercise
+  static Future<double?> _getUser1RMForExercise(String exerciseName) async {
+    try {
+      final workouts = await WorkoutService.getUserWorkouts();
+      double? max1RM;
+      
+      for (final workout in workouts) {
+        for (final exercise in workout.exercises) {
+          if (exercise.title.toLowerCase() == exerciseName.toLowerCase()) {
+            for (final set in exercise.sets) {
+              if (set.isCompleted && set.weight > 0 && set.reps > 0) {
+                final estimated1RM = _calculate1RM(set.weight, set.reps);
+                if (max1RM == null || estimated1RM > max1RM) {
+                  max1RM = estimated1RM;
+                }
+              }
+            }
+          }
+        }
+      }
+      
+      return max1RM;
+    } catch (e) {
+      // print('Error getting 1RM for $exerciseName: $e');
+      return null;
+    }
+  }
+
+  /// Calculate 1RM using Brzycki formula
+  static double _calculate1RM(double weight, int reps) {
+    if (reps == 1) return weight;
+    if (reps > 10) reps = 10; // Cap for accuracy
+    return weight / (1.0278 - 0.0278 * reps);
+  }
+
+  /// Get user's body weight from profile data
+  static Future<double?> _getUserBodyWeight() async {
+    try {
+      final userData = await getUserBodyData();
+      final height = userData['height']?.toDouble();
+      final bmi = userData['bmi']?.toDouble();
+      
+      if (height != null && bmi != null) {
+        // Calculate weight from BMI: weight = BMI * (height/100)^2
+        return bmi * (height / 100) * (height / 100);
+      }
+      
+      return null;
+    } catch (e) {
+      // print('Error getting user body weight: $e');
+      return null;
+    }
+  }
+
+  /// Get personalized weight based on 1RM, body weight, and user data
+  static Future<double> _getPersonalizedWeight(
+    ExerciseInformation exercise,
+    double? user1RM,
+    double? userBodyWeight,
+    String goal,
+    String fitnessLevel,
+  ) async {
+    // final String exerciseName = exercise.title.toLowerCase();
+    // final String muscleGroup = exercise.mainMuscle.toLowerCase();
+    // final String equipment = exercise.equipment.toLowerCase();
+
+    // If we have 1RM data, use it as the primary source
+    if (user1RM != null && user1RM > 0) {
+      return _getWeightFrom1RM(user1RM, goal, fitnessLevel);
+    }
+
+    // Fallback to body weight based calculations
+    if (userBodyWeight != null && userBodyWeight > 0) {
+      return _getWeightFromBodyWeight(userBodyWeight, exercise, goal, fitnessLevel);
+    }
+
+    // Final fallback to generic calculations
+    return _getGenericWeight(exercise, goal, fitnessLevel);
+  }
+
+  /// Calculate weight from 1RM data
+  static double _getWeightFrom1RM(double oneRM, String goal, String fitnessLevel) {
+    double percentage;
+    
+    // Set percentage based on goal
     switch (goal.toLowerCase()) {
       case 'lose weight':
-        setCount = _getSetCountForWeightLoss(fitnessLevel);
-        reps = _getRepsForWeightLoss(exerciseName, muscleGroup, equipment);
-        weight = _getRecommendedWeight(
-          exerciseName,
-          muscleGroup,
-          equipment,
-          goal,
-          fitnessLevel,
-        );
+        percentage = 0.65; // 65% of 1RM for higher reps
         break;
       case 'gain muscle':
-        setCount = _getSetCountForMuscleGain(fitnessLevel);
-        reps = _getRepsForMuscleGain(
-          exerciseName,
-          muscleGroup,
-          equipment,
-          fitnessLevel,
-        );
-        weight = _getRecommendedWeight(
-          exerciseName,
-          muscleGroup,
-          equipment,
-          goal,
-          fitnessLevel,
-        );
+        percentage = 0.75; // 75% of 1RM for hypertrophy
         break;
       case 'endurance':
-        setCount = _getSetCountForEndurance(fitnessLevel);
-        reps = _getRepsForEndurance(exerciseName, muscleGroup, equipment);
-        weight = _getRecommendedWeight(
-          exerciseName,
-          muscleGroup,
-          equipment,
-          goal,
-          fitnessLevel,
-        );
+        percentage = 0.55; // 55% of 1RM for endurance
         break;
-      case 'cardio':
-        setCount = _getSetCountForCardio(fitnessLevel);
-        reps = _getRepsForCardio(exerciseName, muscleGroup, equipment);
-        weight = _getRecommendedWeight(
-          exerciseName,
-          muscleGroup,
-          equipment,
-          goal,
-          fitnessLevel,
-        );
+      case 'strength':
+        percentage = 0.85; // 85% of 1RM for strength
         break;
       default:
-        setCount = 3;
-        reps = 10;
-        weight = _getRecommendedWeight(
-          exerciseName,
-          muscleGroup,
-          equipment,
-          goal,
-          fitnessLevel,
-        );
+        percentage = 0.70; // 70% of 1RM default
     }
-
-    // Create progressive sets (pyramid or reverse pyramid based on goal)
-    return _createProgressiveSets(setCount, reps, weight, goal, fitnessLevel);
-  }
-
-  /// Get set count for weight loss based on fitness level
-  static int _getSetCountForWeightLoss(String fitnessLevel) {
-    switch (fitnessLevel.toLowerCase()) {
-      case 'beginner':
-        return 2;
-      case 'intermediate':
-        return 3;
-      case 'advance':
-        return 4;
-      default:
-        return 3;
-    }
-  }
-
-  /// Get set count for muscle gain based on fitness level
-  static int _getSetCountForMuscleGain(String fitnessLevel) {
-    switch (fitnessLevel.toLowerCase()) {
-      case 'beginner':
-        return 3;
-      case 'intermediate':
-        return 4;
-      case 'advance':
-        return 5;
-      default:
-        return 3;
-    }
-  }
-
-  /// Get set count for endurance based on fitness level
-  static int _getSetCountForEndurance(String fitnessLevel) {
-    switch (fitnessLevel.toLowerCase()) {
-      case 'beginner':
-        return 2;
-      case 'intermediate':
-        return 3;
-      case 'advance':
-        return 4;
-      default:
-        return 3;
-    }
-  }
-
-  /// Get set count for cardio based on fitness level
-  static int _getSetCountForCardio(String fitnessLevel) {
-    switch (fitnessLevel.toLowerCase()) {
-      case 'beginner':
-        return 2;
-      case 'intermediate':
-        return 3;
-      case 'advance':
-        return 4;
-      default:
-        return 3;
-    }
-  }
-
-  /// Get reps for weight loss based on exercise type
-  static int _getRepsForWeightLoss(
-    String exerciseName,
-    String muscleGroup,
-    String equipment,
-  ) {
-    // Higher reps for weight loss (12-20 range)
-    int baseReps = 15;
-
-    // Adjust based on exercise type
-    if (exerciseName.contains('squat') || exerciseName.contains('deadlift')) {
-      baseReps = 12; // Compound movements - slightly lower reps
-    } else if (exerciseName.contains('press') || exerciseName.contains('row')) {
-      baseReps = 14; // Compound upper body
-    } else if (equipment == 'bodyweight') {
-      baseReps = 18; // Bodyweight exercises - higher reps
-    } else if (muscleGroup == 'arms') {
-      baseReps = 16; // Isolation exercises
-    }
-
-    return baseReps;
-  }
-
-  /// Get reps for muscle gain based on exercise type and fitness level
-  static int _getRepsForMuscleGain(
-    String exerciseName,
-    String muscleGroup,
-    String equipment,
-    String fitnessLevel,
-  ) {
-    // Moderate reps for muscle gain (6-12 range)
-    int baseReps = 8;
 
     // Adjust based on fitness level
     switch (fitnessLevel.toLowerCase()) {
       case 'beginner':
-        baseReps = 10; // Higher reps for beginners
+        percentage *= 0.8; // Reduce weight for beginners
         break;
       case 'intermediate':
-        baseReps = 8;
+        percentage *= 0.9; // Slight reduction for intermediate
         break;
       case 'advance':
-        baseReps = 6; // Lower reps for advanced users
+        percentage *= 1.0; // Full percentage for advanced
         break;
+      default:
+        percentage *= 0.85;
+    }
+
+    return (oneRM * percentage).roundToDouble();
+  }
+
+  /// Calculate weight from body weight
+  static double _getWeightFromBodyWeight(
+    double bodyWeight,
+    ExerciseInformation exercise,
+    String goal,
+    String fitnessLevel,
+  ) {
+    final String exerciseName = exercise.title.toLowerCase();
+    final String equipment = exercise.equipment.toLowerCase();
+
+    // Bodyweight exercises
+    if (equipment == 'bodyweight') {
+      return 0.0;
+    }
+
+    // Calculate weight as percentage of body weight
+    double bodyWeightPercentage;
+    
+    if (exerciseName.contains('squat') || exerciseName.contains('deadlift')) {
+      bodyWeightPercentage = 0.6; // 60% of body weight for compound leg movements
+    } else if (exerciseName.contains('bench press') || exerciseName.contains('press')) {
+      bodyWeightPercentage = 0.4; // 40% of body weight for compound upper body
+    } else if (exerciseName.contains('row') || exerciseName.contains('pull')) {
+      bodyWeightPercentage = 0.35; // 35% of body weight for pulling movements
+    } else if (exerciseName.contains('curl') || exerciseName.contains('tricep')) {
+      bodyWeightPercentage = 0.15; // 15% of body weight for arm isolation
+    } else if (exerciseName.contains('shoulder') || exerciseName.contains('lateral')) {
+      bodyWeightPercentage = 0.2; // 20% of body weight for shoulder exercises
+    } else {
+      bodyWeightPercentage = 0.25; // 25% of body weight default
+    }
+
+    // Adjust based on goal
+    switch (goal.toLowerCase()) {
+      case 'lose weight':
+        bodyWeightPercentage *= 0.7; // Reduce for weight loss
+        break;
+      case 'gain muscle':
+        bodyWeightPercentage *= 1.0; // Standard for muscle gain
+        break;
+      case 'endurance':
+        bodyWeightPercentage *= 0.5; // Reduce for endurance
+        break;
+      case 'strength':
+        bodyWeightPercentage *= 1.2; // Increase for strength
+        break;
+    }
+
+    // Adjust based on fitness level
+    switch (fitnessLevel.toLowerCase()) {
+      case 'beginner':
+        bodyWeightPercentage *= 0.6; // Reduce for beginners
+        break;
+      case 'intermediate':
+        bodyWeightPercentage *= 0.8; // Moderate for intermediate
+        break;
+      case 'advance':
+        bodyWeightPercentage *= 1.0; // Full for advanced
+        break;
+    }
+
+    return (bodyWeight * bodyWeightPercentage).roundToDouble();
+  }
+
+  /// Get generic weight (fallback method)
+  static double _getGenericWeight(
+    ExerciseInformation exercise,
+    String goal,
+    String fitnessLevel,
+  ) {
+    final String exerciseName = exercise.title.toLowerCase();
+    final String muscleGroup = exercise.mainMuscle.toLowerCase();
+    final String equipment = exercise.equipment.toLowerCase();
+
+    // Base weights in kg
+    double baseWeight;
+    
+    if (exerciseName.contains('squat') || exerciseName.contains('deadlift')) {
+      baseWeight = 40.0;
+    } else if (exerciseName.contains('bench press') || exerciseName.contains('press')) {
+      baseWeight = 30.0;
+    } else if (exerciseName.contains('row') || exerciseName.contains('pull')) {
+      baseWeight = 25.0;
+    } else if (muscleGroup == 'arms') {
+      baseWeight = 10.0;
+    } else if (muscleGroup == 'shoulders') {
+      baseWeight = 15.0;
+    } else if (muscleGroup == 'chest') {
+      baseWeight = 20.0;
+    } else if (muscleGroup == 'back') {
+      baseWeight = 18.0;
+    } else if (muscleGroup == 'legs') {
+      baseWeight = 25.0;
+    } else if (equipment.contains('cable')) {
+      baseWeight = 15.0;
+    } else if (equipment.contains('machine')) {
+      baseWeight = 20.0;
+    } else {
+      baseWeight = 15.0;
+    }
+
+    // Adjust based on goal
+    switch (goal.toLowerCase()) {
+      case 'lose weight':
+        baseWeight *= 0.6;
+        break;
+      case 'gain muscle':
+        baseWeight *= 1.0;
+        break;
+      case 'endurance':
+        baseWeight *= 0.5;
+        break;
+      case 'strength':
+        baseWeight *= 1.2;
+        break;
+    }
+
+    // Adjust based on fitness level
+    switch (fitnessLevel.toLowerCase()) {
+      case 'beginner':
+        baseWeight *= 0.5;
+        break;
+      case 'intermediate':
+        baseWeight *= 0.8;
+        break;
+      case 'advance':
+        baseWeight *= 1.2;
+        break;
+    }
+
+    return baseWeight.roundToDouble();
+  }
+
+  /// Get personalized reps based on goal, exercise type, and user data
+  static int _getPersonalizedReps(
+    String exerciseName,
+    String muscleGroup,
+    String equipment,
+    String goal,
+    String fitnessLevel,
+    double? user1RM,
+  ) {
+    int baseReps;
+
+    // Set base reps based on goal
+    switch (goal.toLowerCase()) {
+      case 'lose weight':
+        baseReps = 15; // Higher reps for weight loss
+        break;
+      case 'gain muscle':
+        baseReps = 10; // Moderate reps for hypertrophy
+        break;
+      case 'endurance':
+        baseReps = 20; // High reps for endurance
+        break;
+      case 'strength':
+        baseReps = 6; // Lower reps for strength
+        break;
+      default:
+        baseReps = 12;
     }
 
     // Adjust based on exercise type
@@ -591,242 +922,94 @@ class RecommendedTrainingService {
       baseReps = (baseReps * 1.1).round(); // Isolation exercises
     }
 
-    return baseReps < 6
-        ? 6
-        : (baseReps > 12 ? 12 : baseReps); // Ensure reps stay in optimal range
-  }
-
-  /// Get reps for endurance based on exercise type
-  static int _getRepsForEndurance(
-    String exerciseName,
-    String muscleGroup,
-    String equipment,
-  ) {
-    // High reps for endurance (15-25 range)
-    int baseReps = 20;
-
-    // Adjust based on exercise type
-    if (exerciseName.contains('squat') || exerciseName.contains('deadlift')) {
-      baseReps = 15; // Compound movements - moderate reps
-    } else if (exerciseName.contains('press') || exerciseName.contains('row')) {
-      baseReps = 18; // Compound upper body
-    } else if (equipment == 'bodyweight') {
-      baseReps = 25; // Bodyweight exercises - very high reps
-    } else if (muscleGroup == 'arms') {
-      baseReps = 22; // Isolation exercises
-    }
-
-    return baseReps;
-  }
-
-  /// Get reps for cardio based on exercise type
-  static int _getRepsForCardio(
-    String exerciseName,
-    String muscleGroup,
-    String equipment,
-  ) {
-    // Very high reps for cardio (20-40 range)
-    int baseReps = 30;
-
-    // Adjust based on exercise type
-    if (exerciseName.contains('jump') || exerciseName.contains('burpee')) {
-      baseReps = 25; // High impact - moderate reps
-    } else if (exerciseName.contains('mountain climber') ||
-        exerciseName.contains('plank')) {
-      baseReps = 40; // Low impact - very high reps
-    } else if (equipment == 'bodyweight') {
-      baseReps = 35; // Bodyweight exercises
-    } else if (muscleGroup == 'legs') {
-      baseReps = 30; // Leg exercises
-    }
-
-    return baseReps;
-  }
-
-  /// Create progressive sets with varying reps and weights
-  static List<CustomWorkoutSet> _createProgressiveSets(
-    int setCount,
-    int baseReps,
-    double baseWeight,
-    String goal,
-    String fitnessLevel,
-  ) {
-    // Use the new progressive weight system for better weight recommendations
-    return _createProgressiveWeightSets(
-      setCount,
-      baseReps,
-      baseWeight,
-      goal,
-      fitnessLevel,
-    );
-  }
-
-  /// Generate workout name
-  static String _generateWorkoutName(String goal, String fitnessLevel) {
-    String goalText = goal.replaceAll(' ', '');
-    String levelText = fitnessLevel.toLowerCase();
-    return 'Recommended $goalText ($levelText)';
-  }
-
-  /// Generate workout description
-  static String _generateWorkoutDescription(
-    String goal,
-    String fitnessLevel,
-    List<ExerciseInformation> exercises,
-  ) {
-    String description =
-        'This $fitnessLevel-level workout is designed to help you $goal. ';
-    description +=
-        'It includes ${exercises.length} exercises targeting different muscle groups. ';
-
-    switch (goal.toLowerCase()) {
-      case 'lose weight':
-        description +=
-            'Focus on maintaining proper form and completing all sets with controlled movements.';
-        break;
-      case 'gain muscle':
-        description +=
-            'Focus on progressive overload and proper form to maximize muscle growth.';
-        break;
-      case 'endurance':
-        description +=
-            'Focus on maintaining steady pace and completing all repetitions with good form.';
-        break;
-      case 'cardio':
-        description +=
-            'Keep your heart rate elevated throughout the workout for maximum cardiovascular benefits.';
-        break;
-    }
-
-    return description;
-  }
-
-  /// Get recommended weight for an exercise based on multiple factors
-  static double _getRecommendedWeight(
-    String exerciseName,
-    String muscleGroup,
-    String equipment,
-    String goal,
-    String fitnessLevel,
-  ) {
-    // Base weight recommendations by exercise type and goal
-    double baseWeight = _getBaseWeightForExercise(
-      exerciseName,
-      muscleGroup,
-      equipment,
-    );
-
-    // Adjust based on goal
-    baseWeight = _adjustWeightForGoal(baseWeight, goal);
-
     // Adjust based on fitness level
-    baseWeight = _adjustWeightForFitnessLevel(baseWeight, fitnessLevel);
-
-    // Adjust for bodyweight exercises
-    if (equipment == 'bodyweight') {
-      return 0.0; // Bodyweight exercises
-    }
-
-    return baseWeight;
-  }
-
-  /// Get base weight for different exercise types
-  static double _getBaseWeightForExercise(
-    String exerciseName,
-    String muscleGroup,
-    String equipment,
-  ) {
-    // Base weights in kg for different exercise categories
-    if (exerciseName.contains('squat') || exerciseName.contains('deadlift')) {
-      return 40.0; // Compound leg movements
-    } else if (exerciseName.contains('bench press') ||
-        exerciseName.contains('press')) {
-      return 30.0; // Compound upper body push
-    } else if (exerciseName.contains('row') || exerciseName.contains('pull')) {
-      return 25.0; // Compound upper body pull
-    } else if (muscleGroup == 'arms') {
-      return 10.0; // Isolation arm exercises
-    } else if (muscleGroup == 'shoulders') {
-      return 15.0; // Shoulder exercises
-    } else if (muscleGroup == 'chest') {
-      return 20.0; // Chest isolation
-    } else if (muscleGroup == 'back') {
-      return 18.0; // Back isolation
-    } else if (muscleGroup == 'legs') {
-      return 25.0; // Leg isolation
-    } else if (muscleGroup == 'abs') {
-      return 5.0; // Core exercises
-    } else if (equipment.contains('cable')) {
-      return 15.0; // Cable exercises
-    } else if (equipment.contains('machine')) {
-      return 20.0; // Machine exercises
-    }
-
-    return 15.0; // Default weight
-  }
-
-  /// Adjust weight based on fitness goal
-  static double _adjustWeightForGoal(double baseWeight, String goal) {
-    switch (goal.toLowerCase()) {
-      case 'lose weight':
-        return baseWeight * 0.6; // Lighter weights for higher reps
-      case 'gain muscle':
-        return baseWeight * 1.0; // Standard weight for hypertrophy
-      case 'endurance':
-        return baseWeight * 0.5; // Light weights for endurance
-      case 'cardio':
-        return 0.0; // Bodyweight for cardio
-      default:
-        return baseWeight * 0.8; // Moderate weight
-    }
-  }
-
-  /// Adjust weight based on fitness level
-  static double _adjustWeightForFitnessLevel(
-    double baseWeight,
-    String fitnessLevel,
-  ) {
     switch (fitnessLevel.toLowerCase()) {
       case 'beginner':
-        return baseWeight * 0.5; // 50% of base weight for beginners
+        baseReps = (baseReps * 1.1).round(); // Higher reps for beginners
+        break;
       case 'intermediate':
-        return baseWeight * 0.8; // 80% of base weight for intermediate
+        baseReps = baseReps; // Standard reps
+        break;
       case 'advance':
-        return baseWeight * 1.2; // 120% of base weight for advanced
-      default:
-        return baseWeight * 0.6; // Default to beginner level
+        baseReps = (baseReps * 0.9).round(); // Lower reps for advanced
+        break;
     }
+
+    // Ensure reps stay in reasonable range
+    if (baseReps < 6) baseReps = 6;
+    if (baseReps > 25) baseReps = 25;
+
+    return baseReps;
   }
 
-  /// Create progressive weight sets (pyramid or reverse pyramid)
-  static List<CustomWorkoutSet> _createProgressiveWeightSets(
+  /// Get personalized set count
+  static int _getPersonalizedSetCount(String fitnessLevel, String goal) {
+    int baseSets;
+
+    // Set count based on fitness level
+    switch (fitnessLevel.toLowerCase()) {
+      case 'beginner':
+        baseSets = 3;
+        break;
+      case 'intermediate':
+        baseSets = 4;
+        break;
+      case 'advance':
+        baseSets = 5;
+        break;
+      default:
+        baseSets = 3;
+    }
+
+    // Adjust based on goal
+    switch (goal.toLowerCase()) {
+      case 'lose weight':
+        baseSets = (baseSets * 1.1).round(); // More sets for weight loss
+        break;
+      case 'endurance':
+        baseSets = (baseSets * 1.2).round(); // More sets for endurance
+        break;
+      case 'strength':
+        baseSets = (baseSets * 0.9).round(); // Fewer sets for strength
+        break;
+    }
+
+    // Ensure sets stay in reasonable range
+    if (baseSets < 2) baseSets = 2;
+    if (baseSets > 6) baseSets = 6;
+
+    return baseSets;
+  }
+
+  /// Create personalized progressive sets with intelligent progression
+  static List<CustomWorkoutSet> _createPersonalizedProgressiveSets(
     int setCount,
     int baseReps,
     double baseWeight,
     String goal,
     String fitnessLevel,
+    double? user1RM,
   ) {
     List<CustomWorkoutSet> sets = [];
 
     switch (goal.toLowerCase()) {
       case 'lose weight':
-        // Reverse pyramid for weight loss (decreasing weight)
+        // Reverse pyramid for weight loss (decreasing weight, increasing reps)
         for (int i = 0; i < setCount; i++) {
           double weight = baseWeight - (i * 2.5); // Decrease by 2.5kg each set
-          int reps = baseReps - (i * 2); // Decrease by 2 reps each set
-          sets.add(
-            CustomWorkoutSet(
-              weight:
-                  weight < 0.0
-                      ? 0.0
-                      : (weight > baseWeight ? baseWeight : weight),
-              reps: reps < 8 ? 8 : (reps > baseReps ? baseReps : reps),
-            ),
-          );
+          int reps = baseReps + (i * 2); // Increase by 2 reps each set
+          
+          // Ensure weight doesn't go below 0
+          weight = weight < 0.0 ? 0.0 : weight;
+          // Ensure reps stay in reasonable range
+          reps = reps < 8 ? 8 : (reps > 25 ? 25 : reps);
+          
+          sets.add(CustomWorkoutSet(weight: weight, reps: reps));
         }
         break;
+
       case 'gain muscle':
-        // Pyramid for muscle gain (increasing weight for advanced, consistent for beginners)
+        // Pyramid for muscle gain (increasing weight, decreasing reps)
         if (fitnessLevel.toLowerCase() == 'beginner') {
           // Consistent weight for beginners
           for (int i = 0; i < setCount; i++) {
@@ -835,35 +1018,37 @@ class RecommendedTrainingService {
         } else {
           // Pyramid for intermediate/advanced
           for (int i = 0; i < setCount; i++) {
-            double weight =
-                baseWeight + (i * 2.5); // Increase by 2.5kg each set
+            double weight = baseWeight + (i * 2.5); // Increase by 2.5kg each set
             int reps = baseReps - (i * 1); // Slight decrease in reps
-            sets.add(
-              CustomWorkoutSet(
-                weight:
-                    weight < baseWeight
-                        ? baseWeight
-                        : (weight > baseWeight + 10.0
-                            ? baseWeight + 10.0
-                            : weight),
-                reps: reps < 6 ? 6 : (reps > baseReps ? baseReps : reps),
-              ),
-            );
+            
+            // Ensure reps stay in reasonable range
+            reps = reps < 6 ? 6 : (reps > baseReps ? baseReps : reps);
+            
+            sets.add(CustomWorkoutSet(weight: weight, reps: reps));
           }
         }
         break;
+
       case 'endurance':
         // Consistent light weight for endurance
         for (int i = 0; i < setCount; i++) {
           sets.add(CustomWorkoutSet(weight: baseWeight, reps: baseReps));
         }
         break;
-      case 'cardio':
-        // Bodyweight for cardio
+
+      case 'strength':
+        // Heavy weight, low reps for strength
         for (int i = 0; i < setCount; i++) {
-          sets.add(CustomWorkoutSet(weight: 0.0, reps: baseReps));
+          double weight = baseWeight + (i * 5.0); // Increase by 5kg each set
+          int reps = baseReps - (i * 2); // Decrease reps more aggressively
+          
+          // Ensure reps stay in strength range
+          reps = reps < 3 ? 3 : (reps > 8 ? 8 : reps);
+          
+          sets.add(CustomWorkoutSet(weight: weight, reps: reps));
         }
         break;
+
       default:
         // Default consistent weight
         for (int i = 0; i < setCount; i++) {
@@ -873,4 +1058,45 @@ class RecommendedTrainingService {
 
     return sets;
   }
+
+  // /// Generate workout name
+  // static String _generateWorkoutName(String goal, String fitnessLevel) {
+  //   String goalText = goal.replaceAll(' ', '');
+  //   String levelText = fitnessLevel.toLowerCase();
+  //   return 'Recommended $goalText ($levelText)';
+  // }
+
+  // /// Generate workout description
+  // static String _generateWorkoutDescription(
+  //   String goal,
+  //   String fitnessLevel,
+  //   List<ExerciseInformation> exercises,
+  // ) {
+  //   String description =
+  //       'This $fitnessLevel-level workout is designed to help you $goal. ';
+  //   description +=
+  //       'It includes ${exercises.length} exercises targeting different muscle groups. ';
+
+  //   switch (goal.toLowerCase()) {
+  //     case 'lose weight':
+  //       description +=
+  //           'Focus on maintaining proper form and completing all sets with controlled movements.';
+  //       break;
+  //     case 'gain muscle':
+  //       description +=
+  //           'Focus on progressive overload and proper form to maximize muscle growth.';
+  //       break;
+  //     case 'endurance':
+  //       description +=
+  //           'Focus on maintaining steady pace and completing all repetitions with good form.';
+  //       break;
+  //     case 'cardio':
+  //       description +=
+  //           'Keep your heart rate elevated throughout the workout for maximum cardiovascular benefits.';
+  //       break;
+  //   }
+
+  //   return description;
+  // }
+
 }

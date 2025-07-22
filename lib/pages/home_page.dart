@@ -139,9 +139,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                           const SizedBox(height: 10),
                           Text(
                             '${_getGreeting()} Remember \nto Stay Hydrated',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 16,
-                              color: Colors.black,
+                              color: themeService.currentTheme.textTheme.bodyMedium?.color ?? Colors.black,
                               fontWeight: FontWeight.w300,
                             ),
                           ),

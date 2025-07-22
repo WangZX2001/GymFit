@@ -221,16 +221,13 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage>
             icon.contains('.png') ||
             icon.contains('.gif'))) {
       
-      return Container(
+      return SizedBox(
         width: 80,
         height: 80,
         child: Image.asset(
           icon,
           fit: BoxFit.contain,
           errorBuilder: (context, error, stackTrace) {
-            // Debug: Print the path that failed to load
-            print('Failed to load image: $icon');
-            print('Error: $error');
             // Fallback to default icon if image fails to load
             return Icon(Icons.fitness_center, size: 60, color: themeService.currentTheme.textTheme.titleLarge?.color);
           },
@@ -239,7 +236,7 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage>
     }
     // If it's an IconData, use it directly
     else if (icon is IconData) {
-      return Container(
+      return SizedBox(
         width: 80,
         height: 80,
         child: Icon(icon, size: 60, color: themeService.currentTheme.textTheme.titleLarge?.color),
@@ -247,7 +244,7 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage>
     }
     // Default fallback icon
     else {
-      return Container(
+      return SizedBox(
         width: 80,
         height: 80,
         child: Icon(Icons.fitness_center, size: 60, color: themeService.currentTheme.textTheme.titleLarge?.color),
@@ -381,7 +378,7 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage>
               Row(
                 children: [
                   // Image area
-                  Container(
+                  SizedBox(
                     width: 80,
                     height: 80,
                     child: _buildIconOrImage(icon),
