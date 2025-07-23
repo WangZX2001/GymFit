@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:gymfit/models/custom_workout.dart';
+import 'package:gymfit/services/recovery_service.dart';
 
 class CustomWorkoutService {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -139,6 +141,15 @@ class CustomWorkoutService {
           .collection('custom_workouts')
           .doc(workoutId)
           .delete();
+      
+      // Force recovery system to recalculate since workout history changed
+      try {
+        await RecoveryService.resetRecoveryData();
+      } catch (e) {
+        if (kDebugMode) {
+          print('Error resetting recovery data after custom workout deletion: $e');
+        }
+      }
     } catch (e) {
       throw Exception('Failed to delete custom workout: $e');
     }

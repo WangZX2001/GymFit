@@ -14,6 +14,7 @@ import 'package:gymfit/models/exercise_set.dart';
 import 'package:gymfit/models/custom_workout.dart';
 import 'package:gymfit/services/custom_workout_service.dart';
 import 'package:gymfit/pages/workout/custom_workout_configuration_page_refactored.dart';
+import 'package:gymfit/utils/one_rm_calculator.dart';
 
 class ExerciseDescriptionPage extends StatefulWidget {
   final String title;
@@ -441,13 +442,6 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> with 
     }
   }
 
-  // Calculate 1RM using Brzycki Formula
-  double estimate1RM(double weight, int reps) {
-    if (reps == 1) return weight;
-    if (reps > 10) reps = 10; // Cap for accuracy
-    return weight / (1.0278 - 0.0278 * reps);
-  }
-
   // Get real 1RM data from workout history
   Future<List<Map<String, dynamic>>> _getReal1RMData() async {
     try {
@@ -460,7 +454,7 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> with 
           if (exercise.title.toLowerCase() == widget.title.toLowerCase()) {
             for (final set in exercise.sets) {
               if (set.isCompleted && set.weight > 0 && set.reps > 0) {
-                final estimated1RM = estimate1RM(set.weight, set.reps);
+                final estimated1RM = OneRMCalculator.brzycki(set.weight, set.reps);
                 final dateKey = '${workout.date.year}-${workout.date.month.toString().padLeft(2, '0')}-${workout.date.day.toString().padLeft(2, '0')}';
                 
                 // If this date doesn't exist or this 1RM is higher, update it

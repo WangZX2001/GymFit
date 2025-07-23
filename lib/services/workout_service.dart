@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:gymfit/models/workout.dart';
 import 'package:gymfit/models/quick_start_exercise.dart';
+import 'package:gymfit/services/recovery_service.dart';
 
 class WorkoutService {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -230,6 +231,15 @@ class WorkoutService {
 
     // Notify listeners that a workout has been deleted
     _notifyWorkoutUpdate();
+    
+    // Force recovery system to recalculate since workout history changed
+    try {
+      await RecoveryService.resetRecoveryData();
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error resetting recovery data after workout deletion: $e');
+      }
+    }
   }
 
   static Future<void> updateWorkout(Workout workout) async {
@@ -505,6 +515,50 @@ class WorkoutService {
     } catch (e) {
       debugPrint('Error fetching last exercise data: $e');
       return null;
+    }
+  }
+
+  /// Clean up duplicate workouts (workouts with same name within 1 minute)
+  static Future<List<String>> cleanupDuplicateWorkouts() async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw Exception('User not authenticated');
+    }
+
+    try {
+      final workouts = await getUserWorkouts();
+      final Map<String, List<Workout>> groupedWorkouts = {};
+      final List<String> deletedIds = [];
+      
+      // Group workouts by name and time (within 1 minute)
+      for (final workout in workouts) {
+        final key = '${workout.name}_${workout.date.year}_${workout.date.month}_${workout.date.day}_${workout.date.hour}_${workout.date.minute}';
+        groupedWorkouts.putIfAbsent(key, () => []).add(workout);
+      }
+      
+      // Delete duplicates, keeping the one with most exercises or latest time
+      for (final entry in groupedWorkouts.entries) {
+        final workoutList = entry.value;
+        if (workoutList.length > 1) {
+          // Sort by number of exercises (descending), then by date (descending)
+          workoutList.sort((a, b) {
+            final exerciseComparison = b.exercises.length.compareTo(a.exercises.length);
+            if (exerciseComparison != 0) return exerciseComparison;
+            return b.date.compareTo(a.date);
+          });
+          
+          // Keep the first one, delete the rest
+          final toDelete = workoutList.skip(1);
+          for (final workout in toDelete) {
+            await deleteWorkout(workout.id);
+            deletedIds.add(workout.id);
+          }
+        }
+      }
+      
+      return deletedIds;
+    } catch (e) {
+      throw Exception('Failed to cleanup duplicate workouts: $e');
     }
   }
 }

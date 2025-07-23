@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:gymfit/models/custom_workout.dart';
 import 'package:gymfit/packages/exercise_information_repository/exercise_information_repository.dart';
 import 'package:gymfit/services/workout_service.dart'; // Added for WorkoutService
+import 'package:gymfit/utils/one_rm_calculator.dart'; // Added for OneRMCalculator
 
 class RecommendedTrainingService {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -659,9 +660,7 @@ class RecommendedTrainingService {
 
   /// Calculate 1RM using Brzycki formula
   static double _calculate1RM(double weight, int reps) {
-    if (reps == 1) return weight;
-    if (reps > 10) reps = 10; // Cap for accuracy
-    return weight / (1.0278 - 0.0278 * reps);
+    return OneRMCalculator.brzycki(weight, reps);
   }
 
   /// Get user's body weight from profile data

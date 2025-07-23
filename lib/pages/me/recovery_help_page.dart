@@ -230,7 +230,7 @@ class RecoveryHelpPage extends StatelessWidget {
         border: Border.all(color: isDark ? Colors.grey.shade700 : Colors.grey.shade300, width: 1),
         boxShadow: [
           BoxShadow(
-            color: isDark ? Colors.black.withOpacity(0.12) : Colors.black.withOpacity(0.04),
+            color: isDark ? Colors.black.withValues(alpha: 0.12) : Colors.black.withValues(alpha: 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -312,7 +312,7 @@ class RecoveryHelpPage extends StatelessWidget {
         border: Border.all(color: isDark ? Colors.grey.shade700 : Colors.grey.shade300, width: 1),
         boxShadow: [
           BoxShadow(
-            color: isDark ? Colors.black.withOpacity(0.12) : Colors.black.withOpacity(0.04),
+            color: isDark ? Colors.black.withValues(alpha: 0.12) : Colors.black.withValues(alpha: 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),

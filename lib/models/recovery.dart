@@ -1,4 +1,35 @@
 import 'dart:math';
+import 'package:gymfit/utils/one_rm_calculator.dart';
+
+/// Data class for exercise information used in recovery calculations
+class ExerciseData {
+  final String exerciseType;
+  final int sets;
+  final double weight;
+  final int reps;
+
+  ExerciseData({
+    required this.exerciseType,
+    required this.sets,
+    required this.weight,
+    required this.reps,
+  });
+}
+
+/// Data class for exercise load calculations
+class ExerciseLoadData {
+  final String exerciseType;
+  final double baseLoad;
+  final double effectiveLoad;
+  final double intensityMultiplier;
+
+  ExerciseLoadData({
+    required this.exerciseType,
+    required this.baseLoad,
+    required this.effectiveLoad,
+    required this.intensityMultiplier,
+  });
+}
 
 class MuscleGroup {
   final String name;
@@ -115,21 +146,27 @@ class RecoveryCalculator {
     'Other': 8000.0,       // Default for unrecognized exercises
   };
 
-  static const Map<String, double> muscleGroupMaxLoads = {
-    'Chest': 12000.0,
-    'Back': 15000.0,
-    'Quadriceps': 20000.0,
-    'Hamstrings': 12000.0,
-    'Shoulders': 8000.0,
-    'Biceps': 6000.0,
-    'Triceps': 6000.0,
-    'Calves': 3000.0,
-    'Core': 4000.0,
-    'Forearms': 4000.0,
-    'Neck': 2000.0,
-    'Glutes': 12000.0,
-    'Other': 10000.0,
+  static const Map<String, double> muscleGroupWorkoutLoads = {
+    'Chest': 3000.0,      // 2,500-3,500 kg range, using upper bound
+    'Back': 4000.0,       // 3,000-4,000 kg range, using upper bound
+    'Quadriceps': 5000.0, // 3,500-5,000 kg range, using upper bound
+    'Hamstrings': 2800.0, // 1,600-2,800 kg range, using upper bound
+    'Shoulders': 1200.0,  // 800-1,200 kg range, using upper bound
+    'Biceps': 540.0,      // 360-540 kg range, using upper bound
+    'Triceps': 720.0,     // 540-720 kg range, using upper bound
+    'Calves': 2700.0,     // 1,800-2,700 kg range, using upper bound
+    'Core': 1200.0,       // 600-1,200 kg range, using upper bound
+    'Glutes': 4000.0,     // 2,400-4,000 kg range, using upper bound
+    'Forearms': 4000.0,   // Keeping existing value (not in your table)
+    'Neck': 2000.0,       // Keeping existing value (not in your table)
+    'Other': 2500.0,      // Default for unrecognized exercises
   };
+
+  /// Helper to get workout load for a muscle group, using userWorkoutLoad if available, otherwise default
+  static double getWorkoutLoad(String muscleGroup, {double? userWorkoutLoad}) {
+    final defaultWorkoutLoad = muscleGroupWorkoutLoads[muscleGroup] ?? 2500.0;
+    return (userWorkoutLoad != null && userWorkoutLoad > 0) ? userWorkoutLoad : defaultWorkoutLoad;
+  }
 
   /// Calculate recovery percentage using exponential decay function with realistic post-workout recovery
   /// recovery(t) = initial_recovery + (100 - initial_recovery) × (1 - e^(-k × t))
@@ -141,21 +178,18 @@ class RecoveryCalculator {
     required String exerciseType,
     double? intensityAdjustedLoad,
     double? currentRecovery, // Pass in the current recovery before the new workout
-    double? userMaxLoad, // Pass in the user's max weekly load for this muscle group if available
+    double? userWorkoutLoad, // Pass in the user's workout load for this muscle group if available
   }) {
     // Use intensity-adjusted load if available, otherwise use base training load
     final effectiveLoad = intensityAdjustedLoad ?? trainingLoad;
-    // Hybrid maxLoad: use userMaxLoad if available, else science-based default
-    final defaultMaxLoad = muscleGroupMaxLoads[muscleGroup] ?? 10000.0;
-    final maxLoad = (userMaxLoad != null && userMaxLoad > 0) ? userMaxLoad : defaultMaxLoad;
-    
+    final workoutLoad = getWorkoutLoad(muscleGroup, userWorkoutLoad: userWorkoutLoad);
     // Calculate initial post-workout recovery based on effective training load
-    final initialRecovery = calculateInitialRecovery(effectiveLoad, exerciseType);
+    final initialRecovery = calculateInitialRecovery(effectiveLoad, exerciseType, workoutLoad: workoutLoad);
 
     // Curve-based reduction if muscle is not at 100% and this is a new workout
     if (hoursSinceLastSession <= 0 && currentRecovery != null && currentRecovery < 100) {
       final intensityMultiplier = getExerciseIntensityMultiplier(exerciseType);
-      double fatigueScoreCurve = (effectiveLoad / maxLoad) * (intensityMultiplier / 25.0);
+      double fatigueScoreCurve = (effectiveLoad / workoutLoad) * (intensityMultiplier / 25.0);
       fatigueScoreCurve = fatigueScoreCurve.clamp(0.1, 0.7);
       double reduction = currentRecovery * fatigueScoreCurve;
       double reducedRecovery = currentRecovery - reduction;
@@ -191,23 +225,239 @@ class RecoveryCalculator {
     return recovery.clamp(0.0, 100.0);
   }
 
+  /// Calculate recovery for multiple exercises targeting the same muscle group
+  /// Uses weighted average approach (Option A) for fatigue calculation
+  /// FIXED: Correct order of operations - time-based recovery first, then new workout impact
+  static double calculateRecoveryForMultipleExercises({
+    required List<ExerciseData> exercises,
+    required int hoursSinceLastSession,
+    required double fatigueScore,
+    required String muscleGroup,
+    double? currentRecovery,
+    double? userWorkoutLoad,
+  }) {
+    
+    // Handle time-based recovery when no new exercises are added
+    if (exercises.isEmpty) {
+      if (hoursSinceLastSession <= 0) {
+        return currentRecovery ?? 100.0;
+      }
+      
+      // Apply time-based recovery only
+      if (currentRecovery != null && currentRecovery < 100) {
+        final muscleRate = muscleRecoveryRates[muscleGroup] ?? muscleRecoveryRates['Other']!;
+        final workoutLoad = getWorkoutLoad(muscleGroup, userWorkoutLoad: userWorkoutLoad);
+        
+        // Use default exercise multiplier for time-based recovery
+        final exerciseMultiplier = getExerciseTypeMultiplier('Bench Press'); // Default compound exercise
+        double k = (muscleRate * exerciseMultiplier) / log(workoutLoad + 1);
+        
+        // Apply fatigue factor
+        double fatigueFactor = 1.0;
+        if (fatigueScore > 1.5) {
+          fatigueFactor = 0.8;
+        }
+        
+        double adjustedK = k * fatigueFactor;
+        
+        // Apply time-based recovery to current recovery
+        double timeRecoveredValue = currentRecovery + (100 - currentRecovery) * (1 - exp(-adjustedK * hoursSinceLastSession));
+        final result = timeRecoveredValue.clamp(0.0, 100.0);
+        return result;
+      } else {
+        return currentRecovery ?? 100.0;
+      }
+    }
+
+    final workoutLoad = getWorkoutLoad(muscleGroup, userWorkoutLoad: userWorkoutLoad);
+    
+    // Step 1: Calculate effective load for each exercise
+    final exerciseLoads = <ExerciseLoadData>[];
+    double totalBaseLoad = 0.0;
+    
+    for (final exercise in exercises) {
+      final baseLoad = exercise.sets * exercise.weight * exercise.reps;
+      final intensityMultiplier = getExerciseIntensityMultiplier(exercise.exerciseType);
+      final effectiveLoad = baseLoad * intensityMultiplier;
+      
+      exerciseLoads.add(ExerciseLoadData(
+        exerciseType: exercise.exerciseType,
+        baseLoad: baseLoad,
+        effectiveLoad: effectiveLoad,
+        intensityMultiplier: intensityMultiplier,
+      ));
+      
+      totalBaseLoad += baseLoad;
+    }
+    
+    // Step 2: Calculate weighted average fatigue score curve (Option A)
+    double weightedFatigueScoreCurve = 0.0;
+    for (final exerciseData in exerciseLoads) {
+      final weight = exerciseData.baseLoad / totalBaseLoad;
+      final individualFatigueCurve = (exerciseData.effectiveLoad / workoutLoad) * (exerciseData.intensityMultiplier / 25.0);
+      weightedFatigueScoreCurve += weight * individualFatigueCurve;
+    }
+    
+    // Step 3: Calculate initial recovery using the most intense exercise type
+    final mostIntenseExercise = exerciseLoads.reduce((a, b) => a.intensityMultiplier > b.intensityMultiplier ? a : b);
+    final initialRecovery = calculateInitialRecovery(totalBaseLoad, mostIntenseExercise.exerciseType, workoutLoad: workoutLoad);
+    
+    // Step 4: Handle different scenarios with CORRECT ORDER
+    if (hoursSinceLastSession <= 0) {
+      // New workout (no time passed)
+      
+      // FIXED LOGIC: Only use reduction recovery if this is actually a subsequent workout
+      // in the same session, not just combining exercises from the same session
+      if (currentRecovery != null && currentRecovery < 100) {
+        // Check if this is a subsequent workout by comparing with the recovery that would
+        // result from just these exercises (without considering current recovery)
+        final exercisesOnlyRecovery = calculateInitialRecovery(totalBaseLoad, mostIntenseExercise.exerciseType, workoutLoad: workoutLoad);
+        
+        if (currentRecovery < exercisesOnlyRecovery) {
+          // Reduction recovery for subsequent workout
+          weightedFatigueScoreCurve = weightedFatigueScoreCurve.clamp(0.1, 0.7);
+          double reduction = currentRecovery * weightedFatigueScoreCurve;
+          double reducedRecovery = currentRecovery - reduction;
+          
+          // Use minimum recovery threshold from the most intense exercise
+          final minRecovery = exerciseLoads.map((e) => getMinimumRecoveryThreshold(e.exerciseType)).reduce((a, b) => a < b ? a : b);
+          final result = reducedRecovery.clamp(minRecovery, 100.0);
+          return result;
+        } else {
+          // Same session, just combining exercises - use the recovery for these exercises
+          return exercisesOnlyRecovery;
+        }
+      } else {
+        // First workout for this muscle group
+        return initialRecovery;
+      }
+    } else {
+      // Time has passed since last workout
+      if (currentRecovery != null && currentRecovery < 100) {
+        // FIXED ORDER: Step 1 - Apply time-based recovery first
+        final muscleRate = muscleRecoveryRates[muscleGroup] ?? muscleRecoveryRates['Other']!;
+        
+        // Use weighted average exercise multiplier
+        double weightedExerciseMultiplier = 0.0;
+        for (final exerciseData in exerciseLoads) {
+          final weight = exerciseData.baseLoad / totalBaseLoad;
+          final exerciseMultiplier = getExerciseTypeMultiplier(exerciseData.exerciseType);
+          weightedExerciseMultiplier += weight * exerciseMultiplier;
+        }
+        
+        // Calculate k value for time-based recovery
+        double k = (muscleRate * weightedExerciseMultiplier) / log(totalBaseLoad + 1);
+        
+        // Apply fatigue factor
+        double fatigueFactor = 1.0;
+        if (fatigueScore > 1.5) {
+          fatigueFactor = 0.8;
+        }
+        
+        double adjustedK = k * fatigueFactor;
+        
+        // Apply time-based recovery to current recovery
+        double timeRecoveredValue = currentRecovery + (100 - currentRecovery) * (1 - exp(-adjustedK * hoursSinceLastSession));
+        
+        // Step 2 - Apply reduction from new workout
+        weightedFatigueScoreCurve = weightedFatigueScoreCurve.clamp(0.1, 0.7);
+        double reduction = timeRecoveredValue * weightedFatigueScoreCurve;
+        double finalRecovery = timeRecoveredValue - reduction;
+        
+        // CRITICAL FIX: Ensure recovery never increases from a new workout
+        finalRecovery = finalRecovery.clamp(0.0, timeRecoveredValue);
+        
+        // Apply minimum recovery threshold
+        final minRecovery = exerciseLoads.map((e) => getMinimumRecoveryThreshold(e.exerciseType)).reduce((a, b) => a < b ? a : b);
+        final result = finalRecovery.clamp(minRecovery, 100.0);
+        return result;
+      } else {
+        // No previous recovery data, use initial recovery with time-based recovery
+        final muscleRate = muscleRecoveryRates[muscleGroup] ?? muscleRecoveryRates['Other']!;
+        
+        // Use weighted average exercise multiplier
+        double weightedExerciseMultiplier = 0.0;
+        for (final exerciseData in exerciseLoads) {
+          final weight = exerciseData.baseLoad / totalBaseLoad;
+          final exerciseMultiplier = getExerciseTypeMultiplier(exerciseData.exerciseType);
+          weightedExerciseMultiplier += weight * exerciseMultiplier;
+        }
+        
+        // Calculate k value
+        double k = (muscleRate * weightedExerciseMultiplier) / log(totalBaseLoad + 1);
+        
+        // Apply fatigue factor
+        double fatigueFactor = 1.0;
+        if (fatigueScore > 1.5) {
+          fatigueFactor = 0.8;
+        }
+        
+        double adjustedK = k * fatigueFactor;
+        
+        // Exponential recovery curve from initial recovery
+        double recovery = initialRecovery + (100 - initialRecovery) * (1 - exp(-adjustedK * hoursSinceLastSession));
+        
+        return recovery.clamp(0.0, 100.0);
+      }
+    }
+  }
+
+  /// Calculate recovery for a complete workout session with multiple exercises
+  /// Groups exercises by muscle group and calculates recovery for each group
+  static Map<String, double> calculateWorkoutRecovery({
+    required List<ExerciseData> allExercises,
+    required int hoursSinceLastSession,
+    required Map<String, double> currentRecoveries,
+    required Map<String, double> fatigueScores,
+    Map<String, double>? userWorkoutLoads,
+  }) {
+    final results = <String, double>{};
+    
+    // Group exercises by muscle group
+    final exercisesByMuscleGroup = <String, List<ExerciseData>>{};
+    
+    for (final exercise in allExercises) {
+      final muscleGroups = getMuscleGroupsFromExercise(exercise.exerciseType);
+      for (final muscleGroup in muscleGroups) {
+        exercisesByMuscleGroup.putIfAbsent(muscleGroup, () => []).add(exercise);
+      }
+    }
+    
+    // Calculate recovery for each muscle group
+    for (final entry in exercisesByMuscleGroup.entries) {
+      final muscleGroup = entry.key;
+      final exercises = entry.value;
+      
+      final currentRecovery = currentRecoveries[muscleGroup];
+      final fatigueScore = fatigueScores[muscleGroup] ?? 1.0;
+      final userWorkoutLoad = userWorkoutLoads?[muscleGroup];
+      
+      final recovery = calculateRecoveryForMultipleExercises(
+        exercises: exercises,
+        hoursSinceLastSession: hoursSinceLastSession,
+        fatigueScore: fatigueScore,
+        muscleGroup: muscleGroup,
+        currentRecovery: currentRecovery,
+        userWorkoutLoad: userWorkoutLoad,
+      );
+      
+      results[muscleGroup] = recovery;
+    }
+    
+    return results;
+  }
+
   /// Calculate initial post-workout recovery percentage based on training load and exercise type
   /// Higher loads = lower initial recovery, but never 0% unless extreme
-  static double calculateInitialRecovery(double trainingLoad, String exerciseType) {
+  static double calculateInitialRecovery(double trainingLoad, String exerciseType, {required double workoutLoad}) {
     // Get exercise intensity multiplier (higher = more fatiguing)
     final intensityMultiplier = getExerciseIntensityMultiplier(exerciseType);
-    
-    // Calculate fatigue impact based on load and intensity
-    // Higher load and intensity = lower initial recovery
-    final fatigueImpact = (trainingLoad / 1000) * intensityMultiplier;
-    
+    // Calculate fatigue impact based on load and intensity, normalized by workout load
+    final fatigueImpact = (trainingLoad / workoutLoad) * intensityMultiplier;
     // Calculate initial recovery (higher fatigue = lower recovery)
-    // Base recovery starts at 100% and decreases with fatigue
     double initialRecovery = 100 - fatigueImpact;
-    
     // Apply minimum recovery thresholds based on exercise type
     final minRecovery = getMinimumRecoveryThreshold(exerciseType);
-    
     // Ensure recovery doesn't go below minimum threshold
     return initialRecovery.clamp(minRecovery, 100.0);
   }
@@ -307,11 +557,7 @@ class RecoveryCalculator {
 
   /// Calculate 1RM using Brzycki formula
   static double calculate1RM(double weight, int reps) {
-    if (reps <= 0) return weight;
-    if (reps == 1) return weight;
-    
-    // Brzycki formula: 1RM = weight × (36 / (37 - reps))
-    return weight * (36 / (37 - reps));
+    return OneRMCalculator.brzycki(weight, reps);
   }
 
   /// Calculate training intensity relative to 1RM
@@ -399,19 +645,33 @@ class RecoveryCalculator {
   static List<String> getMuscleGroupsFromExercise(String exerciseName) {
     final lowerName = exerciseName.toLowerCase();
     
-    if (lowerName.contains('bench') || lowerName.contains('chest') || lowerName.contains('fly')) {
+    // Compound exercises that affect multiple muscle groups
+    if (lowerName.contains('bench')) {
+      return ['Chest', 'Triceps']; // Bench press affects chest and triceps
+    } else if (lowerName.contains('row') || lowerName.contains('pulldown') || lowerName.contains('lat')) {
+      return ['Back', 'Biceps']; // Rows and pulldowns affect back and biceps
+    } else if (lowerName.contains('press') && !lowerName.contains('bench')) {
+      return ['Shoulders', 'Triceps']; // Overhead press affects shoulders and triceps
+    } else if (lowerName.contains('deadlift')) {
+      return ['Back', 'Hamstrings', 'Glutes']; // Deadlift affects multiple muscle groups
+    } else if (lowerName.contains('squat')) {
+      return ['Quadriceps', 'Glutes']; // Squat affects quads and glutes
+    }
+    
+    // Single muscle group exercises
+    if (lowerName.contains('chest') || lowerName.contains('fly')) {
       return ['Chest'];
     } else if (lowerName.contains('curl') || lowerName.contains('bicep')) {
       return ['Biceps'];
     } else if (lowerName.contains('tricep') || lowerName.contains('pushdown') || lowerName.contains('skull')) {
       return ['Triceps'];
-    } else if (lowerName.contains('shoulder') || lowerName.contains('press') || lowerName.contains('raise')) {
+    } else if (lowerName.contains('shoulder') || lowerName.contains('raise')) {
       return ['Shoulders'];
-    } else if (lowerName.contains('row') || lowerName.contains('pulldown') || lowerName.contains('lat') || lowerName.contains('trap')) {
+    } else if (lowerName.contains('trap')) {
       return ['Back'];
-    } else if (lowerName.contains('squat') || lowerName.contains('leg') || lowerName.contains('press')) {
+    } else if (lowerName.contains('leg') && !lowerName.contains('deadlift') && !lowerName.contains('squat')) {
       return ['Quadriceps'];
-    } else if (lowerName.contains('deadlift') || lowerName.contains('hamstring')) {
+    } else if (lowerName.contains('hamstring')) {
       return ['Hamstrings'];
     } else if (lowerName.contains('glute') || lowerName.contains('hip') || lowerName.contains('bridge')) {
       return ['Glutes'];
@@ -419,7 +679,7 @@ class RecoveryCalculator {
       return ['Calves'];
     } else if (lowerName.contains('forearm') || lowerName.contains('wrist') || lowerName.contains('grip')) {
       return ['Forearms'];
-    } else if (lowerName.contains('neck') || lowerName.contains('trap')) {
+    } else if (lowerName.contains('neck')) {
       return ['Neck'];
     } else if (lowerName.contains('abs') || lowerName.contains('core') || lowerName.contains('crunch')) {
       return ['Core'];

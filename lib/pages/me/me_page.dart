@@ -6,6 +6,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import 'package:gymfit/models/workout.dart';
 import 'package:gymfit/services/workout_service.dart';
+import 'package:gymfit/services/recovery_service.dart';
 import 'package:gymfit/pages/me/statistics_page.dart';
 import 'package:gymfit/pages/me/friends_page.dart';
 import 'package:gymfit/pages/me/recovery_page.dart';
@@ -60,6 +61,8 @@ class _MePageState extends State<MePage> with WidgetsBindingObserver, AutomaticK
     if (state == AppLifecycleState.resumed) {
       _loadWorkouts();
       _loadUserProfile();
+      // Also refresh recovery data when app resumes
+      RecoveryService.refreshRecoveryData();
     }
   }
 
@@ -133,6 +136,8 @@ class _MePageState extends State<MePage> with WidgetsBindingObserver, AutomaticK
       });
       await _loadWorkouts();
       await _loadUserProfile();
+      // Also refresh recovery data when manually refreshing
+      await RecoveryService.refreshRecoveryData();
     }
   }
 
@@ -140,6 +145,8 @@ class _MePageState extends State<MePage> with WidgetsBindingObserver, AutomaticK
   void _onWorkoutUpdate() {
     _loadWorkouts();
     _loadUserProfile();
+    // Automatically refresh recovery data when workouts are updated/deleted
+    RecoveryService.refreshRecoveryData();
   }
 
   // Callback for profile updates

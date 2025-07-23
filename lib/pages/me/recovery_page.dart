@@ -241,8 +241,8 @@ class _RecoveryPageState extends State<RecoveryPage> with AutomaticKeepAliveClie
               boxShadow: [
                 BoxShadow(
                   color: themeService.isDarkMode 
-                      ? Colors.black.withOpacity(0.3)
-                      : Colors.grey.withOpacity(0.1),
+                      ? Colors.black.withValues(alpha: 0.3)
+                      : Colors.grey.withValues(alpha: 0.1),
                   spreadRadius: 1,
                   blurRadius: 5,
                   offset: const Offset(0, 2),
@@ -316,8 +316,8 @@ class _RecoveryPageState extends State<RecoveryPage> with AutomaticKeepAliveClie
         boxShadow: [
           BoxShadow(
             color: themeService.isDarkMode 
-                ? Colors.black.withOpacity(0.3)
-                : Colors.grey.withOpacity(0.1),
+                ? Colors.black.withValues(alpha: 0.3)
+                : Colors.grey.withValues(alpha: 0.1),
             spreadRadius: 1,
             blurRadius: 5,
             offset: const Offset(0, 2),
@@ -345,7 +345,7 @@ class _RecoveryPageState extends State<RecoveryPage> with AutomaticKeepAliveClie
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Color(recoveryColor).withOpacity(0.2),
+                  color: Color(recoveryColor).withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: Color(recoveryColor)),
                 ),
@@ -497,7 +497,6 @@ class _RecoveryPageState extends State<RecoveryPage> with AutomaticKeepAliveClie
           );
     
     final isCustom = recoveryData?.customBaselines.containsKey(muscleGroup.name) ?? false;
-    final isWeightAdjusted = bodyWeight != null && bodyWeight > 0 && !isCustom;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
