@@ -6,13 +6,14 @@ import 'package:provider/provider.dart';
 import 'package:gymfit/models/quick_start_exercise.dart';
 import 'package:gymfit/models/editable_workout_models.dart' hide DecimalTextInputFormatter;
 import 'package:gymfit/components/exercise_set_row.dart' show ExerciseSetRow;
+import 'package:gymfit/components/shared_adapters.dart';
 import 'package:gymfit/services/theme_service.dart';
 
 // Generic interface for exercise data
 abstract class ExerciseData {
   String get title;
   List<dynamic> get sets;
-  bool get isChecked;
+  bool? get isChecked; // Nullable to support custom workout configuration without checkboxes
 }
 
 // Adapter for QuickStartExercise
@@ -28,7 +29,7 @@ class QuickStartExerciseAdapter implements ExerciseData {
   List<dynamic> get sets => exercise.sets;
   
   @override
-  bool get isChecked => exercise.sets.every((set) => set.isChecked);
+  bool? get isChecked => exercise.sets.every((set) => set.isChecked);
 }
 
 // Adapter for EditableExercise
@@ -44,7 +45,7 @@ class EditableExerciseAdapter implements ExerciseData {
   List<dynamic> get sets => exercise.sets;
   
   @override
-  bool get isChecked => exercise.sets.every((set) => set.isChecked);
+  bool? get isChecked => exercise.sets.every((set) => set.isChecked);
 }
 
 class GenericExerciseCard extends StatefulWidget {
@@ -57,11 +58,13 @@ class GenericExerciseCard extends StatefulWidget {
   final Function(ExerciseData, dynamic) onRemoveSet;
   final Function(ExerciseData, dynamic, double) onWeightChanged;
   final Function(ExerciseData, dynamic, int) onRepsChanged;
-  final Function(ExerciseData, dynamic, bool) onSetCheckedChanged;
-  final Function(ExerciseData, bool) onAllSetsCheckedChanged;
+  final Function(ExerciseData, dynamic, bool)? onSetCheckedChanged; // Optional for custom workout configuration
+  final Function(ExerciseData, bool)? onAllSetsCheckedChanged; // Optional for custom workout configuration
   final VoidCallback onAddSet;
   final VoidCallback onRequestReorderMode;
   final Function(bool)? onFocusChanged;
+  final double? rowHeight; // Optional parameter to control set row height
+  final double? headerSpacing; // Optional parameter to control spacing after header
 
   const GenericExerciseCard({
     super.key,
@@ -79,6 +82,8 @@ class GenericExerciseCard extends StatefulWidget {
     required this.onAddSet,
     required this.onRequestReorderMode,
     this.onFocusChanged,
+    this.rowHeight,
+    this.headerSpacing,
   });
 
   @override
@@ -386,7 +391,7 @@ class _GenericExerciseCardState extends State<GenericExerciseCard>
                                         'Set',
                                         style: TextStyle(
                                           fontWeight: FontWeight.bold,
-                                          fontSize: isSmallScreen ? 16 : 18,
+                                          fontSize: isSmallScreen ? 14 : 16,
                                         ),
                                         textAlign: TextAlign.center,
                                         overflow: TextOverflow.ellipsis,
@@ -450,29 +455,33 @@ class _GenericExerciseCardState extends State<GenericExerciseCard>
                                       ),
                                     ),
                                   ),
-                                  SizedBox(width: spacing),
-                                  SizedBox(
-                                    width: 40,
-                                    height: 40,
-                                    child: Center(
-                                      child: Checkbox(
-                                        value: widget.exercise.isChecked,
-                                        tristate: true,
-                                        fillColor: WidgetStateProperty.resolveWith<Color>((Set<WidgetState> states) {
-                                          if (states.contains(WidgetState.selected)) {
-                                            return Colors.green;
-                                          }
-                                          return Colors.grey.shade300;
-                                        }),
-                                        onChanged: (val) {
-                                          HapticFeedback.lightImpact();
-                                          widget.onAllSetsCheckedChanged(widget.exercise, val ?? false);
-                                        },
+                                  if (widget.exercise.isChecked != null) ...[
+                                    SizedBox(width: spacing),
+                                    SizedBox(
+                                      width: 40,
+                                      height: 40,
+                                      child: Center(
+                                        child: Checkbox(
+                                          value: widget.exercise.isChecked,
+                                          tristate: true,
+                                          fillColor: WidgetStateProperty.resolveWith<Color>((Set<WidgetState> states) {
+                                            if (states.contains(WidgetState.selected)) {
+                                              return Colors.green;
+                                            }
+                                            return Colors.grey.shade300;
+                                          }),
+                                          onChanged: (val) {
+                                            HapticFeedback.lightImpact();
+                                            widget.onAllSetsCheckedChanged?.call(widget.exercise, val ?? false);
+                                          },
+                                        ),
                                       ),
                                     ),
-                                  ),
+                                  ],
                                 ],
                               ),
+                              if (widget.headerSpacing != null)
+                                SizedBox(height: widget.headerSpacing),
                               Divider(
                                 height: 1,
                                 thickness: 1,
@@ -540,15 +549,26 @@ class _GenericExerciseCardState extends State<GenericExerciseCard>
   }
 
   Widget _buildSetRow(dynamic exerciseSet, int setIndex) {
+    // Check if this is a ConfigSet and wrap it with ConfigSetAdapter if needed
+    dynamic setToPass = exerciseSet;
+    
+    // If the exercise is a ConfigExerciseAdapter, wrap ConfigSet with ConfigSetAdapter
+    if (widget.exercise is ConfigExerciseAdapter && exerciseSet.runtimeType.toString() == 'ConfigSet') {
+      setToPass = ConfigSetAdapter(exerciseSet);
+    }
+    
     // Use the unified ExerciseSetRow component for both types
     return ExerciseSetRow(
-      exerciseSet: exerciseSet,
+      exerciseSet: setToPass,
       setIndex: setIndex,
       preventAutoFocus: widget.preventAutoFocus,
       onWeightChanged: (weight) => widget.onWeightChanged(widget.exercise, exerciseSet, weight),
       onRepsChanged: (reps) => widget.onRepsChanged(widget.exercise, exerciseSet, reps),
-      onCheckedChanged: (checked) => widget.onSetCheckedChanged(widget.exercise, exerciseSet, checked),
+      onCheckedChanged: widget.onSetCheckedChanged != null 
+          ? (checked) => widget.onSetCheckedChanged!(widget.exercise, exerciseSet, checked)
+          : null,
       onDismissed: () => widget.onRemoveSet(widget.exercise, exerciseSet),
+      rowHeight: widget.rowHeight,
     );
   }
 

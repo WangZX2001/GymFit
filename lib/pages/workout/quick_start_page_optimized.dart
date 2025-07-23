@@ -804,7 +804,6 @@ class _QuickStartPageOptimizedState extends State<QuickStartPageOptimized> {
                                         !stateManager.isEditingWorkoutName)
                                     ? Column(
                                       children: [
-                                        const SizedBox(height: 16),
                                         LayoutBuilder(
                                           builder: (context, constraints) {
                                             final buttonFontSize = 14.0;

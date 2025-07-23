@@ -136,6 +136,7 @@ class CustomWorkoutList extends StatelessWidget {
                 style: TextStyle(
                   color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
                   fontSize: 12,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
               trailing: Icon(

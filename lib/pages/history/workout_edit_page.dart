@@ -477,70 +477,65 @@ class _WorkoutEditPageState extends State<WorkoutEditPage> {
               // Exercise List with timing card - now extends to edge
               Expanded(
                 child: _isInReorderMode
-                    ? ReorderableListView.builder(
-                        itemCount: _exercises.length + 1, // +1 for timing card
-                        padding: const EdgeInsets.only(bottom: 100),
-                        onReorder: (oldIndex, newIndex) {
-                          // Adjust indices since timing card is first
-                          if (oldIndex > 0 && newIndex > 0) {
-                            _handleReorderExercises(oldIndex - 1, newIndex - 1);
-                          }
-                        },
-                        onReorderStart: (int index) {
-                          _handleReorderStart(index);
-                        },
-                        onReorderEnd: (int index) {
-                          _handleReorderEnd(index);
-                        },
-                        itemBuilder: (context, exerciseIndex) {
-                          // Show timing card as first item
-                          if (exerciseIndex == 0) {
-                            return Padding(
-                              padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 8.0),
-                              child: WorkoutTimingCard(
-                                key: const ValueKey('timing_card'),
-                                startTime: _startTime,
-                                duration: _endTime.difference(_startTime),
-                                onStartDateTap: _selectStartDate,
-                                onStartTimeTap: _selectStartTime,
-                                onDurationTap: _selectDuration,
+                    ? Column(
+                        children: [
+                          // Reorderable exercise list
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 2.0),
+                              child: ReorderableListView(
+                                shrinkWrap: true,
+                                physics: const AlwaysScrollableScrollPhysics(),
+                                onReorder: (oldIndex, newIndex) {
+                                  _handleReorderExercises(oldIndex, newIndex);
+                                },
+                                onReorderStart: (int index) {
+                                  _handleReorderStart(index);
+                                },
+                                onReorderEnd: (int index) {
+                                  _handleReorderEnd(index);
+                                },
+                                children: _exercises.asMap().entries.map((entry) {
+                                  final index = entry.key;
+                                  final exercise = entry.value;
+                                  final exerciseData = EditableExerciseAdapter(exercise);
+                                  return Container(
+                                    key: ValueKey('exercise_${exercise.title}_$index'),
+                                    margin: const EdgeInsets.only(bottom: 6.0),
+                                    child: GenericExerciseCard(
+                                      exercise: exerciseData,
+                                      exerciseIndex: index,
+                                      preventAutoFocus: _preventAutoFocus,
+                                      isNewlyAdded: _isExerciseNewlyAdded(exercise),
+                                      isCollapsed: _isInReorderMode,
+                                      onRemoveExercise: (exerciseData) => _removeExercise(index),
+                                      onRemoveSet: (exerciseData, set) => _removeSet(index, exercise.sets.indexOf(set as EditableExerciseSet)),
+                                      onWeightChanged: (exerciseData, set, weight) {
+                                        final editableSet = set as EditableExerciseSet;
+                                        editableSet.updateWeight(weight);
+                                      },
+                                      onRepsChanged: (exerciseData, set, reps) {
+                                        final editableSet = set as EditableExerciseSet;
+                                        editableSet.updateReps(reps);
+                                      },
+                                      onSetCheckedChanged: (exerciseData, set, checked) {
+                                        final editableSet = set as EditableExerciseSet;
+                                        final setIndex = exercise.sets.indexOf(editableSet);
+                                        _onSetCheckChanged(index, setIndex, checked);
+                                      },
+                                      onAllSetsCheckedChanged: (exerciseData, checked) {
+                                        _onExerciseCheckChanged(index, checked);
+                                      },
+                                      onAddSet: () => _addSet(index),
+                                      onRequestReorderMode: _handleRequestReorderMode,
+                                      onFocusChanged: _onFocusChanged,
+                                    ),
+                                  );
+                                }).toList(),
                               ),
-                            );
-                          }
-                          
-                          // Show exercises (adjust index since timing card is first)
-                          final exercise = _exercises[exerciseIndex - 1];
-                          final exerciseData = EditableExerciseAdapter(exercise);
-                          return GenericExerciseCard(
-                            key: ValueKey('exercise_${exercise.title}_${exerciseIndex - 1}'),
-                            exercise: exerciseData,
-                            exerciseIndex: exerciseIndex - 1,
-                            preventAutoFocus: _preventAutoFocus,
-                            isNewlyAdded: _isExerciseNewlyAdded(exercise),
-                            isCollapsed: _isInReorderMode,
-                            onRemoveExercise: (exerciseData) => _removeExercise(exerciseIndex - 1),
-                            onRemoveSet: (exerciseData, set) => _removeSet(exerciseIndex - 1, exercise.sets.indexOf(set as EditableExerciseSet)),
-                            onWeightChanged: (exerciseData, set, weight) {
-                              final editableSet = set as EditableExerciseSet;
-                              editableSet.updateWeight(weight);
-                            },
-                            onRepsChanged: (exerciseData, set, reps) {
-                              final editableSet = set as EditableExerciseSet;
-                              editableSet.updateReps(reps);
-                            },
-                            onSetCheckedChanged: (exerciseData, set, checked) {
-                              final editableSet = set as EditableExerciseSet;
-                              final setIndex = exercise.sets.indexOf(editableSet);
-                              _onSetCheckChanged(exerciseIndex - 1, setIndex, checked);
-                            },
-                            onAllSetsCheckedChanged: (exerciseData, checked) {
-                              _onExerciseCheckChanged(exerciseIndex - 1, checked);
-                            },
-                            onAddSet: () => _addSet(exerciseIndex - 1),
-                            onRequestReorderMode: _handleRequestReorderMode,
-                            onFocusChanged: _onFocusChanged,
-                          );
-                        },
+                            ),
+                          ),
+                        ],
                       )
                     : ListView.builder(
                         controller: _scrollController,
@@ -564,86 +559,96 @@ class _WorkoutEditPageState extends State<WorkoutEditPage> {
                           // Show exercises (adjust index since timing card is first)
                           final exercise = _exercises[exerciseIndex - 1];
                           final exerciseData = EditableExerciseAdapter(exercise);
-                          return GenericExerciseCard(
-                            exercise: exerciseData,
-                            exerciseIndex: exerciseIndex - 1,
-                            preventAutoFocus: _preventAutoFocus,
-                            isNewlyAdded: _isExerciseNewlyAdded(exercise),
-                            isCollapsed: _isInReorderMode,
-                            onRemoveExercise: (exerciseData) => _removeExercise(exerciseIndex - 1),
-                            onRemoveSet: (exerciseData, set) => _removeSet(exerciseIndex - 1, exercise.sets.indexOf(set as EditableExerciseSet)),
-                            onWeightChanged: (exerciseData, set, weight) {
-                              final editableSet = set as EditableExerciseSet;
-                              editableSet.updateWeight(weight);
-                            },
-                            onRepsChanged: (exerciseData, set, reps) {
-                              final editableSet = set as EditableExerciseSet;
-                              editableSet.updateReps(reps);
-                            },
-                            onSetCheckedChanged: (exerciseData, set, checked) {
-                              final editableSet = set as EditableExerciseSet;
-                              final setIndex = exercise.sets.indexOf(editableSet);
-                              _onSetCheckChanged(exerciseIndex - 1, setIndex, checked);
-                            },
-                            onAllSetsCheckedChanged: (exerciseData, checked) {
-                              _onExerciseCheckChanged(exerciseIndex - 1, checked);
-                            },
-                            onAddSet: () => _addSet(exerciseIndex - 1),
-                            onRequestReorderMode: _handleRequestReorderMode,
-                            onFocusChanged: _onFocusChanged,
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 16.0),
+                            child: GenericExerciseCard(
+                              exercise: exerciseData,
+                              exerciseIndex: exerciseIndex - 1,
+                              preventAutoFocus: _preventAutoFocus,
+                              isNewlyAdded: _isExerciseNewlyAdded(exercise),
+                              isCollapsed: _isInReorderMode,
+                              onRemoveExercise: (exerciseData) => _removeExercise(exerciseIndex - 1),
+                              onRemoveSet: (exerciseData, set) => _removeSet(exerciseIndex - 1, exercise.sets.indexOf(set as EditableExerciseSet)),
+                              onWeightChanged: (exerciseData, set, weight) {
+                                final editableSet = set as EditableExerciseSet;
+                                editableSet.updateWeight(weight);
+                              },
+                              onRepsChanged: (exerciseData, set, reps) {
+                                final editableSet = set as EditableExerciseSet;
+                                editableSet.updateReps(reps);
+                              },
+                              onSetCheckedChanged: (exerciseData, set, checked) {
+                                final editableSet = set as EditableExerciseSet;
+                                final setIndex = exercise.sets.indexOf(editableSet);
+                                _onSetCheckChanged(exerciseIndex - 1, setIndex, checked);
+                              },
+                              onAllSetsCheckedChanged: (exerciseData, checked) {
+                                _onExerciseCheckChanged(exerciseIndex - 1, checked);
+                              },
+                              onAddSet: () => _addSet(exerciseIndex - 1),
+                              onRequestReorderMode: _handleRequestReorderMode,
+                              onFocusChanged: _onFocusChanged,
+                            ),
                           );
                         },
                       ),
               ),
                 
               // Done button for reorder mode
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16.0, 0.0, 16.0, 0.0),
-                child: AnimatedSize(
-                  duration: const Duration(milliseconds: 400),
-                  curve: Curves.easeInOutQuart,
-                  child: AnimatedOpacity(
-                    duration: const Duration(milliseconds: 300),
-                    curve: Curves.easeInOut,
-                    opacity: (_isInReorderMode && !_isAnyFieldFocused && !_isEditingWorkoutName) ? 1.0 : 0.0,
-                    child: (_isInReorderMode && !_isAnyFieldFocused && !_isEditingWorkoutName)
-                        ? Column(
-                          children: [
-                            const SizedBox(height: 4),
-                            LayoutBuilder(
-                              builder: (context, constraints) {
-                                final screenWidth = MediaQuery.of(context).size.width;
-                                final buttonFontSize = screenWidth < 350 ? 16.0 : 18.0;
-                                final buttonPadding = screenWidth < 350 
-                                    ? const EdgeInsets.symmetric(vertical: 12) 
-                                    : const EdgeInsets.symmetric(vertical: 16);
+              AnimatedSize(
+                duration: const Duration(milliseconds: 400),
+                curve: Curves.easeInOutQuart,
+                child: AnimatedOpacity(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOut,
+                  opacity: (_isInReorderMode && !_isAnyFieldFocused && !_isEditingWorkoutName) ? 1.0 : 0.0,
+                  child: (_isInReorderMode && !_isAnyFieldFocused && !_isEditingWorkoutName)
+                      ? Column(
+                        children: [
+                          LayoutBuilder(
+                            builder: (context, constraints) {
+                              final buttonFontSize = 14.0;
+                              final buttonPadding = const EdgeInsets.symmetric(vertical: 8);
 
-                                return SizedBox(
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                child: SizedBox(
                                   width: double.infinity,
-                                  child: ElevatedButton(
+                                  child: OutlinedButton.icon(
                                     onPressed: _handleDoneReorder,
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.blue,
-                                      foregroundColor: Colors.white,
-                                      shape: const StadiumBorder(),
-                                      padding: buttonPadding,
+                                    icon: FaIcon(
+                                      FontAwesomeIcons.check,
+                                      color: themeService.isDarkMode ? Colors.black : Colors.white,
+                                      size: buttonFontSize * 0.8,
                                     ),
-                                    child: Text(
+                                    label: Text(
                                       'Done',
                                       style: TextStyle(
-                                        color: Colors.white,
                                         fontSize: buttonFontSize,
-                                        fontWeight: FontWeight.bold,
+                                        fontWeight: FontWeight.w900,
+                                        color: themeService.isDarkMode ? Colors.black : Colors.white,
                                       ),
                                     ),
+                                    style: OutlinedButton.styleFrom(
+                                      backgroundColor: themeService.isDarkMode ? Colors.white : Colors.black,
+                                      foregroundColor: themeService.isDarkMode ? Colors.black : Colors.white,
+                                      side: BorderSide(
+                                        color: themeService.isDarkMode ? Colors.white : Colors.black,
+                                        width: 1.5,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      padding: buttonPadding,
+                                    ),
                                   ),
-                                );
-                              },
-                            ),
-                          ],
-                        )
-                        : const SizedBox.shrink(),
-                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      )
+                      : const SizedBox.shrink(),
                 ),
               ),
               // Add Exercises button at the bottom
