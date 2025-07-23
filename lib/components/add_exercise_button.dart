@@ -39,7 +39,6 @@ class AddExerciseButton extends StatelessWidget {
                   const SizedBox(height: 0),
                   LayoutBuilder(
                     builder: (context, constraints) {
-                      final screenWidth = MediaQuery.of(context).size.width;
                       final buttonFontSize = 14.0;
                       final buttonPadding = const EdgeInsets.symmetric(vertical: 8);
 

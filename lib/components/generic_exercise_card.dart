@@ -374,7 +374,6 @@ class _GenericExerciseCardState extends State<GenericExerciseCard>
                           final availableWidth = constraints.maxWidth;
                           final isSmallScreen = availableWidth < 350;
                           final spacing = isSmallScreen ? 6.0 : 8.0;
-                          final minCheckboxSize = 40.0;
                           
                           return Column(
                             children: [

@@ -109,6 +109,15 @@ class _WorkoutEditPageState extends State<WorkoutEditPage> {
     }
   }
 
+  Future<void> _selectStartDate() async {
+    await WorkoutEditService.selectStartDate(
+      context,
+      _startTime,
+      (newStartTime) => setState(() => _startTime = newStartTime),
+      (newEndTime) => setState(() => _endTime = newEndTime),
+    );
+  }
+
   Future<void> _selectStartTime() async {
     await WorkoutEditService.selectStartTime(
       context,
@@ -118,12 +127,12 @@ class _WorkoutEditPageState extends State<WorkoutEditPage> {
     );
   }
 
-  Future<void> _selectEndTime() async {
-    await WorkoutEditService.selectEndTime(
+  Future<void> _selectDuration() async {
+    final currentDuration = _endTime.difference(_startTime);
+    await WorkoutEditService.selectDuration(
       context,
-      _startTime,
-      _endTime,
-      (newEndTime) => setState(() => _endTime = newEndTime),
+      currentDuration,
+      (newDuration) => setState(() => _endTime = _startTime.add(newDuration)),
     );
   }
 
@@ -491,9 +500,10 @@ class _WorkoutEditPageState extends State<WorkoutEditPage> {
                               child: WorkoutTimingCard(
                                 key: const ValueKey('timing_card'),
                                 startTime: _startTime,
-                                endTime: _endTime,
+                                duration: _endTime.difference(_startTime),
+                                onStartDateTap: _selectStartDate,
                                 onStartTimeTap: _selectStartTime,
-                                onEndTimeTap: _selectEndTime,
+                                onDurationTap: _selectDuration,
                               ),
                             );
                           }
@@ -539,15 +549,16 @@ class _WorkoutEditPageState extends State<WorkoutEditPage> {
                         itemBuilder: (context, exerciseIndex) {
                           // Show timing card as first item
                           if (exerciseIndex == 0) {
-                            return Padding(
-                              padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 8.0),
-                              child: WorkoutTimingCard(
-                                startTime: _startTime,
-                                endTime: _endTime,
-                                onStartTimeTap: _selectStartTime,
-                                onEndTimeTap: _selectEndTime,
-                              ),
-                            );
+                                                      return Padding(
+                            padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 8.0),
+                            child: WorkoutTimingCard(
+                              startTime: _startTime,
+                              duration: _endTime.difference(_startTime),
+                              onStartDateTap: _selectStartDate,
+                              onStartTimeTap: _selectStartTime,
+                              onDurationTap: _selectDuration,
+                            ),
+                          );
                           }
                           
                           // Show exercises (adjust index since timing card is first)

@@ -363,10 +363,12 @@ class _CustomWorkoutPageState extends State<CustomWorkoutPage> {
     
     // Navigate back to the main app and open QuickStart properly
     if (!mounted) return;
-    Navigator.of(context).popUntil((route) => route.isFirst);
+    final navigator = Navigator.of(context);
+    navigator.popUntil((route) => route.isFirst);
     
     // Use the overlay system to open QuickStart properly with slight delay
     Future.delayed(const Duration(milliseconds: 50), () {
+      if (!mounted) return;
       QuickStartOverlay.openQuickStart(context);
     });
   }
@@ -458,6 +460,8 @@ class _CustomWorkoutPageState extends State<CustomWorkoutPage> {
         ),
       ),
     );
+
+    if (!mounted) return;
 
     if (mounted && result == true) {
       _loadSavedWorkouts();

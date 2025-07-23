@@ -563,9 +563,6 @@ class _QuickStartPageOptimizedState extends State<QuickStartPageOptimized> {
                 },
                 child: LayoutBuilder(
                   builder: (context, constraints) {
-                    final isSmallScreen = constraints.maxWidth < 350;
-                    final mainPadding = isSmallScreen ? 12.0 : 16.0;
-
                     return Column(
                       children: [
                         // Workout Name Display at the top with smooth transition
@@ -810,10 +807,6 @@ class _QuickStartPageOptimizedState extends State<QuickStartPageOptimized> {
                                         const SizedBox(height: 16),
                                         LayoutBuilder(
                                           builder: (context, constraints) {
-                                            final screenWidth =
-                                                MediaQuery.of(
-                                                  context,
-                                                ).size.width;
                                             final buttonFontSize = 14.0;
                                             final buttonPadding = const EdgeInsets.symmetric(vertical: 8);
 

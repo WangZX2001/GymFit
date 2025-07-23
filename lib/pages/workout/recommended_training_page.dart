@@ -360,6 +360,7 @@ class _RecommendedTrainingPageState extends State<RecommendedTrainingPage> {
 
     // Navigate to quick start page with smooth slide-up animation from bottom and slight delay
     Future.delayed(const Duration(milliseconds: 50), () {
+      if (!mounted) return;
       Navigator.of(context, rootNavigator: true).push(
       PageRouteBuilder(
         pageBuilder: (ctx, animation, secondaryAnimation) => QuickStartPageOptimized(

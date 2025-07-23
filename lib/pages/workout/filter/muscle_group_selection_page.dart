@@ -115,54 +115,63 @@ class _MuscleGroupSelectionPageState extends State<MuscleGroupSelectionPage> {
     final isParent = _isParentMuscle(muscle);
     final isExpanded = expandedGroups.contains(muscle);
     
-    return Column(
-      children: [
-        Container(
-          color: themeService.isDarkMode 
-              ? const Color(0xFF2A2A2A)
-              : Colors.grey.shade50,
-          child: CheckboxListTile(
-            contentPadding: EdgeInsets.only(
-              left: isSubMuscle ? 48.0 : 16.0,
-              right: 16.0,
-              top: 2.0,
-              bottom: 2.0,
-            ),
-            title: Row(
+    if (isParent && !isSubMuscle) {
+      // Custom row for parent muscles with checkbox on the right, aligned and vertically centered
+      return Column(
+        children: [
+          Container(
+            color: themeService.isDarkMode
+                ? const Color(0xFF2A2A2A)
+                : Colors.grey.shade50,
+            height: 48.0,
+            padding: const EdgeInsets.only(left: 16.0, right: 0.0),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Expanded(
-                  child: Text(
-                    muscle,
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: themeService.currentTheme.textTheme.titleMedium?.color,
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => _toggleExpansion(muscle),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 0.0),
+                        child: Text(
+                          muscle,
+                          style: TextStyle(
+                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                            color: themeService.currentTheme.textTheme.titleMedium?.color,
+                          ),
+                        ),
+                      ),
                     ),
                   ),
-                ),
-                if (isParent)
                   GestureDetector(
                     onTap: () => _toggleExpansion(muscle),
-                    child: Icon(
-                      isExpanded ? Icons.expand_less : Icons.expand_more,
-                      color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey[600],
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 4.0),
+                      child: Icon(
+                        isExpanded ? Icons.expand_less : Icons.expand_more,
+                        color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey[600],
+                      ),
                     ),
                   ),
-              ],
+                  Padding(
+                    padding: const EdgeInsets.only(right: 16.0, left: 4.0),
+                    child: Checkbox(
+                      value: isSelected,
+                      onChanged: (bool? value) {
+                        _toggleSelection(muscle);
+                      },
+                      activeColor: Colors.blue,
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                  ),
+                ],
+              ),
             ),
-            value: isSelected,
-            onChanged: (bool? value) {
-              _toggleSelection(muscle);
-            },
-            activeColor: Colors.blue,
-          ),
-        ),
-                  if (isParent && isExpanded && widget.subGroups != null) ...[
+          if (isExpanded && widget.subGroups != null) ...[
             // Divider line between parent and sub-muscles
             Container(
-              margin: EdgeInsets.only(
-                left: isSubMuscle ? 48.0 : 16.0,
-                right: 16.0,
-              ),
+              margin: const EdgeInsets.only(left: 16.0, right: 16.0),
               height: 1,
               color: themeService.isDarkMode ? Colors.grey.shade700 : Colors.grey.shade300,
             ),
@@ -176,10 +185,7 @@ class _MuscleGroupSelectionPageState extends State<MuscleGroupSelectionPage> {
                   // Add divider after each sub-muscle except the last one
                   if (index < widget.subGroups![muscle]!.length - 1)
                     Container(
-                      margin: EdgeInsets.only(
-                        left: 48.0,
-                        right: 16.0,
-                      ),
+                      margin: const EdgeInsets.only(left: 48.0, right: 16.0),
                       height: 1,
                       color: themeService.isDarkMode ? Colors.grey.shade700 : Colors.grey.shade300,
                     ),
@@ -187,8 +193,54 @@ class _MuscleGroupSelectionPageState extends State<MuscleGroupSelectionPage> {
               );
             }),
           ],
-      ],
-    );
+        ],
+      );
+    } else {
+      // Custom row for sub-muscles and non-parent muscles, matching parent row style
+      return Column(
+        children: [
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => _toggleSelection(muscle),
+            child: Container(
+              color: themeService.isDarkMode
+                  ? const Color(0xFF2A2A2A)
+                  : Colors.grey.shade50,
+              height: 48.0,
+              padding: EdgeInsets.only(left: isSubMuscle ? 48.0 : 16.0, right: 0.0),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 0.0),
+                      child: Text(
+                        muscle,
+                        style: TextStyle(
+                          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                          color: themeService.currentTheme.textTheme.titleMedium?.color,
+                        ),
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(right: 16.0, left: 4.0),
+                    child: Checkbox(
+                      value: isSelected,
+                      onChanged: (bool? value) {
+                        _toggleSelection(muscle);
+                      },
+                      activeColor: Colors.blue,
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      );
+    }
   }
 
   @override

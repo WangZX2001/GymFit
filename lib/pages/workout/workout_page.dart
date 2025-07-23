@@ -54,7 +54,7 @@ class WorkoutPage extends StatelessWidget {
           QuickStartOverlay.customWorkoutName = null;
           // Open quick start after confirmation with slight delay for more deliberate feel
           Future.delayed(const Duration(milliseconds: 50), () {
-            // ignore: use_build_context_synchronously
+            if (!context.mounted) return;
             QuickStartOverlay.openQuickStart(context);
           });
         }
@@ -65,6 +65,7 @@ class WorkoutPage extends StatelessWidget {
       // No confirmation needed, start directly with slight delay for more deliberate feel
       QuickStartOverlay.customWorkoutName = null;
       Future.delayed(const Duration(milliseconds: 50), () {
+        if (!context.mounted) return;
         QuickStartOverlay.openQuickStart(context);
       });
     }

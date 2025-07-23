@@ -21,19 +21,20 @@ class _ExerciseFilterPageState extends State<ExerciseFilterPage> {
 
   // Define available filter options
   final List<String> mainMuscles = [
-    'Chest',
-    'Back',
-    'Shoulders',
     'Arms',
-    'Legs',
+    'Back',
+    'Cardio',
+    'Chest',
     'Core',
     'Glutes',
-    'Cardio',
+    'Legs',
+    'Shoulders',
   ];
 
   final Map<String, List<String>> muscleSubGroups = {
-    'Back': ['Upper Back', 'Lower Back', 'Traps', 'Neck', 'Lats'],
-    'Arms': ['Biceps', 'Triceps'],
+    'Back': ['Lats', 'Lower Back', 'Neck', 'Traps', 'Upper Back'],
+    'Arms': ['Biceps', 'Forearms', 'Triceps'],
+    'Legs': ['Adductors', 'Calves', 'Hamstring', 'Quadriceps'],
   };
 
 
@@ -51,16 +52,10 @@ class _ExerciseFilterPageState extends State<ExerciseFilterPage> {
   Widget _buildMuscleGroupSection(String title, List<String> options, Set<String> selected, Function(List<String>) onSelectionChanged) {
     final themeService = Provider.of<ThemeService>(context, listen: false);
     
-    return Container(
-      decoration: BoxDecoration(
-        color: themeService.isDarkMode 
-            ? const Color(0xFF2A2A2A)
-            : Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      margin: const EdgeInsets.only(bottom: 8.0),
-      child: ListTile(
-        title: Text(
+    return ListTile(
+      title: Padding(
+        padding: const EdgeInsets.only(left: 12.0),
+        child: Text(
           title,
           style: TextStyle(
             fontSize: 16,
@@ -68,7 +63,10 @@ class _ExerciseFilterPageState extends State<ExerciseFilterPage> {
             color: themeService.currentTheme.textTheme.titleMedium?.color,
           ),
         ),
-                    subtitle: selected.isEmpty 
+      ),
+      subtitle: Padding(
+        padding: const EdgeInsets.only(left: 12.0),
+        child: selected.isEmpty 
             ? Text(
                 'None selected',
                 style: TextStyle(
@@ -83,45 +81,48 @@ class _ExerciseFilterPageState extends State<ExerciseFilterPage> {
                   color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
                 ),
               ),
-        trailing: Icon(
-          Icons.arrow_forward_ios, 
-          size: 16,
-          color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
-        ),
-        onTap: () async {
-          final result = await Navigator.push<List<String>>(
-            context,
-            MaterialPageRoute(
-              builder: (context) => MuscleGroupSelectionPage(
-                title: title,
-                muscleGroups: options,
-                initialSelected: selected,
-                subGroups: title == 'Main Muscle' ? muscleSubGroups : null,
-              ),
-            ),
-          );
-          
-          if (result != null) {
-            onSelectionChanged(result);
-          }
-        },
       ),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: Icon(
+              Icons.arrow_forward_ios,
+              size: 16,
+              color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
+            ),
+          ),
+        ],
+      ),
+      onTap: () async {
+        final result = await Navigator.push<List<String>>(
+          context,
+          MaterialPageRoute(
+            builder: (context) => MuscleGroupSelectionPage(
+              title: title,
+              muscleGroups: options,
+              initialSelected: selected,
+              subGroups: title == 'Main Muscle' ? muscleSubGroups : null,
+            ),
+          ),
+        );
+        
+        if (result != null) {
+          onSelectionChanged(result);
+        }
+      },
+      contentPadding: const EdgeInsets.symmetric(horizontal: 0, vertical: 4),
     );
   }
 
   Widget _buildExperienceSection() {
     final themeService = Provider.of<ThemeService>(context, listen: false);
     
-    return Container(
-      decoration: BoxDecoration(
-        color: themeService.isDarkMode 
-            ? const Color(0xFF2A2A2A)
-            : Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      margin: const EdgeInsets.only(bottom: 8.0),
-      child: ListTile(
-        title: Text(
+    return ListTile(
+      title: Padding(
+        padding: const EdgeInsets.only(left: 12.0),
+        child: Text(
           'Experience Level',
           style: TextStyle(
             fontSize: 16,
@@ -129,7 +130,10 @@ class _ExerciseFilterPageState extends State<ExerciseFilterPage> {
             color: themeService.currentTheme.textTheme.titleMedium?.color,
           ),
         ),
-        subtitle: selectedExperienceLevels.isEmpty 
+      ),
+      subtitle: Padding(
+        padding: const EdgeInsets.only(left: 12.0),
+        child: selectedExperienceLevels.isEmpty 
             ? Text(
                 'None selected',
                 style: TextStyle(
@@ -144,44 +148,47 @@ class _ExerciseFilterPageState extends State<ExerciseFilterPage> {
                   color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
                 ),
               ),
-        trailing: Icon(
-          Icons.arrow_forward_ios, 
-          size: 16,
-          color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
-        ),
-        onTap: () async {
-          final result = await Navigator.push<List<String>>(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ExperienceLevelSelectionPage(
-                initialSelected: selectedExperienceLevels,
-              ),
-            ),
-          );
-          
-          if (result != null) {
-            setState(() {
-              selectedExperienceLevels = Set.from(result);
-            });
-          }
-        },
       ),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: Icon(
+              Icons.arrow_forward_ios,
+              size: 16,
+              color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
+            ),
+          ),
+        ],
+      ),
+      onTap: () async {
+        final result = await Navigator.push<List<String>>(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ExperienceLevelSelectionPage(
+              initialSelected: selectedExperienceLevels,
+            ),
+          ),
+        );
+        
+        if (result != null) {
+          setState(() {
+            selectedExperienceLevels = Set.from(result);
+          });
+        }
+      },
+      contentPadding: const EdgeInsets.symmetric(horizontal: 0, vertical: 4),
     );
   }
 
   Widget _buildEquipmentSection() {
     final themeService = Provider.of<ThemeService>(context, listen: false);
     
-    return Container(
-      decoration: BoxDecoration(
-        color: themeService.isDarkMode 
-            ? const Color(0xFF2A2A2A)
-            : Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      margin: const EdgeInsets.only(bottom: 8.0),
-      child: ListTile(
-        title: Text(
+    return ListTile(
+      title: Padding(
+        padding: const EdgeInsets.only(left: 12.0),
+        child: Text(
           'Equipment',
           style: TextStyle(
             fontSize: 16,
@@ -189,7 +196,10 @@ class _ExerciseFilterPageState extends State<ExerciseFilterPage> {
             color: themeService.currentTheme.textTheme.titleMedium?.color,
           ),
         ),
-        subtitle: selectedEquipment.isEmpty 
+      ),
+      subtitle: Padding(
+        padding: const EdgeInsets.only(left: 12.0),
+        child: selectedEquipment.isEmpty 
             ? Text(
                 'None selected',
                 style: TextStyle(
@@ -204,28 +214,37 @@ class _ExerciseFilterPageState extends State<ExerciseFilterPage> {
                   color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
                 ),
               ),
-        trailing: Icon(
-          Icons.arrow_forward_ios, 
-          size: 16,
-          color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
-        ),
-        onTap: () async {
-          final result = await Navigator.push<List<String>>(
-            context,
-            MaterialPageRoute(
-              builder: (context) => EquipmentSelectionPage(
-                initialSelected: selectedEquipment,
-              ),
-            ),
-          );
-          
-          if (result != null) {
-            setState(() {
-              selectedEquipment = Set.from(result);
-            });
-          }
-        },
       ),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: Icon(
+              Icons.arrow_forward_ios,
+              size: 16,
+              color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
+            ),
+          ),
+        ],
+      ),
+      onTap: () async {
+        final result = await Navigator.push<List<String>>(
+          context,
+          MaterialPageRoute(
+            builder: (context) => EquipmentSelectionPage(
+              initialSelected: selectedEquipment,
+            ),
+          ),
+        );
+        
+        if (result != null) {
+          setState(() {
+            selectedEquipment = Set.from(result);
+          });
+        }
+      },
+      contentPadding: const EdgeInsets.symmetric(horizontal: 0, vertical: 4),
     );
   }
 
@@ -290,25 +309,24 @@ class _ExerciseFilterPageState extends State<ExerciseFilterPage> {
         children: [
           Expanded(
             child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildMuscleGroupSection(
-                      'Main Muscle',
-                      mainMuscles,
-                      selectedMainMuscles,
-                      (selection) {
-                        setState(() {
-                          selectedMainMuscles = Set.from(selection);
-                        });
-                      },
-                    ),
-                    _buildExperienceSection(),
-                    _buildEquipmentSection(),
-                  ],
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildMuscleGroupSection(
+                    'Main Muscle',
+                    mainMuscles,
+                    selectedMainMuscles,
+                    (selection) {
+                      setState(() {
+                        selectedMainMuscles = Set.from(selection);
+                      });
+                    },
+                  ),
+                  const Divider(height: 1),
+                  _buildExperienceSection(),
+                  const Divider(height: 1),
+                  _buildEquipmentSection(),
+                ],
               ),
             ),
           ),

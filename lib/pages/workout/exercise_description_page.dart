@@ -105,7 +105,294 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> with 
     super.dispose();
   }
 
+  void _addToQuickStart() {
+    // Add haptic feedback when adding exercise to quick start
+    HapticFeedback.heavyImpact();
+    
+    // Create a new QuickStartExercise with this exercise
+    final newExercise = QuickStartExercise(
+      title: widget.title,
+      sets: [ExerciseSet()], // Start with one empty set
+    );
 
+    // Check if there's an existing quick start
+    if (QuickStartOverlay.selectedExercises.isNotEmpty) {
+      // Add to existing quick start
+      QuickStartOverlay.selectedExercises.add(newExercise);
+    } else {
+      // Start a new quick start
+      QuickStartOverlay.selectedExercises = [newExercise];
+      QuickStartOverlay.startTimer();
+    }
+
+    // Navigate to the Quick Start page with smooth sliding animation and slight delay
+    Future.delayed(const Duration(milliseconds: 50), () {
+      if (!mounted) return;
+      Navigator.of(context, rootNavigator: true).push(
+      PageRouteBuilder(
+        pageBuilder: (ctx, animation, secondaryAnimation) => QuickStartPageOptimized(
+          initialSelectedExercises: QuickStartOverlay.selectedExercises,
+          showMinibarOnMinimize: true, // Show integrated minibar when minimizing
+        ),
+        transitionDuration: const Duration(milliseconds: 400),
+        reverseTransitionDuration: const Duration(milliseconds: 350),
+        transitionsBuilder: (ctx, animation, secAnim, child) {
+          // Create a curved animation for smoother motion
+          final curvedAnimation = CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeOutCubic,
+            reverseCurve: Curves.easeInCubic,
+          );
+          
+          // Slide up animation with subtle scale effect
+          final slideTween = Tween<Offset>(
+            begin: const Offset(0, 1), 
+            end: Offset.zero,
+          );
+          
+          // Subtle scale animation for more visual polish
+          final scaleTween = Tween<double>(
+            begin: 0.95,
+            end: 1.0,
+          );
+          
+          // Fade animation for smoother transition
+          final fadeTween = Tween<double>(
+            begin: 0.8,
+            end: 1.0,
+          );
+          
+          return SlideTransition(
+            position: slideTween.animate(curvedAnimation),
+            child: ScaleTransition(
+              scale: scaleTween.animate(curvedAnimation),
+              child: FadeTransition(
+                opacity: fadeTween.animate(curvedAnimation),
+                child: child,
+              ),
+            ),
+          );
+        },
+      ),
+    );
+    });
+  }
+
+  void _showCustomWorkoutSelection(BuildContext context) async {
+    final themeService = Provider.of<ThemeService>(context, listen: false);
+    try {
+      final customWorkouts = await CustomWorkoutService.getSavedCustomWorkouts();
+      if (!mounted) return;
+      showModalBottomSheet(
+        // ignore: use_build_context_synchronously
+        context: context,
+        backgroundColor: Colors.transparent,
+        isScrollControlled: true,
+        builder: (context) {
+          return Container(
+            decoration: BoxDecoration(
+              color: themeService.currentTheme.cardTheme.color,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: themeService.isDarkMode ? Colors.grey.shade600 : Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 40),
+                Row(
+                  children: [
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: FaIcon(
+                        FontAwesomeIcons.xmark, 
+                        color: themeService.currentTheme.textTheme.titleMedium?.color,
+                      ),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                    Expanded(
+                      child: Text(
+                        customWorkouts.isEmpty ? 'Create Custom Workout' : 'Select Custom Workout',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: themeService.currentTheme.textTheme.titleMedium?.color,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    const SizedBox(width: 40), // Balance the X button width
+                  ],
+                ),
+                const SizedBox(height: 8),
+                // Create New option - always shown first
+                ListTile(
+                  leading: const FaIcon(FontAwesomeIcons.plus, color: Colors.green),
+                  title: Text(
+                    'Create New',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: themeService.currentTheme.textTheme.titleMedium?.color,
+                    ),
+                  ),
+                  subtitle: Text(
+                    'Start a new custom workout with this exercise',
+                    style: TextStyle(
+                      color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey[600],
+                    ),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _createNewCustomWorkout();
+                  },
+                ),
+                if (customWorkouts.isNotEmpty) ...[
+                  Divider(
+                    height: 1,
+                    thickness: 1,
+                    color: themeService.isDarkMode ? Colors.grey.shade700 : Colors.grey,
+                  ),
+                  Flexible(
+                    child: ListView.separated(
+                      controller: _customWorkoutScrollController,
+                      shrinkWrap: true,
+                      itemCount: customWorkouts.length,
+                      separatorBuilder: (context, index) => Divider(
+                        height: 1,
+                        thickness: 1,
+                        color: themeService.isDarkMode ? Colors.grey.shade700 : Colors.grey,
+                      ),
+                      itemBuilder: (context, index) {
+                        final workout = customWorkouts[index];
+                        return ListTile(
+                          title: Text(workout.name),
+                          subtitle: Text(workout.description ?? ''),
+                          onTap: () {
+                            Navigator.pop(context);
+                            _addToCustomWorkout(workout);
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 20),
+              ],
+            ),
+          );
+        },
+      );
+    } catch (e) {
+      // Only check mounted immediately before using context
+      if (mounted) {
+        // ignore: use_build_context_synchronously
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error loading custom workouts: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  void _addToCustomWorkout(CustomWorkout workout) async {
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    
+    try {
+      // Create a new exercise to add
+      final newExercise = CustomWorkoutExercise(
+        name: widget.title,
+        sets: [CustomWorkoutSet(weight: 0.0, reps: 0)], // Default set
+      );
+
+      // Add the exercise to the workout
+      final updatedExercises = [...workout.exercises, newExercise];
+
+      // Save the updated workout
+      await CustomWorkoutService.deleteCustomWorkout(workout.id);
+      await CustomWorkoutService.saveCustomWorkout(
+        name: workout.name,
+        exercises: updatedExercises,
+        description: workout.description,
+      );
+
+      if (mounted) {
+        scaffoldMessenger.showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const FaIcon(
+                  FontAwesomeIcons.circleCheck,
+                  color: Colors.white,
+                  size: 20,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Exercise Added',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      Text(
+                        '${widget.title} → ${workout.name}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: const Color(0xFF4CAF50),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            margin: const EdgeInsets.all(16),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        scaffoldMessenger.showSnackBar(
+          SnackBar(
+            content: Text('Error adding exercise to workout: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  void _createNewCustomWorkout() async {
+    // Navigate to custom workout configuration page with this exercise pre-loaded
+    await Navigator.of(context, rootNavigator: true).push(
+      MaterialPageRoute(
+        builder: (context) => CustomWorkoutConfigurationPage(
+          exerciseNames: [widget.title], // Pass current exercise as a list
+        ),
+      ),
+    );
+  }
 
   // Helper to pick color based on experience level
   Color _getExperienceColor(String level) {
@@ -119,13 +406,6 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> with 
       default:
         return Colors.grey;
     }
-  }
-
-  // Calculate 1RM using Brzycki Formula
-  double estimate1RM(double weight, int reps) {
-    if (reps == 1) return weight;
-    if (reps > 10) reps = 10; // Cap for accuracy
-    return weight / (1.0278 - 0.0278 * reps);
   }
 
   // Format 1RM to show appropriate decimal places
@@ -159,6 +439,13 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> with 
     } else {
       return value.toStringAsFixed(2); // 2 decimal places
     }
+  }
+
+  // Calculate 1RM using Brzycki Formula
+  double estimate1RM(double weight, int reps) {
+    if (reps == 1) return weight;
+    if (reps > 10) reps = 10; // Cap for accuracy
+    return weight / (1.0278 - 0.0278 * reps);
   }
 
   // Get real 1RM data from workout history
@@ -279,309 +566,6 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> with 
           ),
         );
       },
-    );
-  }
-
-  void _addToQuickStart() {
-    // Add haptic feedback when adding exercise to quick start
-    HapticFeedback.heavyImpact();
-    
-    // Create a new QuickStartExercise with this exercise
-    final newExercise = QuickStartExercise(
-      title: widget.title,
-      sets: [ExerciseSet()], // Start with one empty set
-    );
-
-    // Check if there's an existing quick start
-    if (QuickStartOverlay.selectedExercises.isNotEmpty) {
-      // Add to existing quick start
-      QuickStartOverlay.selectedExercises.add(newExercise);
-    } else {
-      // Start a new quick start
-      QuickStartOverlay.selectedExercises = [newExercise];
-      QuickStartOverlay.startTimer();
-    }
-
-    // Navigate to the Quick Start page with smooth sliding animation and slight delay
-    Future.delayed(const Duration(milliseconds: 50), () {
-      Navigator.of(context, rootNavigator: true).push(
-      PageRouteBuilder(
-        pageBuilder: (ctx, animation, secondaryAnimation) => QuickStartPageOptimized(
-          initialSelectedExercises: QuickStartOverlay.selectedExercises,
-          showMinibarOnMinimize: true, // Show integrated minibar when minimizing
-        ),
-        transitionDuration: const Duration(milliseconds: 400),
-        reverseTransitionDuration: const Duration(milliseconds: 350),
-        transitionsBuilder: (ctx, animation, secAnim, child) {
-          // Create a curved animation for smoother motion
-          final curvedAnimation = CurvedAnimation(
-            parent: animation,
-            curve: Curves.easeOutCubic,
-            reverseCurve: Curves.easeInCubic,
-          );
-          
-          // Slide up animation with subtle scale effect
-          final slideTween = Tween<Offset>(
-            begin: const Offset(0, 1), 
-            end: Offset.zero,
-          );
-          
-          // Subtle scale animation for more visual polish
-          final scaleTween = Tween<double>(
-            begin: 0.95,
-            end: 1.0,
-          );
-          
-          // Fade animation for smoother transition
-          final fadeTween = Tween<double>(
-            begin: 0.8,
-            end: 1.0,
-          );
-          
-          return SlideTransition(
-            position: slideTween.animate(curvedAnimation),
-            child: ScaleTransition(
-              scale: scaleTween.animate(curvedAnimation),
-              child: FadeTransition(
-                opacity: fadeTween.animate(curvedAnimation),
-                child: child,
-              ),
-            ),
-          );
-        },
-      ),
-    );
-    });
-  }
-
-  void _showCustomWorkoutSelection(BuildContext context) {
-    final themeService = Provider.of<ThemeService>(context, listen: false);
-    final scaffoldMessenger = ScaffoldMessenger.of(context);
-    
-    CustomWorkoutService.getSavedCustomWorkouts().then((customWorkouts) {
-      if (!mounted) return;
-
-      showModalBottomSheet(
-        // ignore: use_build_context_synchronously
-        context: context,
-        backgroundColor: Colors.transparent,
-        isScrollControlled: true,
-        builder: (context) {
-          return Container(
-            decoration: BoxDecoration(
-              color: themeService.currentTheme.cardTheme.color,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-            ),
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: themeService.isDarkMode ? Colors.grey.shade600 : Colors.grey[300],
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                const SizedBox(height: 40),
-                Row(
-                  children: [
-                    IconButton(
-                      onPressed: () => Navigator.pop(context),
-                      icon: FaIcon(
-                        FontAwesomeIcons.xmark, 
-                        color: themeService.currentTheme.textTheme.titleMedium?.color,
-                      ),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                    ),
-                    Expanded(
-                      child: Text(
-                        customWorkouts.isEmpty ? 'Create Custom Workout' : 'Select Custom Workout',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: themeService.currentTheme.textTheme.titleMedium?.color,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                    const SizedBox(width: 40), // Balance the X button width
-                  ],
-                ),
-                const SizedBox(height: 8),
-                // Create New option - always shown first
-                ListTile(
-                  leading: const FaIcon(FontAwesomeIcons.plus, color: Colors.green),
-                  title: Text(
-                    'Create New',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: themeService.currentTheme.textTheme.titleMedium?.color,
-                    ),
-                  ),
-                  subtitle: Text(
-                    'Start a new custom workout with this exercise',
-                    style: TextStyle(
-                      color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey[600],
-                    ),
-                  ),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _createNewCustomWorkout();
-                  },
-                ),
-                if (customWorkouts.isNotEmpty) ...[
-                  Divider(
-                    height: 1,
-                    thickness: 1,
-                    color: themeService.isDarkMode ? Colors.grey.shade700 : Colors.grey,
-                  ),
-                                     Flexible(
-                     child: ListView.separated(
-                       controller: _customWorkoutScrollController,
-                       shrinkWrap: true,
-                       itemCount: customWorkouts.length,
-                       separatorBuilder: (context, index) => Divider(
-                         height: 1,
-                         thickness: 1,
-                         color: themeService.isDarkMode ? Colors.grey.shade700 : Colors.grey,
-                       ),
-                       itemBuilder: (context, index) {
-                         final workout = customWorkouts[index];
-                         return ListTile(
-                           leading: FaIcon(
-                             FontAwesomeIcons.dumbbell, 
-                             color: themeService.currentTheme.textTheme.titleMedium?.color,
-                           ),
-                           title: Text(
-                             workout.name,
-                             style: TextStyle(
-                               fontWeight: FontWeight.bold,
-                               color: themeService.currentTheme.textTheme.titleMedium?.color,
-                             ),
-                           ),
-                           subtitle: Text(
-                             '${workout.exercises.length} exercises',
-                             style: TextStyle(
-                               color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey[600],
-                             ),
-                           ),
-                           onTap: () {
-                             Navigator.pop(context);
-                             _addToCustomWorkout(workout);
-                           },
-                         );
-                       },
-                     ),
-                   ),
-                ],
-                const SizedBox(height: 20),
-              ],
-            ),
-          );
-        },
-      );
-    }).catchError((e) {
-      if (mounted) {
-        scaffoldMessenger.showSnackBar(
-          SnackBar(
-            content: Text('Error loading custom workouts: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    });
-  }
-
-  void _addToCustomWorkout(CustomWorkout workout) async {
-    final scaffoldMessenger = ScaffoldMessenger.of(context);
-    
-    try {
-      // Create a new exercise to add
-      final newExercise = CustomWorkoutExercise(
-        name: widget.title,
-        sets: [CustomWorkoutSet(weight: 0.0, reps: 0)], // Default set
-      );
-
-      // Add the exercise to the workout
-      final updatedExercises = [...workout.exercises, newExercise];
-
-      // Save the updated workout
-      await CustomWorkoutService.deleteCustomWorkout(workout.id);
-      await CustomWorkoutService.saveCustomWorkout(
-        name: workout.name,
-        exercises: updatedExercises,
-        description: workout.description,
-      );
-
-      if (mounted) {
-        scaffoldMessenger.showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const FaIcon(
-                  FontAwesomeIcons.circleCheck,
-                  color: Colors.white,
-                  size: 20,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'Exercise Added',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                      Text(
-                        '${widget.title} → ${workout.name}',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            backgroundColor: const Color(0xFF4CAF50),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            margin: const EdgeInsets.all(16),
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        scaffoldMessenger.showSnackBar(
-          SnackBar(
-            content: Text('Error adding exercise to workout: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
-
-  void _createNewCustomWorkout() async {
-    // Navigate to custom workout configuration page with this exercise pre-loaded
-    await Navigator.of(context, rootNavigator: true).push(
-      MaterialPageRoute(
-        builder: (context) => CustomWorkoutConfigurationPage(
-          exerciseNames: [widget.title], // Pass current exercise as a list
-        ),
-      ),
     );
   }
 
