@@ -76,23 +76,26 @@ class CustomWorkoutList extends StatelessWidget {
           color: themeService.isDarkMode ? Colors.grey.shade700 : Colors.grey.shade300,
         ),
         const SizedBox(height: 16),
-        Row(
-          children: [
-            Icon(
-              Icons.push_pin,
-              color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade700,
-              size: 18,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              'Pinned',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: themeService.currentTheme.textTheme.titleMedium?.color,
+        Padding(
+          padding: const EdgeInsets.only(left: 16),
+          child: Row(
+            children: [
+              Icon(
+                Icons.push_pin,
+                color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade700,
+                size: 18,
               ),
-            ),
-          ],
+              const SizedBox(width: 8),
+              Text(
+                'Pinned',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: themeService.currentTheme.textTheme.titleMedium?.color,
+                ),
+              ),
+            ],
+          ),
         ),
         const SizedBox(height: 12),
         for (int i = 0; i < customWorkouts.length; i++) ...[
