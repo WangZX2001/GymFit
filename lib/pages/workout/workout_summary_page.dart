@@ -191,48 +191,35 @@ class _WorkoutSummaryPageState extends State<WorkoutSummaryPage> {
       final totalCompletedSets = _getTotalCompletedSets();
       final totalExercises = widget.completedExercises.length;
 
-      return Scaffold(
-        backgroundColor: themeService.currentTheme.scaffoldBackgroundColor,
-        appBar: AppBar(
-          backgroundColor: themeService.currentTheme.appBarTheme.backgroundColor,
-          elevation: 0,
-          leading: const SizedBox(), // Remove back button
-          title: Text(
-            'Workout Complete!',
-            style: TextStyle(
-              color: themeService.currentTheme.appBarTheme.foregroundColor,
-              fontWeight: FontWeight.bold
+      return PopScope(
+        canPop: false, // Prevent back navigation
+        child: Scaffold(
+          backgroundColor: themeService.currentTheme.scaffoldBackgroundColor,
+          appBar: AppBar(
+            backgroundColor: themeService.currentTheme.appBarTheme.backgroundColor,
+            elevation: 0,
+            leading: const SizedBox(), // Remove back button
+            automaticallyImplyLeading: false, // Disable back button and swipe gesture
+            title: Text(
+              'Workout Complete!',
+              style: TextStyle(
+                color: themeService.currentTheme.appBarTheme.foregroundColor,
+                fontWeight: FontWeight.bold
+              ),
             ),
+            centerTitle: true,
           ),
-          centerTitle: true,
-        ),
-        body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              children: [
-                Expanded(
-                  child: SingleChildScrollView(
-                    child: Column(
-                      children: [
-                        // Congratulations Section
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(24.0),
-                          decoration: BoxDecoration(
-                            color: themeService.currentTheme.cardTheme.color,
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                color: themeService.isDarkMode 
-                                    ? Colors.black.withValues(alpha: 0.3)
-                                    : Colors.black.withValues(alpha: 0.1),
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: Column(
+          body: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 0.0),
+              child: Column(
+                children: [
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        children: [
+                          // Congratulations Section
+                          Column(
                             children: [
                               const FaIcon(
                                 FontAwesomeIcons.trophy,
@@ -260,28 +247,11 @@ class _WorkoutSummaryPageState extends State<WorkoutSummaryPage> {
                               ),
                             ],
                           ),
-                        ),
 
-                        const SizedBox(height: 20),
+                          const SizedBox(height: 20),
 
-                        // Workout Name Section
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(20.0),
-                          decoration: BoxDecoration(
-                            color: themeService.currentTheme.cardTheme.color,
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                color: themeService.isDarkMode 
-                                    ? Colors.black.withValues(alpha: 0.3)
-                                    : Colors.black.withValues(alpha: 0.1),
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: Row(
+                          // Workout Name Section
+                          Row(
                             children: [
                               const FaIcon(
                                 FontAwesomeIcons.tag,
@@ -315,28 +285,11 @@ class _WorkoutSummaryPageState extends State<WorkoutSummaryPage> {
                               ),
                             ],
                           ),
-                        ),
 
-                        const SizedBox(height: 20),
+                          const SizedBox(height: 20),
 
-                        // Workout Stats Section
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(20.0),
-                          decoration: BoxDecoration(
-                            color: themeService.currentTheme.cardTheme.color,
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                color: themeService.isDarkMode 
-                                    ? Colors.black.withValues(alpha: 0.3)
-                                    : Colors.black.withValues(alpha: 0.1),
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: Column(
+                          // Workout Stats Section
+                          Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
@@ -492,29 +445,12 @@ class _WorkoutSummaryPageState extends State<WorkoutSummaryPage> {
                               ),
                             ],
                           ),
-                        ),
 
-                        const SizedBox(height: 20),
+                          const SizedBox(height: 40),
 
-                        // Exercise Breakdown
-                        if (widget.completedExercises.isNotEmpty)
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(20.0),
-                            decoration: BoxDecoration(
-                              color: themeService.currentTheme.cardTheme.color,
-                              borderRadius: BorderRadius.circular(16),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: themeService.isDarkMode 
-                                      ? Colors.black.withValues(alpha: 0.3)
-                                      : Colors.black.withValues(alpha: 0.1),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: Column(
+                          // Exercise Breakdown
+                          if (widget.completedExercises.isNotEmpty)
+                            Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
@@ -584,46 +520,64 @@ class _WorkoutSummaryPageState extends State<WorkoutSummaryPage> {
                                 }),
                               ],
                             ),
+
+                          const SizedBox(height: 20),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  // Done Button
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton(
+                        onPressed: () {
+                          // Clear workout data and navigate back to home
+                          QuickStartOverlay.selectedExercises.clear();
+                          QuickStartOverlay.resetTimer();
+                          QuickStartOverlay.hideMinibar();
+
+                          // Navigate back to home screen
+                          Navigator.of(context).popUntil((route) => route.isFirst);
+                        },
+                        style: OutlinedButton.styleFrom(
+                          backgroundColor: themeService.isDarkMode ? Colors.white : Colors.black,
+                          foregroundColor: themeService.isDarkMode ? Colors.black : Colors.white,
+                          side: BorderSide(
+                            color: themeService.isDarkMode ? Colors.white : Colors.black,
+                            width: 1.5,
                           ),
-
-                        const SizedBox(height: 20),
-                      ],
-                    ),
-                  ),
-                ),
-
-                // Done Button
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      // Clear workout data and navigate back to home
-                      QuickStartOverlay.selectedExercises.clear();
-                      QuickStartOverlay.resetTimer();
-                      QuickStartOverlay.hideMinibar();
-
-                      // Navigate back to home screen
-                      Navigator.of(context).popUntil((route) => route.isFirst);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: themeService.isDarkMode ? Colors.white : Colors.black,
-                      foregroundColor: themeService.isDarkMode ? Colors.black : Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: Text(
-                      'Done',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: themeService.isDarkMode ? Colors.black : Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            FaIcon(
+                              FontAwesomeIcons.check,
+                              color: themeService.isDarkMode ? Colors.black : Colors.white,
+                              size: 14.0 * 0.8,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Done',
+                              style: TextStyle(
+                                fontSize: 14.0,
+                                fontWeight: FontWeight.w900,
+                                color: themeService.isDarkMode ? Colors.black : Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

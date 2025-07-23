@@ -339,13 +339,13 @@ class _CustomWorkoutPageState extends State<CustomWorkoutPage> {
       }
       
       // Add haptic feedback when starting new workout after confirmation
-      HapticFeedback.mediumImpact();
+      HapticFeedback.heavyImpact();
       // Clear existing workout
       QuickStartOverlay.selectedExercises.clear();
       QuickStartOverlay.resetTimer();
     } else {
       // Add haptic feedback when starting new workout
-      HapticFeedback.mediumImpact();
+      HapticFeedback.heavyImpact();
     }
 
     // Convert custom workout exercises to QuickStartExercise objects with configured sets
@@ -365,8 +365,10 @@ class _CustomWorkoutPageState extends State<CustomWorkoutPage> {
     if (!mounted) return;
     Navigator.of(context).popUntil((route) => route.isFirst);
     
-    // Use the overlay system to open QuickStart properly
-    QuickStartOverlay.openQuickStart(context);
+    // Use the overlay system to open QuickStart properly with slight delay
+    Future.delayed(const Duration(milliseconds: 50), () {
+      QuickStartOverlay.openQuickStart(context);
+    });
   }
 
   Future<void> _deleteWorkout(CustomWorkout workout) async {

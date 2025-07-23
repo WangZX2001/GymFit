@@ -36,35 +36,44 @@ class AddExerciseButton extends StatelessWidget {
             ? const SizedBox.shrink()
             : Column(
                 children: [
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 0),
                   LayoutBuilder(
                     builder: (context, constraints) {
                       final screenWidth = MediaQuery.of(context).size.width;
-                      final buttonFontSize = screenWidth < 350 ? 16.0 : 18.0;
-                      final buttonPadding = screenWidth < 350
-                          ? const EdgeInsets.symmetric(vertical: 12)
-                          : const EdgeInsets.symmetric(vertical: 16);
+                      final buttonFontSize = 14.0;
+                      final buttonPadding = const EdgeInsets.symmetric(vertical: 8);
 
-                      return SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          onPressed: () => _handleAddExercises(context),
-                          icon: FaIcon(
-                            FontAwesomeIcons.plus,
-                            color: themeService.isDarkMode ? Colors.black : Colors.white,
-                          ),
-                          label: Text(
-                            'Add Exercises',
-                            style: TextStyle(
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            onPressed: () => _handleAddExercises(context),
+                            icon: FaIcon(
+                              FontAwesomeIcons.plus,
                               color: themeService.isDarkMode ? Colors.black : Colors.white,
-                              fontSize: buttonFontSize,
-                              fontWeight: FontWeight.bold,
+                              size: buttonFontSize * 0.8,
                             ),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: themeService.isDarkMode ? Colors.white : Colors.black,
-                            shape: const StadiumBorder(),
-                            padding: buttonPadding,
+                            label: Text(
+                              'Add Exercises',
+                              style: TextStyle(
+                                fontSize: buttonFontSize,
+                                fontWeight: FontWeight.w900,
+                                color: themeService.isDarkMode ? Colors.black : Colors.white,
+                              ),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              backgroundColor: themeService.isDarkMode ? Colors.white : Colors.black,
+                              foregroundColor: themeService.isDarkMode ? Colors.black : Colors.white,
+                              side: BorderSide(
+                                color: themeService.isDarkMode ? Colors.white : Colors.black,
+                                width: 1.5,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              padding: buttonPadding,
+                            ),
                           ),
                         ),
                       );

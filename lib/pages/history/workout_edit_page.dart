@@ -8,7 +8,7 @@ import 'package:gymfit/services/workout_edit_service.dart';
 import 'package:gymfit/services/theme_service.dart';
 import 'package:gymfit/components/workout_name_editor.dart';
 import 'package:gymfit/components/workout_timing_card.dart';
-import 'package:gymfit/components/editable_exercise_card.dart';
+import 'package:gymfit/components/generic_exercise_card.dart';
 import 'package:gymfit/components/add_exercise_button.dart';
 import 'package:provider/provider.dart';
 
@@ -182,8 +182,6 @@ class _WorkoutEditPageState extends State<WorkoutEditPage> {
     }
   }
 
-
-
   void _onExercisesAdded() {
     // This method is called when exercises are being added
     // We can add any additional logic here if needed
@@ -263,8 +261,6 @@ class _WorkoutEditPageState extends State<WorkoutEditPage> {
   bool _isExerciseNewlyAdded(EditableExercise exercise) {
     return _newlyAddedExercises.contains(exercise);
   }
-
-
 
   void _handleRequestReorderMode() {
     setState(() {
@@ -446,12 +442,12 @@ class _WorkoutEditPageState extends State<WorkoutEditPage> {
           onTap: () {
             _clearFocusAggressively();
           },
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 0.0),
-            child: Column(
-              children: [
-                // Workout Name Card with smooth transition
-                AnimatedSize(
+          child: Column(
+            children: [
+              // Workout Name Card with smooth transition
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 0.0),
+                child: AnimatedSize(
                   duration: const Duration(milliseconds: 500),
                   curve: Curves.easeOutQuart,
                   child: _showWorkoutNameInAppBar
@@ -467,93 +463,132 @@ class _WorkoutEditPageState extends State<WorkoutEditPage> {
                           onSubmitted: _onWorkoutNameSubmitted,
                         ),
                 ),
+              ),
 
-                // Exercise List with timing card
-                Expanded(
-                  child: _isInReorderMode
-                      ? ReorderableListView.builder(
-                          itemCount: _exercises.length + 1, // +1 for timing card
-                          padding: const EdgeInsets.only(bottom: 100),
-                          onReorder: (oldIndex, newIndex) {
-                            // Adjust indices since timing card is first
-                            if (oldIndex > 0 && newIndex > 0) {
-                              _handleReorderExercises(oldIndex - 1, newIndex - 1);
-                            }
-                          },
-                          onReorderStart: (int index) {
-                            _handleReorderStart(index);
-                          },
-                          onReorderEnd: (int index) {
-                            _handleReorderEnd(index);
-                          },
-                          itemBuilder: (context, exerciseIndex) {
-                            // Show timing card as first item
-                            if (exerciseIndex == 0) {
-                              return WorkoutTimingCard(
+              // Exercise List with timing card - now extends to edge
+              Expanded(
+                child: _isInReorderMode
+                    ? ReorderableListView.builder(
+                        itemCount: _exercises.length + 1, // +1 for timing card
+                        padding: const EdgeInsets.only(bottom: 100),
+                        onReorder: (oldIndex, newIndex) {
+                          // Adjust indices since timing card is first
+                          if (oldIndex > 0 && newIndex > 0) {
+                            _handleReorderExercises(oldIndex - 1, newIndex - 1);
+                          }
+                        },
+                        onReorderStart: (int index) {
+                          _handleReorderStart(index);
+                        },
+                        onReorderEnd: (int index) {
+                          _handleReorderEnd(index);
+                        },
+                        itemBuilder: (context, exerciseIndex) {
+                          // Show timing card as first item
+                          if (exerciseIndex == 0) {
+                            return Padding(
+                              padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 8.0),
+                              child: WorkoutTimingCard(
                                 key: const ValueKey('timing_card'),
                                 startTime: _startTime,
                                 endTime: _endTime,
                                 onStartTimeTap: _selectStartTime,
                                 onEndTimeTap: _selectEndTime,
-                              );
-                            }
-                            
-                            // Show exercises (adjust index since timing card is first)
-                            final exercise = _exercises[exerciseIndex - 1];
-                            return EditableExerciseCard(
-                              key: ValueKey('exercise_${exercise.title}_${exerciseIndex - 1}'),
-                              exercise: exercise,
-                              exerciseIndex: exerciseIndex - 1,
-                              onAddSet: () => _addSet(exerciseIndex - 1),
-                              onRemoveExercise: () => _removeExercise(exerciseIndex - 1),
-                              onRemoveSet: (setIndex) => _removeSet(exerciseIndex - 1, setIndex),
-                              onExerciseCheckChanged: (value) => _onExerciseCheckChanged(exerciseIndex - 1, value),
-                              onSetCheckChanged: (setIndex, value) => _onSetCheckChanged(exerciseIndex - 1, setIndex, value),
-                              preventAutoFocus: _preventAutoFocus,
-                              onFocusChanged: _onFocusChanged,
-                              isNewlyAdded: _isExerciseNewlyAdded(exercise),
-                              isCollapsed: _isInReorderMode,
-                              onRequestReorderMode: _handleRequestReorderMode,
+                              ),
                             );
-                          },
-                        )
-                      : ListView.builder(
-                          controller: _scrollController,
-                          itemCount: _exercises.length + 1, // +1 for timing card
-                          padding: const EdgeInsets.only(bottom: 100),
-                          itemBuilder: (context, exerciseIndex) {
-                            // Show timing card as first item
-                            if (exerciseIndex == 0) {
-                              return WorkoutTimingCard(
+                          }
+                          
+                          // Show exercises (adjust index since timing card is first)
+                          final exercise = _exercises[exerciseIndex - 1];
+                          final exerciseData = EditableExerciseAdapter(exercise);
+                          return GenericExerciseCard(
+                            key: ValueKey('exercise_${exercise.title}_${exerciseIndex - 1}'),
+                            exercise: exerciseData,
+                            exerciseIndex: exerciseIndex - 1,
+                            preventAutoFocus: _preventAutoFocus,
+                            isNewlyAdded: _isExerciseNewlyAdded(exercise),
+                            isCollapsed: _isInReorderMode,
+                            onRemoveExercise: (exerciseData) => _removeExercise(exerciseIndex - 1),
+                            onRemoveSet: (exerciseData, set) => _removeSet(exerciseIndex - 1, exercise.sets.indexOf(set as EditableExerciseSet)),
+                            onWeightChanged: (exerciseData, set, weight) {
+                              final editableSet = set as EditableExerciseSet;
+                              editableSet.updateWeight(weight);
+                            },
+                            onRepsChanged: (exerciseData, set, reps) {
+                              final editableSet = set as EditableExerciseSet;
+                              editableSet.updateReps(reps);
+                            },
+                            onSetCheckedChanged: (exerciseData, set, checked) {
+                              final editableSet = set as EditableExerciseSet;
+                              final setIndex = exercise.sets.indexOf(editableSet);
+                              _onSetCheckChanged(exerciseIndex - 1, setIndex, checked);
+                            },
+                            onAllSetsCheckedChanged: (exerciseData, checked) {
+                              _onExerciseCheckChanged(exerciseIndex - 1, checked);
+                            },
+                            onAddSet: () => _addSet(exerciseIndex - 1),
+                            onRequestReorderMode: _handleRequestReorderMode,
+                            onFocusChanged: _onFocusChanged,
+                          );
+                        },
+                      )
+                    : ListView.builder(
+                        controller: _scrollController,
+                        itemCount: _exercises.length + 1, // +1 for timing card
+                        padding: const EdgeInsets.only(bottom: 100),
+                        itemBuilder: (context, exerciseIndex) {
+                          // Show timing card as first item
+                          if (exerciseIndex == 0) {
+                            return Padding(
+                              padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 8.0),
+                              child: WorkoutTimingCard(
                                 startTime: _startTime,
                                 endTime: _endTime,
                                 onStartTimeTap: _selectStartTime,
                                 onEndTimeTap: _selectEndTime,
-                              );
-                            }
-                            
-                            // Show exercises (adjust index since timing card is first)
-                            final exercise = _exercises[exerciseIndex - 1];
-                            return EditableExerciseCard(
-                              exercise: exercise,
-                              exerciseIndex: exerciseIndex - 1,
-                              onAddSet: () => _addSet(exerciseIndex - 1),
-                              onRemoveExercise: () => _removeExercise(exerciseIndex - 1),
-                              onRemoveSet: (setIndex) => _removeSet(exerciseIndex - 1, setIndex),
-                              onExerciseCheckChanged: (value) => _onExerciseCheckChanged(exerciseIndex - 1, value),
-                              onSetCheckChanged: (setIndex, value) => _onSetCheckChanged(exerciseIndex - 1, setIndex, value),
-                              preventAutoFocus: _preventAutoFocus,
-                              onFocusChanged: _onFocusChanged,
-                              isNewlyAdded: _isExerciseNewlyAdded(exercise),
-                              isCollapsed: _isInReorderMode,
-                              onRequestReorderMode: _handleRequestReorderMode,
+                              ),
                             );
-                          },
-                        ),
-                ),
+                          }
+                          
+                          // Show exercises (adjust index since timing card is first)
+                          final exercise = _exercises[exerciseIndex - 1];
+                          final exerciseData = EditableExerciseAdapter(exercise);
+                          return GenericExerciseCard(
+                            exercise: exerciseData,
+                            exerciseIndex: exerciseIndex - 1,
+                            preventAutoFocus: _preventAutoFocus,
+                            isNewlyAdded: _isExerciseNewlyAdded(exercise),
+                            isCollapsed: _isInReorderMode,
+                            onRemoveExercise: (exerciseData) => _removeExercise(exerciseIndex - 1),
+                            onRemoveSet: (exerciseData, set) => _removeSet(exerciseIndex - 1, exercise.sets.indexOf(set as EditableExerciseSet)),
+                            onWeightChanged: (exerciseData, set, weight) {
+                              final editableSet = set as EditableExerciseSet;
+                              editableSet.updateWeight(weight);
+                            },
+                            onRepsChanged: (exerciseData, set, reps) {
+                              final editableSet = set as EditableExerciseSet;
+                              editableSet.updateReps(reps);
+                            },
+                            onSetCheckedChanged: (exerciseData, set, checked) {
+                              final editableSet = set as EditableExerciseSet;
+                              final setIndex = exercise.sets.indexOf(editableSet);
+                              _onSetCheckChanged(exerciseIndex - 1, setIndex, checked);
+                            },
+                            onAllSetsCheckedChanged: (exerciseData, checked) {
+                              _onExerciseCheckChanged(exerciseIndex - 1, checked);
+                            },
+                            onAddSet: () => _addSet(exerciseIndex - 1),
+                            onRequestReorderMode: _handleRequestReorderMode,
+                            onFocusChanged: _onFocusChanged,
+                          );
+                        },
+                      ),
+              ),
                 
-                // Done button for reorder mode
-                AnimatedSize(
+              // Done button for reorder mode
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16.0, 0.0, 16.0, 0.0),
+                child: AnimatedSize(
                   duration: const Duration(milliseconds: 400),
                   curve: Curves.easeInOutQuart,
                   child: AnimatedOpacity(
@@ -599,32 +634,27 @@ class _WorkoutEditPageState extends State<WorkoutEditPage> {
                         : const SizedBox.shrink(),
                   ),
                 ),
-                // Add Exercises button at the bottom
-                AnimatedSize(
-                  duration: const Duration(milliseconds: 400),
-                  curve: Curves.easeInOutQuart,
-                  child: AnimatedOpacity(
-                    duration: const Duration(milliseconds: 300),
-                    curve: Curves.easeInOut,
-                    opacity: _isInReorderMode ? 0.0 : 1.0,
-                    child: _isInReorderMode
-                        ? const SizedBox.shrink()
-                        : Column(
-                          children: [
-                            const SizedBox(height: 4),
-                            AddExerciseButton(
-                              isAnyFieldFocused: _isAnyFieldFocused,
-                              isEditingWorkoutName: _isEditingWorkoutName,
-                              onExercisesAdded: _onExercisesAdded,
-                              onExercisesLoaded: _onExercisesLoaded,
-                            ),
-                          ],
-                        ),
-                  ),
+              ),
+              // Add Exercises button at the bottom
+              AnimatedSize(
+                duration: const Duration(milliseconds: 400),
+                curve: Curves.easeInOutQuart,
+                child: AnimatedOpacity(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOut,
+                  opacity: _isInReorderMode ? 0.0 : 1.0,
+                  child: _isInReorderMode
+                      ? const SizedBox.shrink()
+                      : AddExerciseButton(
+                        isAnyFieldFocused: _isAnyFieldFocused,
+                        isEditingWorkoutName: _isEditingWorkoutName,
+                        onExercisesAdded: _onExercisesAdded,
+                        onExercisesLoaded: _onExercisesLoaded,
+                      ),
                 ),
+              ),
 
-              ],
-            ),
+            ],
           ),
         ),
       ),

@@ -726,36 +726,33 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage>
                                     ? const SizedBox.shrink()
                                     : Container(
                                         width: double.infinity,
-                                        padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 32.0),
-                                        child: ElevatedButton(
-                                          onPressed:
-                                              () =>
-                                                  Navigator.pop(context, _selectedTitles.toList()),
-                                          style: ElevatedButton.styleFrom(
+                                        padding: const EdgeInsets.fromLTRB(16.0, 0.0, 16.0, 32.0),
+                                        child: OutlinedButton.icon(
+                                          onPressed: () => Navigator.pop(context, _selectedTitles.toList()),
+                                          icon: Icon(
+                                            Icons.check,
+                                            color: themeService.isDarkMode ? Colors.black : Colors.white,
+                                            size: 14 * 0.8,
+                                          ),
+                                          label: Text(
+                                            'Done (${_selectedTitles.length})',
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w900,
+                                              color: themeService.isDarkMode ? Colors.black : Colors.white,
+                                            ),
+                                          ),
+                                          style: OutlinedButton.styleFrom(
                                             backgroundColor: themeService.isDarkMode ? Colors.white : Colors.black,
                                             foregroundColor: themeService.isDarkMode ? Colors.black : Colors.white,
-                                            padding: const EdgeInsets.symmetric(vertical: 16),
+                                            side: BorderSide(
+                                              color: themeService.isDarkMode ? Colors.white : Colors.black,
+                                              width: 1.5,
+                                            ),
                                             shape: RoundedRectangleBorder(
                                               borderRadius: BorderRadius.circular(12),
                                             ),
-                                          ),
-                                          child: Row(
-                                            mainAxisAlignment: MainAxisAlignment.center,
-                                            children: [
-                                              Icon(
-                                                Icons.check,
-                                                color: themeService.isDarkMode ? Colors.black : Colors.white,
-                                              ),
-                                              const SizedBox(width: 8),
-                                              Text(
-                                                'Done (${_selectedTitles.length})',
-                                                style: TextStyle(
-                                                  fontSize: 18,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: themeService.isDarkMode ? Colors.black : Colors.white,
-                                                ),
-                                              ),
-                                            ],
+                                            padding: const EdgeInsets.symmetric(vertical: 8),
                                           ),
                                         ),
                                       ),

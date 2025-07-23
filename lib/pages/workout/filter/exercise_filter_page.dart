@@ -316,27 +316,31 @@ class _ExerciseFilterPageState extends State<ExerciseFilterPage> {
             padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 32.0),
             child: SizedBox(
               width: double.infinity,
-                              child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context, _getFilterResults());
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: themeService.isDarkMode ? Colors.white : Colors.black,
-                    foregroundColor: themeService.isDarkMode ? Colors.black : Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+              child: OutlinedButton(
+                onPressed: () {
+                  Navigator.pop(context, _getFilterResults());
+                },
+                style: OutlinedButton.styleFrom(
+                  backgroundColor: themeService.isDarkMode ? Colors.white : Colors.black,
+                  foregroundColor: themeService.isDarkMode ? Colors.black : Colors.white,
+                  side: BorderSide(
+                    color: themeService.isDarkMode ? Colors.white : Colors.black,
+                    width: 1.5,
                   ),
-                  child: Text(
-                    'Apply Filters',
-                    style: TextStyle(
-                      fontSize: 16, 
-                      fontWeight: FontWeight.w700,
-                      color: themeService.isDarkMode ? Colors.black : Colors.white,
-                    ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                ),
+                child: Text(
+                  'Apply Filters',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                    color: themeService.isDarkMode ? Colors.black : Colors.white,
                   ),
                 ),
+              ),
             ),
           ),
         ],

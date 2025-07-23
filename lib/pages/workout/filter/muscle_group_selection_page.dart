@@ -278,7 +278,7 @@ class _MuscleGroupSelectionPageState extends State<MuscleGroupSelectionPage> {
             color: themeService.isDarkMode 
                 ? Colors.black
                 : Colors.grey.shade50,
-            padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 32.0),
+            padding: const EdgeInsets.fromLTRB(16.0, 8.0, 16.0, 32.0),
             child: Column(
               children: [
                 if (selectedMuscles.isNotEmpty)
@@ -286,6 +286,7 @@ class _MuscleGroupSelectionPageState extends State<MuscleGroupSelectionPage> {
                     padding: const EdgeInsets.only(bottom: 12.0),
                     child: Text(
                       '${selectedMuscles.length} selected',
+                      textAlign: TextAlign.center,
                       style: TextStyle(
                         color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey[600],
                         fontSize: 14,
@@ -295,23 +296,27 @@ class _MuscleGroupSelectionPageState extends State<MuscleGroupSelectionPage> {
                   ),
                 SizedBox(
                   width: double.infinity,
-                  child: ElevatedButton(
+                  child: OutlinedButton(
                     onPressed: () {
                       Navigator.pop(context, selectedMuscles.toList());
                     },
-                    style: ElevatedButton.styleFrom(
+                    style: OutlinedButton.styleFrom(
                       backgroundColor: themeService.isDarkMode ? Colors.white : Colors.black,
                       foregroundColor: themeService.isDarkMode ? Colors.black : Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                      side: BorderSide(
+                        color: themeService.isDarkMode ? Colors.white : Colors.black,
+                        width: 1.5,
                       ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 8),
                     ),
                     child: Text(
                       'Apply Selection',
                       style: TextStyle(
-                        fontSize: 16, 
-                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w900,
                         color: themeService.isDarkMode ? Colors.black : Colors.white,
                       ),
                     ),

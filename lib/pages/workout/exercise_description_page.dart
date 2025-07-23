@@ -284,7 +284,7 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> with 
 
   void _addToQuickStart() {
     // Add haptic feedback when adding exercise to quick start
-    HapticFeedback.mediumImpact();
+    HapticFeedback.heavyImpact();
     
     // Create a new QuickStartExercise with this exercise
     final newExercise = QuickStartExercise(
@@ -302,24 +302,56 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> with 
       QuickStartOverlay.startTimer();
     }
 
-    // Navigate to the Quick Start page with sliding animation
-    Navigator.of(context, rootNavigator: true).push(
+    // Navigate to the Quick Start page with smooth sliding animation and slight delay
+    Future.delayed(const Duration(milliseconds: 50), () {
+      Navigator.of(context, rootNavigator: true).push(
       PageRouteBuilder(
         pageBuilder: (ctx, animation, secondaryAnimation) => QuickStartPageOptimized(
           initialSelectedExercises: QuickStartOverlay.selectedExercises,
           showMinibarOnMinimize: true, // Show integrated minibar when minimizing
         ),
-        transitionDuration: const Duration(milliseconds: 200),
-        reverseTransitionDuration: const Duration(milliseconds: 200),
+        transitionDuration: const Duration(milliseconds: 400),
+        reverseTransitionDuration: const Duration(milliseconds: 350),
         transitionsBuilder: (ctx, animation, secAnim, child) {
-          final tween = Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero);
+          // Create a curved animation for smoother motion
+          final curvedAnimation = CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeOutCubic,
+            reverseCurve: Curves.easeInCubic,
+          );
+          
+          // Slide up animation with subtle scale effect
+          final slideTween = Tween<Offset>(
+            begin: const Offset(0, 1), 
+            end: Offset.zero,
+          );
+          
+          // Subtle scale animation for more visual polish
+          final scaleTween = Tween<double>(
+            begin: 0.95,
+            end: 1.0,
+          );
+          
+          // Fade animation for smoother transition
+          final fadeTween = Tween<double>(
+            begin: 0.8,
+            end: 1.0,
+          );
+          
           return SlideTransition(
-            position: tween.animate(animation),
-            child: child,
+            position: slideTween.animate(curvedAnimation),
+            child: ScaleTransition(
+              scale: scaleTween.animate(curvedAnimation),
+              child: FadeTransition(
+                opacity: fadeTween.animate(curvedAnimation),
+                child: child,
+              ),
+            ),
           );
         },
       ),
     );
+    });
   }
 
   void _showCustomWorkoutSelection(BuildContext context) {
@@ -563,7 +595,7 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> with 
           backgroundColor: themeService.currentTheme.appBarTheme.backgroundColor,
           elevation: 0,
           leading: IconButton(
-            icon: FaIcon(FontAwesomeIcons.arrowLeft, color: themeService.currentTheme.appBarTheme.foregroundColor),
+            icon: Icon(Icons.arrow_back, color: themeService.currentTheme.appBarTheme.foregroundColor),
             onPressed: () {
               // Add haptic feedback for back navigation
               HapticFeedback.lightImpact();
@@ -653,11 +685,7 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> with 
                                 ),
                                 child: Text(
                                   widget.title,
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: themeService.currentTheme.textTheme.titleLarge?.color,
-                                  ),
+                                  style: themeService.currentTheme.appBarTheme.titleTextStyle,
                                 ),
                               ),
                             ),

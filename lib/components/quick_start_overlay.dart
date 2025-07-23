@@ -291,20 +291,50 @@ class QuickStartOverlay {
   /// Opens the full Quick Start page without the persistent nav bar, sliding up from bottom.
   static void openQuickStart(BuildContext context) {
     hideMinibar();
-    // Open Quick Start page without nav bar, sliding up over 200ms
+    // Open Quick Start page without nav bar, sliding up with smooth animation
     Navigator.of(context, rootNavigator: true).push(
       PageRouteBuilder(
         pageBuilder: (ctx, animation, secondaryAnimation) => QuickStartPageOptimized(
           initialSelectedExercises: selectedExercises,
           initialWorkoutName: customWorkoutName,
         ),
-        transitionDuration: const Duration(milliseconds: 200),
-        reverseTransitionDuration: const Duration(milliseconds: 200),
+        transitionDuration: const Duration(milliseconds: 400),
+        reverseTransitionDuration: const Duration(milliseconds: 350),
         transitionsBuilder: (ctx, animation, secAnim, child) {
-          final tween = Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero);
+          // Create a curved animation for smoother motion
+          final curvedAnimation = CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeOutCubic,
+            reverseCurve: Curves.easeInCubic,
+          );
+          
+          // Slide up animation with subtle scale effect
+          final slideTween = Tween<Offset>(
+            begin: const Offset(0, 1), 
+            end: Offset.zero,
+          );
+          
+          // Subtle scale animation for more visual polish
+          final scaleTween = Tween<double>(
+            begin: 0.95,
+            end: 1.0,
+          );
+          
+          // Fade animation for smoother transition
+          final fadeTween = Tween<double>(
+            begin: 0.8,
+            end: 1.0,
+          );
+          
           return SlideTransition(
-            position: tween.animate(animation),
-            child: child,
+            position: slideTween.animate(curvedAnimation),
+            child: ScaleTransition(
+              scale: scaleTween.animate(curvedAnimation),
+              child: FadeTransition(
+                opacity: fadeTween.animate(curvedAnimation),
+                child: child,
+              ),
+            ),
           );
         },
       ),
@@ -323,7 +353,7 @@ class QuickStartOverlay {
     navigator.pop();
     
     // Delay to allow slide-down animation to complete
-    await Future.delayed(const Duration(milliseconds: 200));
+    await Future.delayed(const Duration(milliseconds: 350));
     
     // Don't show the minibar - just return
   }
@@ -339,7 +369,7 @@ class QuickStartOverlay {
     navigator.pop();
     
     // Delay to allow slide-down animation to complete
-    await Future.delayed(const Duration(milliseconds: 200));
+    await Future.delayed(const Duration(milliseconds: 350));
     
     // Show integrated minibar in navigation bar
     _updateIntegratedMinibarState(true);
