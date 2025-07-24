@@ -76,12 +76,14 @@ class RecoveryData {
   final DateTime lastUpdated;
   final Map<String, double> customBaselines;
   final double? bodyWeight;
+  final Map<String, String> recentExerciseTypes; // NEW: most recent exercise type per muscle group
 
   RecoveryData({
     required this.muscleGroups,
     required this.lastUpdated,
     this.customBaselines = const {},
     this.bodyWeight,
+    this.recentExerciseTypes = const {}, // NEW
   });
 
   Map<String, dynamic> toMap() {
@@ -90,6 +92,7 @@ class RecoveryData {
       'lastUpdated': lastUpdated.millisecondsSinceEpoch,
       'customBaselines': customBaselines,
       'bodyWeight': bodyWeight,
+      'recentExerciseTypes': recentExerciseTypes, // NEW
     };
   }
 
@@ -98,7 +101,10 @@ class RecoveryData {
     final customBaselines = customBaselinesMap.map(
       (key, value) => MapEntry(key, (value as num).toDouble()),
     );
-    
+    final recentExerciseTypesMap = map['recentExerciseTypes'] as Map<String, dynamic>? ?? {};
+    final recentExerciseTypes = recentExerciseTypesMap.map(
+      (key, value) => MapEntry(key, value as String),
+    );
     return RecoveryData(
       muscleGroups: (map['muscleGroups'] as List<dynamic>?)
               ?.map((mg) => MuscleGroup.fromMap(mg as Map<String, dynamic>))
@@ -107,6 +113,7 @@ class RecoveryData {
       lastUpdated: DateTime.fromMillisecondsSinceEpoch(map['lastUpdated'] ?? 0),
       customBaselines: customBaselines,
       bodyWeight: (map['bodyWeight'] as num?)?.toDouble(),
+      recentExerciseTypes: recentExerciseTypes, // NEW
     );
   }
 }
@@ -170,6 +177,9 @@ class RecoveryCalculator {
 
   /// Calculate recovery percentage using exponential decay function with realistic post-workout recovery
   /// recovery(t) = initial_recovery + (100 - initial_recovery) × (1 - e^(-k × t))
+  ///
+  /// k = muscleRate / log(trainingLoad + 1)
+  /// (No exercise type multiplier is used in k)
   static double calculateRecovery({
     required double trainingLoad,
     required int hoursSinceLastSession,
@@ -202,12 +212,9 @@ class RecoveryCalculator {
     // Get muscle-specific base recovery rate
     final muscleRate = muscleRecoveryRates[muscleGroup] ?? muscleRecoveryRates['Other']!;
     
-    // Get exercise type multiplier
-    final exerciseMultiplier = getExerciseTypeMultiplier(exerciseType);
-    
-    // Dynamic k value based on muscle group, exercise type, and effective training load
-    // k = (muscle_rate × exercise_multiplier) / log(load + 1)
-    double k = (muscleRate * exerciseMultiplier) / log(effectiveLoad + 1);
+    // Dynamic k value based only on muscle group and effective training load
+    // k = muscleRate / log(effectiveLoad + 1)
+    double k = muscleRate / log(effectiveLoad + 1);
 
     // Fatigue factor - slows recovery if overtraining
     double fatigueFactor = 1.0;
@@ -248,9 +255,8 @@ class RecoveryCalculator {
         final muscleRate = muscleRecoveryRates[muscleGroup] ?? muscleRecoveryRates['Other']!;
         final workoutLoad = getWorkoutLoad(muscleGroup, userWorkoutLoad: userWorkoutLoad);
         
-        // Use default exercise multiplier for time-based recovery
-        final exerciseMultiplier = getExerciseTypeMultiplier('Bench Press'); // Default compound exercise
-        double k = (muscleRate * exerciseMultiplier) / log(workoutLoad + 1);
+        // k = muscleRate / log(workoutLoad + 1) (no exercise multiplier)
+        double k = muscleRate / log(workoutLoad + 1);
         
         // Apply fatigue factor
         double fatigueFactor = 1.0;
@@ -345,8 +351,8 @@ class RecoveryCalculator {
           weightedExerciseMultiplier += weight * exerciseMultiplier;
         }
         
-        // Calculate k value for time-based recovery
-        double k = (muscleRate * weightedExerciseMultiplier) / log(totalBaseLoad + 1);
+        // k = muscleRate / log(totalBaseLoad + 1) (no exercise multiplier)
+        double k = muscleRate / log(totalBaseLoad + 1);
         
         // Apply fatigue factor
         double fatigueFactor = 1.0;
@@ -383,8 +389,8 @@ class RecoveryCalculator {
           weightedExerciseMultiplier += weight * exerciseMultiplier;
         }
         
-        // Calculate k value
-        double k = (muscleRate * weightedExerciseMultiplier) / log(totalBaseLoad + 1);
+        // k = muscleRate / log(totalBaseLoad + 1) (no exercise multiplier)
+        double k = muscleRate / log(totalBaseLoad + 1);
         
         // Apply fatigue factor
         double fatigueFactor = 1.0;
@@ -807,6 +813,9 @@ class RecoveryCalculator {
   }
 
   /// Estimate hours from now until recovery crosses a given threshold (e.g., 80%)
+  ///
+  /// k = muscleRate / log(workoutLoad + 1)
+  /// (No exercise type multiplier is used in k)
   static double? estimateHoursToRecoveryThreshold({
     required double currentRecovery,
     required double fatigueScore,
@@ -814,14 +823,15 @@ class RecoveryCalculator {
     required double lastTrainedHoursAgo,
     double threshold = 80.0,
     double? userWorkoutLoad,
+    String exerciseType = 'Bench Press', // NEW: default to Bench Press for backward compatibility
   }) {
     // If already above threshold, return 0
     if (currentRecovery >= threshold) return 0;
     // Use default workout load for time-based recovery
     final muscleRate = muscleRecoveryRates[muscleGroup] ?? muscleRecoveryRates['Other']!;
     final workoutLoad = getWorkoutLoad(muscleGroup, userWorkoutLoad: userWorkoutLoad);
-    final exerciseMultiplier = getExerciseTypeMultiplier('Bench Press'); // Use default compound
-    double k = (muscleRate * exerciseMultiplier) / log(workoutLoad + 1);
+    // Remove exercise type multiplier from k
+    double k = muscleRate / log(workoutLoad + 1);
     double fatigueFactor = 1.0;
     if (fatigueScore > 1.5) fatigueFactor = 0.8;
     double adjustedK = k * fatigueFactor;

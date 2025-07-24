@@ -102,11 +102,18 @@ class RecoveryHelpPage extends StatelessWidget {
               ], themeService),
               const SizedBox(height: 24),
 
+              // Remove the Baselines & Customization section header and merge its content into Personalized Recovery
+              // --- Baselines & Customization content moved ---
               _sectionHeader(
-                icon: FontAwesomeIcons.ruler,
-                color: Colors.green.shade400,
-                title: 'Baselines & Customization',
+                icon: FontAwesomeIcons.userGear,
+                color: Colors.indigo.shade400,
+                title: 'Personalized Recovery',
                 themeService: themeService,
+              ),
+              const SizedBox(height: 8),
+              _sectionText(
+                'Your recovery curve adapts to your training habits and body. If you train a muscle more than usual, recovery slows down. If you train less, it speeds up. The app uses your recent workout history and body weight to personalize your recovery.',
+                themeService,
               ),
               const SizedBox(height: 8),
               _sectionText(
@@ -153,32 +160,8 @@ class RecoveryHelpPage extends StatelessWidget {
               ),
               const SizedBox(height: 24),
 
-              // --- NEW: Personalization note ---
-              _sectionHeader(
-                icon: FontAwesomeIcons.userGear,
-                color: Colors.indigo.shade400,
-                title: 'Personalized Recovery',
-                themeService: themeService,
-              ),
-              const SizedBox(height: 8),
-              _sectionText(
-                'Your recovery curve adapts to your training habits and body. If you train a muscle more than usual, recovery slows down. If you train less, it speeds up. The app uses your recent workout history and body weight to personalize your recovery.',
-                themeService,
-              ),
-              const SizedBox(height: 24),
-
               // --- NEW: Compound/multiple exercises note ---
-              _sectionHeader(
-                icon: FontAwesomeIcons.dumbbell,
-                color: Colors.brown.shade400,
-                title: 'Compound & Multiple Exercises',
-                themeService: themeService,
-              ),
-              const SizedBox(height: 8),
-              _sectionText(
-                'Compound lifts (like squats, bench press) and doing several exercises for the same muscle group in one session cause a bigger drop in recovery. The app combines their effects to reflect real muscle fatigue.',
-                themeService,
-              ),
+              // Remove the Compound & Multiple Exercises section entirely
               const SizedBox(height: 32),
               Divider(color: themeService.isDarkMode ? Colors.grey.shade700 : Colors.grey.shade300),
               const SizedBox(height: 16),
@@ -478,16 +461,13 @@ class RecoveryHelpPage extends StatelessWidget {
               SelectableText('recovery(t) = initial_recovery + (100 - initial_recovery) × (1 - e^(-k × t))',
                 style: TextStyle(fontSize: 15, color: themeService.isDarkMode ? Colors.grey[200] : Colors.grey[800], fontWeight: FontWeight.w500)),
               const SizedBox(height: 8),
-              _sectionText('Where k is based on muscle group, exercise type, training load, and is slowed by high fatigue score.', themeService),
+              _sectionText('Where k is based on muscle group, training load, and is slowed by high fatigue score.', themeService),
               const SizedBox(height: 16),
               _sectionText('• Fatigue Score:', themeService, fontWeight: FontWeight.bold),
               _sectionText('Fatigue Score = (Weekly Volume for Muscle Group) / (Baseline Volume). If >1.5, recovery is slowed by 20%.', themeService),
               const SizedBox(height: 16),
               _sectionText('• Compound Sessions & Multiple Exercises:', themeService, fontWeight: FontWeight.bold),
               _sectionText('Multiple exercises for the same muscle group in a session are combined, and compound lifts cause a larger drop in recovery.', themeService),
-              const SizedBox(height: 16),
-              _sectionText('• Minimum Recovery Thresholds:', themeService, fontWeight: FontWeight.bold),
-              _minRecoveryTable(themeService),
               const SizedBox(height: 16),
               _sectionText('• "Next optimal training window" is calculated by solving the recovery curve for when you reach 80% recovery:', themeService),
               SelectableText('t = -ln(1 - (threshold - current) / (100 - current)) / k',
@@ -527,45 +507,6 @@ class RecoveryHelpPage extends StatelessWidget {
     );
   }
 
-  Widget _minRecoveryTable(ThemeService themeService) {
-    final isDark = themeService.isDarkMode;
-    return Table(
-      columnWidths: const {
-        0: FlexColumnWidth(2),
-        1: FlexColumnWidth(1),
-      },
-      border: TableBorder.all(color: isDark ? Colors.grey.shade700 : Colors.grey.shade300),
-      children: [
-        TableRow(
-          decoration: BoxDecoration(color: isDark ? Colors.grey[850] : Colors.grey[300]),
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Text('Exercise Type', style: TextStyle(fontWeight: FontWeight.bold)),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Text('Min Recovery (%)', style: TextStyle(fontWeight: FontWeight.bold)),
-            ),
-          ],
-        ),
-        _minRecoveryRow('deadlift, squat, clean, snatch', '5', isDark),
-        _minRecoveryRow('bench, press, row, pulldown', '10', isDark),
-        _minRecoveryRow('curl, extension, fly, raise', '20', isDark),
-        _minRecoveryRow('crunch, plank, stretch', '50', isDark),
-        _minRecoveryRow('(default)', '15', isDark),
-      ],
-    );
-  }
-  TableRow _minRecoveryRow(String type, String min, bool isDark) {
-    return TableRow(
-      decoration: BoxDecoration(color: isDark ? const Color(0xFF232323) : Colors.white),
-      children: [
-        Padding(padding: const EdgeInsets.all(8.0), child: Text(type)),
-        Padding(padding: const EdgeInsets.all(8.0), child: Text(min)),
-      ],
-    );
-  }
   Widget _recoveryRatesTable(ThemeService themeService) {
     final isDark = themeService.isDarkMode;
     return Table(

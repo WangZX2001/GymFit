@@ -72,7 +72,7 @@ This system is designed to adapt to each user's unique training habits, body wei
   - Each muscle group has a base recovery rate (see `muscleRecoveryRates` in `RecoveryCalculator`).
   - The rate constant `k` is calculated as:
     ```
-    k = (muscle_rate × exercise_multiplier) / log(effectiveLoad + 1)
+    k = muscle_rate / log(effectiveLoad + 1)
     if fatigueScore > 1.5:
         k *= 0.8
     ```
@@ -93,11 +93,11 @@ When you perform multiple exercises that target the same muscle group within a s
 
 - **All exercises for the muscle group are aggregated** for that session.
 - For each exercise:
-  - The app calculates the base load (`sets × weight × reps`) and an intensity multiplier (based on exercise type).
-  - The effective load for each exercise is `base load × intensity multiplier`.
+  - The app calculates the base load (`sets × weight × reps`).
+  - The effective load for each exercise is simply the base load (no intensity multiplier is used in the recovery rate constant).
 - The **total base load** for the muscle group is the sum of all base loads from relevant exercises.
 - The app computes a **weighted average fatigue score curve** for the muscle group, where each exercise's contribution is weighted by its share of the total base load.
-- The most intense exercise (highest intensity multiplier) is used to determine the minimum possible recovery after the session.
+- The most intense exercise (highest intensity multiplier) is still used to determine the minimum possible recovery after the session (for the initial drop only), but not for the recovery rate constant.
 - The initial recovery drop and subsequent recovery curve for the muscle group are then calculated based on these aggregated values, ensuring that the combined effect of all exercises is reflected in the recovery percentage.
 - This approach ensures that doing several different exercises for the same muscle group in one session results in a larger recovery drop than doing just one, and that the impact is proportional to the volume and intensity of each exercise.
 
@@ -157,6 +157,7 @@ t = -ln(1 - (threshold - current) / (100 - current)) / k
 - `current` = current recovery percentage
 - `threshold` = target recovery percentage (default: 80)
 - `k` = personalized recovery rate constant (see earlier sections)
+  - Now: `k = muscle_rate / log(effectiveLoad + 1)` (no exercise multiplier)
 - The app subtracts the hours since the muscle was last trained, so the countdown reflects time from now.
 
 ### UI Behavior

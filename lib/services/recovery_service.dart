@@ -306,30 +306,27 @@ class RecoveryService {
         }
       }
 
-      // Recovery has already been calculated during workout processing
-      // Just apply time-based recovery if needed
+      // After processing all sessions and updating muscleGroupMap, determine the most recent exercise type for each muscle group
+      final Map<String, String> recentExerciseTypes = {};
       for (final muscleGroup in muscleGroupMap.keys) {
-        final group = muscleGroupMap[muscleGroup]!;
-        final hoursSinceLastSession = now.difference(group.lastTrained).inHours.toDouble();
-        
-        // Only apply time-based recovery if significant time has passed since last workout
-        if (hoursSinceLastSession > 1) {
-          final timeBasedRecovery = RecoveryCalculator.calculateRecoveryForMultipleExercises(
-            exercises: [],
-            hoursSinceLastSession: hoursSinceLastSession.toInt(),
-            fatigueScore: group.fatigueScore,
-            muscleGroup: muscleGroup,
-            currentRecovery: group.recoveryPercentage,
-            userWorkoutLoad: null,
-          );
-          
-          muscleGroupMap[muscleGroup] = MuscleGroup(
-            name: muscleGroup,
-            recoveryPercentage: timeBasedRecovery,
-            lastTrained: group.lastTrained,
-            trainingLoad: group.trainingLoad,
-            fatigueScore: group.fatigueScore,
-          );
+        // Find the most recent exercise for this muscle group in the last week
+        String? mostRecentExerciseType;
+        DateTime? mostRecentDate;
+        for (final workout in recentWorkouts) {
+          for (final exercise in workout.exercises) {
+            final exerciseMuscleGroups = RecoveryCalculator.getMuscleGroupsFromExercise(exercise.title, mainMuscle: exercise.mainMuscle);
+            if (exerciseMuscleGroups.contains(muscleGroup)) {
+              if (mostRecentDate == null || workout.date.isAfter(mostRecentDate)) {
+                mostRecentDate = workout.date;
+                mostRecentExerciseType = exercise.title;
+              }
+            }
+          }
+        }
+        if (mostRecentExerciseType != null) {
+          recentExerciseTypes[muscleGroup] = mostRecentExerciseType;
+        } else {
+          recentExerciseTypes[muscleGroup] = 'Bench Press'; // fallback default
         }
       }
 
@@ -338,6 +335,7 @@ class RecoveryService {
         lastUpdated: now,
         customBaselines: existingData?.customBaselines ?? {},
         bodyWeight: bodyWeight,
+        recentExerciseTypes: recentExerciseTypes, // NEW
       );
 
       // Save the calculated data

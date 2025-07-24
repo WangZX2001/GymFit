@@ -402,12 +402,15 @@ class _RecoveryPageState extends State<RecoveryPage> with AutomaticKeepAliveClie
             builder: (context) {
               final now = DateTime.now();
               final hoursSinceLastTrained = now.difference(muscleGroup.lastTrained).inHours.toDouble();
+              // Use the most recent exercise type for this muscle group if available
+              final recentExerciseType = recoveryData?.recentExerciseTypes?[muscleGroup.name] ?? 'Bench Press';
               final hoursTo80 = RecoveryCalculator.estimateHoursToRecoveryThreshold(
                 currentRecovery: muscleGroup.recoveryPercentage,
                 fatigueScore: muscleGroup.fatigueScore,
                 muscleGroup: muscleGroup.name,
                 lastTrainedHoursAgo: hoursSinceLastTrained,
                 threshold: 80.0,
+                exerciseType: recentExerciseType,
               );
               if (hoursTo80 == null) {
                 return const SizedBox.shrink();
