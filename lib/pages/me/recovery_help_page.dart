@@ -137,6 +137,48 @@ class RecoveryHelpPage extends StatelessWidget {
                 'Monitor your weekly training volume and adjust baselines as needed.',
                 'Listen to your body—recovery is individual and can vary.',
               ], themeService),
+              const SizedBox(height: 24),
+
+              // --- NEW: Next optimal training window ---
+              _sectionHeader(
+                icon: FontAwesomeIcons.clock,
+                color: Colors.teal.shade400,
+                title: 'Next Optimal Training Window',
+                themeService: themeService,
+              ),
+              const SizedBox(height: 8),
+              _sectionText(
+                'For each muscle group, the app shows when you’ll be optimally recovered (usually 80%+). If you’re already ready, you’ll see a green check. Otherwise, you’ll see how long to wait for best results.',
+                themeService,
+              ),
+              const SizedBox(height: 24),
+
+              // --- NEW: Personalization note ---
+              _sectionHeader(
+                icon: FontAwesomeIcons.userGear,
+                color: Colors.indigo.shade400,
+                title: 'Personalized Recovery',
+                themeService: themeService,
+              ),
+              const SizedBox(height: 8),
+              _sectionText(
+                'Your recovery curve adapts to your training habits and body. If you train a muscle more than usual, recovery slows down. If you train less, it speeds up. The app uses your recent workout history and body weight to personalize your recovery.',
+                themeService,
+              ),
+              const SizedBox(height: 24),
+
+              // --- NEW: Compound/multiple exercises note ---
+              _sectionHeader(
+                icon: FontAwesomeIcons.dumbbell,
+                color: Colors.brown.shade400,
+                title: 'Compound & Multiple Exercises',
+                themeService: themeService,
+              ),
+              const SizedBox(height: 8),
+              _sectionText(
+                'Compound lifts (like squats, bench press) and doing several exercises for the same muscle group in one session cause a bigger drop in recovery. The app combines their effects to reflect real muscle fatigue.',
+                themeService,
+              ),
               const SizedBox(height: 32),
               Divider(color: themeService.isDarkMode ? Colors.grey.shade700 : Colors.grey.shade300),
               const SizedBox(height: 16),
@@ -146,6 +188,25 @@ class RecoveryHelpPage extends StatelessWidget {
                 fontSize: 13,
                 color: Colors.grey,
               ),
+              const SizedBox(height: 24),
+
+              // --- NEW: Read More button ---
+              Center(
+                child: TextButton(
+                  onPressed: () => _showTechnicalDetails(context, themeService),
+                  style: TextButton.styleFrom(
+                    foregroundColor: themeService.isDarkMode ? Colors.blue[200] : Colors.blue[700],
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    minimumSize: Size(0, 0),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  child: const Text(
+                    'Read More',
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
             ],
           ),
         ),
@@ -382,6 +443,252 @@ class RecoveryHelpPage extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 14.0, horizontal: 8.0),
           child: Container(width: 24, height: 16, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(4))),
         ),
+      ],
+    );
+  }
+
+  void _showTechnicalDetails(BuildContext context, ThemeService themeService) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: themeService.currentTheme.cardTheme.color,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.85,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        builder: (context, scrollController) => SingleChildScrollView(
+          controller: scrollController,
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _sectionHeader(
+                icon: FontAwesomeIcons.code,
+                color: Colors.blueGrey.shade400,
+                title: 'Technical Details: Recovery Calculation',
+                themeService: themeService,
+              ),
+              const SizedBox(height: 16),
+              _sectionText('• Recovery is calculated using an exponential curve personalized to your habits and body:', themeService),
+              const SizedBox(height: 8),
+              SelectableText('recovery(t) = initial_recovery + (100 - initial_recovery) × (1 - e^(-k × t))',
+                style: TextStyle(fontSize: 15, color: themeService.isDarkMode ? Colors.grey[200] : Colors.grey[800], fontWeight: FontWeight.w500)),
+              const SizedBox(height: 8),
+              _sectionText('Where k is based on muscle group, exercise type, training load, and is slowed by high fatigue score.', themeService),
+              const SizedBox(height: 16),
+              _sectionText('• Fatigue Score:', themeService, fontWeight: FontWeight.bold),
+              _sectionText('Fatigue Score = (Weekly Volume for Muscle Group) / (Baseline Volume). If >1.5, recovery is slowed by 20%.', themeService),
+              const SizedBox(height: 16),
+              _sectionText('• Compound Sessions & Multiple Exercises:', themeService, fontWeight: FontWeight.bold),
+              _sectionText('Multiple exercises for the same muscle group in a session are combined, and compound lifts cause a larger drop in recovery.', themeService),
+              const SizedBox(height: 16),
+              _sectionText('• Minimum Recovery Thresholds:', themeService, fontWeight: FontWeight.bold),
+              _minRecoveryTable(themeService),
+              const SizedBox(height: 16),
+              _sectionText('• "Next optimal training window" is calculated by solving the recovery curve for when you reach 80% recovery:', themeService),
+              SelectableText('t = -ln(1 - (threshold - current) / (100 - current)) / k',
+                style: TextStyle(fontSize: 15, color: themeService.isDarkMode ? Colors.grey[200] : Colors.grey[800], fontWeight: FontWeight.w500)),
+              const SizedBox(height: 16),
+              _sectionText('• Muscle Group Recovery Rates:', themeService, fontWeight: FontWeight.bold),
+              _recoveryRatesTable(themeService),
+              const SizedBox(height: 16),
+              _sectionText('• Default Baseline Volumes:', themeService, fontWeight: FontWeight.bold),
+              _baselineVolumesTable(themeService),
+              const SizedBox(height: 16),
+              _sectionText('• Workout Loads per Session:', themeService, fontWeight: FontWeight.bold),
+              _workoutLoadsTable(themeService),
+              const SizedBox(height: 24),
+              _sectionText('Summary:', themeService, fontWeight: FontWeight.bold),
+              _sectionText('The app uses your recent workout history (volume, intensity, frequency) and body weight to adjust the speed of your recovery curve for each muscle group, making it unique to your habits and body.', themeService),
+              const SizedBox(height: 24),
+              Center(
+                child: TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  style: TextButton.styleFrom(
+                    foregroundColor: themeService.isDarkMode ? Colors.blue[200] : Colors.blue[700],
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    minimumSize: Size(0, 0),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  child: const Text(
+                    'Close',
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _minRecoveryTable(ThemeService themeService) {
+    final isDark = themeService.isDarkMode;
+    return Table(
+      columnWidths: const {
+        0: FlexColumnWidth(2),
+        1: FlexColumnWidth(1),
+      },
+      border: TableBorder.all(color: isDark ? Colors.grey.shade700 : Colors.grey.shade300),
+      children: [
+        TableRow(
+          decoration: BoxDecoration(color: isDark ? Colors.grey[850] : Colors.grey[300]),
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Text('Exercise Type', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Text('Min Recovery (%)', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+        _minRecoveryRow('deadlift, squat, clean, snatch', '5', isDark),
+        _minRecoveryRow('bench, press, row, pulldown', '10', isDark),
+        _minRecoveryRow('curl, extension, fly, raise', '20', isDark),
+        _minRecoveryRow('crunch, plank, stretch', '50', isDark),
+        _minRecoveryRow('(default)', '15', isDark),
+      ],
+    );
+  }
+  TableRow _minRecoveryRow(String type, String min, bool isDark) {
+    return TableRow(
+      decoration: BoxDecoration(color: isDark ? const Color(0xFF232323) : Colors.white),
+      children: [
+        Padding(padding: const EdgeInsets.all(8.0), child: Text(type)),
+        Padding(padding: const EdgeInsets.all(8.0), child: Text(min)),
+      ],
+    );
+  }
+  Widget _recoveryRatesTable(ThemeService themeService) {
+    final isDark = themeService.isDarkMode;
+    return Table(
+      columnWidths: const {
+        0: FlexColumnWidth(2),
+        1: FlexColumnWidth(1),
+        2: FlexColumnWidth(2),
+      },
+      border: TableBorder.all(color: isDark ? Colors.grey.shade700 : Colors.grey.shade300),
+      children: [
+        TableRow(
+          decoration: BoxDecoration(color: isDark ? Colors.grey[850] : Colors.grey[300]),
+          children: [
+            Padding(padding: const EdgeInsets.all(8.0), child: Text('Muscle Group', style: TextStyle(fontWeight: FontWeight.bold))),
+            Padding(padding: const EdgeInsets.all(8.0), child: Text('Rate', style: TextStyle(fontWeight: FontWeight.bold))),
+            Padding(padding: const EdgeInsets.all(8.0), child: Text('Typical Recovery Time', style: TextStyle(fontWeight: FontWeight.bold))),
+          ],
+        ),
+        _recoveryRatesRow('Forearms', '0.35', '24–36h (fast)', isDark),
+        _recoveryRatesRow('Calves', '0.32', '24–36h (fast)', isDark),
+        _recoveryRatesRow('Core', '0.30', '24–48h (fast)', isDark),
+        _recoveryRatesRow('Neck', '0.28', '24–48h (fast)', isDark),
+        _recoveryRatesRow('Biceps', '0.25', '48–72h (moderate)', isDark),
+        _recoveryRatesRow('Triceps', '0.23', '48–72h (moderate)', isDark),
+        _recoveryRatesRow('Shoulders', '0.22', '48–72h (moderate)', isDark),
+        _recoveryRatesRow('Chest', '0.18', '48–96h (slow)', isDark),
+        _recoveryRatesRow('Back', '0.16', '72–96h (slow)', isDark),
+        _recoveryRatesRow('Quadriceps', '0.15', '72–96h (slow)', isDark),
+        _recoveryRatesRow('Hamstrings', '0.14', '72–96h (slow)', isDark),
+        _recoveryRatesRow('Glutes', '0.13', '72–96h (slow)', isDark),
+        _recoveryRatesRow('Other', '0.20', 'Default', isDark),
+      ],
+    );
+  }
+  TableRow _recoveryRatesRow(String group, String rate, String time, bool isDark) {
+    return TableRow(
+      decoration: BoxDecoration(color: isDark ? const Color(0xFF232323) : Colors.white),
+      children: [
+        Padding(padding: const EdgeInsets.all(8.0), child: Text(group)),
+        Padding(padding: const EdgeInsets.all(8.0), child: Text(rate)),
+        Padding(padding: const EdgeInsets.all(8.0), child: Text(time)),
+      ],
+    );
+  }
+  Widget _baselineVolumesTable(ThemeService themeService) {
+    final isDark = themeService.isDarkMode;
+    return Table(
+      columnWidths: const {
+        0: FlexColumnWidth(2),
+        1: FlexColumnWidth(1),
+      },
+      border: TableBorder.all(color: isDark ? Colors.grey.shade700 : Colors.grey.shade300),
+      children: [
+        TableRow(
+          decoration: BoxDecoration(color: isDark ? Colors.grey[850] : Colors.grey[300]),
+          children: [
+            Padding(padding: const EdgeInsets.all(8.0), child: Text('Muscle Group', style: TextStyle(fontWeight: FontWeight.bold))),
+            Padding(padding: const EdgeInsets.all(8.0), child: Text('Baseline Volume', style: TextStyle(fontWeight: FontWeight.bold))),
+          ],
+        ),
+        _baselineVolumesRow('Chest', '12,000', isDark),
+        _baselineVolumesRow('Back', '15,000', isDark),
+        _baselineVolumesRow('Quadriceps', '20,000', isDark),
+        _baselineVolumesRow('Hamstrings', '12,000', isDark),
+        _baselineVolumesRow('Shoulders', '8,000', isDark),
+        _baselineVolumesRow('Biceps', '6,000', isDark),
+        _baselineVolumesRow('Triceps', '6,000', isDark),
+        _baselineVolumesRow('Calves', '3,000', isDark),
+        _baselineVolumesRow('Core', '4,000', isDark),
+        _baselineVolumesRow('Glutes', '8,000', isDark),
+        _baselineVolumesRow('Forearms', '8,000', isDark),
+        _baselineVolumesRow('Neck', '8,000', isDark),
+        _baselineVolumesRow('Other', '8,000', isDark),
+      ],
+    );
+  }
+  TableRow _baselineVolumesRow(String group, String volume, bool isDark) {
+    return TableRow(
+      decoration: BoxDecoration(color: isDark ? const Color(0xFF232323) : Colors.white),
+      children: [
+        Padding(padding: const EdgeInsets.all(8.0), child: Text(group)),
+        Padding(padding: const EdgeInsets.all(8.0), child: Text(volume)),
+      ],
+    );
+  }
+  Widget _workoutLoadsTable(ThemeService themeService) {
+    final isDark = themeService.isDarkMode;
+    return Table(
+      columnWidths: const {
+        0: FlexColumnWidth(2),
+        1: FlexColumnWidth(1),
+      },
+      border: TableBorder.all(color: isDark ? Colors.grey.shade700 : Colors.grey.shade300),
+      children: [
+        TableRow(
+          decoration: BoxDecoration(color: isDark ? Colors.grey[850] : Colors.grey[300]),
+          children: [
+            Padding(padding: const EdgeInsets.all(8.0), child: Text('Muscle Group', style: TextStyle(fontWeight: FontWeight.bold))),
+            Padding(padding: const EdgeInsets.all(8.0), child: Text('Workout Load', style: TextStyle(fontWeight: FontWeight.bold))),
+          ],
+        ),
+        _workoutLoadsRow('Chest', '3,000', isDark),
+        _workoutLoadsRow('Back', '4,000', isDark),
+        _workoutLoadsRow('Quadriceps', '5,000', isDark),
+        _workoutLoadsRow('Hamstrings', '2,800', isDark),
+        _workoutLoadsRow('Shoulders', '1,200', isDark),
+        _workoutLoadsRow('Biceps', '540', isDark),
+        _workoutLoadsRow('Triceps', '720', isDark),
+        _workoutLoadsRow('Calves', '2,700', isDark),
+        _workoutLoadsRow('Core', '1,200', isDark),
+        _workoutLoadsRow('Glutes', '4,000', isDark),
+        _workoutLoadsRow('Forearms', '4,000', isDark),
+        _workoutLoadsRow('Neck', '2,000', isDark),
+        _workoutLoadsRow('Other', '2,500', isDark),
+      ],
+    );
+  }
+  TableRow _workoutLoadsRow(String group, String load, bool isDark) {
+    return TableRow(
+      decoration: BoxDecoration(color: isDark ? const Color(0xFF232323) : Colors.white),
+      children: [
+        Padding(padding: const EdgeInsets.all(8.0), child: Text(group)),
+        Padding(padding: const EdgeInsets.all(8.0), child: Text(load)),
       ],
     );
   }

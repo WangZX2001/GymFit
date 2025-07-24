@@ -200,6 +200,18 @@ class RecommendedTrainingService {
 
     // For each day, select exercises for the split
     Map<String, List<CustomWorkoutExercise>> weekPlan = {};
+    // Track used push exercises for the week to avoid repeats
+    Set<String> usedPushExercises = {};
+    // Track used pull exercises for the week to avoid repeats
+    Set<String> usedPullExercises = {};
+    // Track used legs exercises for the week to avoid repeats
+    Set<String> usedLegsExercises = {};
+    // Track used upper exercises for the week to avoid repeats
+    Set<String> usedUpperExercises = {};
+    // Track used lower exercises for the week to avoid repeats
+    Set<String> usedLowerExercises = {};
+    // Track used full body exercises for the week to avoid repeats
+    Set<String> usedFullBodyExercises = {};
     for (final day in days) {
       final targetMuscles = splitMuscleGroups[day] ?? [];
       List<CustomWorkoutExercise> dayExercises = [];
@@ -218,7 +230,453 @@ class RecommendedTrainingService {
       
       // Shuffle the exercises for this specific day
       dayExercisesList.shuffle();
-      
+
+      // --- Custom Push Day Logic ---
+      bool isPushDay = false;
+      if (trainingSplit == 'Push/Pull/Legs') {
+        int i = days.indexOf(day);
+        isPushDay = (i % 3 == 0);
+      }
+      if (isPushDay) {
+        // Determine user level
+        String level = fitnessLevel.toLowerCase();
+        int chestCount = 0, shoulderCount = 0, tricepsCount = 0, totalCount = 0;
+        int chestTarget = 2, shoulderTarget = 1, tricepsTarget = 1, minTotal = 4, maxTotal = 5;
+        if (level == 'intermediate') {
+          chestTarget = 2; shoulderTarget = 1; tricepsTarget = 1; minTotal = 5; maxTotal = 6;
+          // Shoulders/triceps can be 1–2, but we fill up to maxTotal
+        } else if (level == 'advance' || level == 'advanced') {
+          chestTarget = 2; shoulderTarget = 2; tricepsTarget = 2; minTotal = 6; maxTotal = 8;
+        }
+        if (level == 'advance' || level == 'advanced') chestTarget = 3; // 2–3 for advanced
+
+        // Filter by muscle
+        List<ExerciseInformation> chest = dayExercisesList.where((e) => e.mainMuscle.toLowerCase().contains('chest')).toList();
+        List<ExerciseInformation> shoulders = dayExercisesList.where((e) => e.mainMuscle.toLowerCase().contains('shoulder')).toList();
+        List<ExerciseInformation> triceps = dayExercisesList.where((e) => e.mainMuscle.toLowerCase().contains('tricep')).toList();
+        // Remove already used push exercises for the week
+        chest.removeWhere((e) => usedPushExercises.contains(e.title));
+        shoulders.removeWhere((e) => usedPushExercises.contains(e.title));
+        triceps.removeWhere((e) => usedPushExercises.contains(e.title));
+        // Select unique exercises first
+        List<ExerciseInformation> selected = [];
+        selected.addAll(chest.take(chestTarget));
+        chestCount = selected.where((e) => e.mainMuscle.toLowerCase().contains('chest')).length;
+        selected.addAll(shoulders.take(shoulderTarget));
+        shoulderCount = selected.where((e) => e.mainMuscle.toLowerCase().contains('shoulder')).length;
+        selected.addAll(triceps.take(tricepsTarget));
+        tricepsCount = selected.where((e) => e.mainMuscle.toLowerCase().contains('tricep')).length;
+        totalCount = selected.length;
+        // If not enough, fill with remaining unique push exercises
+        List<ExerciseInformation> remaining = [
+          ...chest.skip(chestTarget),
+          ...shoulders.skip(shoulderTarget),
+          ...triceps.skip(tricepsTarget)
+        ];
+        remaining.removeWhere((e) => selected.contains(e));
+        for (var e in remaining) {
+          if (totalCount >= maxTotal) break;
+          selected.add(e);
+          totalCount++;
+        }
+        // If still not enough, allow repeats (from all push exercises)
+        if (totalCount < minTotal) {
+          List<ExerciseInformation> allPush = dayExercisesList.where((e) => ['chest','shoulder','tricep'].any((m) => e.mainMuscle.toLowerCase().contains(m))).toList();
+          for (var e in allPush) {
+            if (totalCount >= minTotal) break;
+            if (!selected.contains(e)) selected.add(e);
+            totalCount++;
+          }
+        }
+        // Mark these as used for the week
+        for (var e in selected) {
+          usedPushExercises.add(e.title);
+        }
+        // Add to dayExercises
+        for (final ex in selected) {
+          final sets = await _generateSetsForExercise(ex, goal, fitnessLevel);
+          dayExercises.add(CustomWorkoutExercise(
+            name: ex.title,
+            sets: sets,
+          ));
+        }
+        weekPlan[day] = dayExercises;
+        continue;
+      }
+      // --- End Custom Push Day Logic ---
+
+      // --- Custom Pull Day Logic ---
+      bool isPullDay = false;
+      if (trainingSplit == 'Push/Pull/Legs') {
+        int i = days.indexOf(day);
+        isPullDay = (i % 3 == 1);
+      }
+      if (isPullDay) {
+        // Determine user level
+        String level = fitnessLevel.toLowerCase();
+        int backTarget = 2, bicepsTarget = 1, rearDeltsTarget = 0, minTotal = 4, maxTotal = 5;
+        if (level == 'intermediate') {
+          backTarget = 3; bicepsTarget = 1; rearDeltsTarget = 1; minTotal = 5; maxTotal = 6;
+        } else if (level == 'advance' || level == 'advanced') {
+          backTarget = 4; bicepsTarget = 2; rearDeltsTarget = 1; minTotal = 6; maxTotal = 8;
+        }
+        if (level == 'beginner') {
+          backTarget = 3; // 2–3, try 3 first
+          rearDeltsTarget = 1; // 0–1, try 1 first
+        }
+
+        // Filter by muscle
+        List<ExerciseInformation> back = dayExercisesList.where((e) => e.mainMuscle.toLowerCase().contains('back')).toList();
+        List<ExerciseInformation> biceps = dayExercisesList.where((e) => e.mainMuscle.toLowerCase().contains('bicep')).toList();
+        List<ExerciseInformation> rearDelts = dayExercisesList.where((e) => e.mainMuscle.toLowerCase().contains('rear delt')).toList();
+        // Remove already used pull exercises for the week
+        back.removeWhere((e) => usedPullExercises.contains(e.title));
+        biceps.removeWhere((e) => usedPullExercises.contains(e.title));
+        rearDelts.removeWhere((e) => usedPullExercises.contains(e.title));
+        // Select unique exercises first
+        List<ExerciseInformation> selected = [];
+        selected.addAll(back.take(backTarget));
+        selected.addAll(biceps.take(bicepsTarget));
+        selected.addAll(rearDelts.take(rearDeltsTarget));
+        int totalCount = selected.length;
+        // If not enough, fill with remaining unique pull exercises
+        List<ExerciseInformation> remaining = [
+          ...back.skip(backTarget),
+          ...biceps.skip(bicepsTarget),
+          ...rearDelts.skip(rearDeltsTarget)
+        ];
+        remaining.removeWhere((e) => selected.contains(e));
+        for (var e in remaining) {
+          if (totalCount >= maxTotal) break;
+          selected.add(e);
+          totalCount++;
+        }
+        // If still not enough, allow repeats (from all pull exercises)
+        if (totalCount < minTotal) {
+          List<ExerciseInformation> allPull = dayExercisesList.where((e) => ['back','bicep','rear delt'].any((m) => e.mainMuscle.toLowerCase().contains(m))).toList();
+          for (var e in allPull) {
+            if (totalCount >= minTotal) break;
+            if (!selected.contains(e)) selected.add(e);
+            totalCount++;
+          }
+        }
+        // Mark these as used for the week
+        for (var e in selected) {
+          usedPullExercises.add(e.title);
+        }
+        // Add to dayExercises
+        for (final ex in selected) {
+          final sets = await _generateSetsForExercise(ex, goal, fitnessLevel);
+          dayExercises.add(CustomWorkoutExercise(
+            name: ex.title,
+            sets: sets,
+          ));
+        }
+        weekPlan[day] = dayExercises;
+        continue;
+      }
+      // --- End Custom Pull Day Logic ---
+
+      // --- Custom Legs Day Logic ---
+      bool isLegsDay = false;
+      if (trainingSplit == 'Push/Pull/Legs') {
+        int i = days.indexOf(day);
+        isLegsDay = (i % 3 == 2);
+      }
+      if (isLegsDay) {
+        // Determine user level
+        String level = fitnessLevel.toLowerCase();
+        int quadsTarget = 1, hamstringsTarget = 1, glutesTarget = 1, calvesTarget = 0, minTotal = 3, maxTotal = 5;
+        if (level == 'intermediate') {
+          quadsTarget = 2; hamstringsTarget = 1; glutesTarget = 1; calvesTarget = 1; minTotal = 5; maxTotal = 6;
+          // Hamstrings can be 1–2, but we fill up to maxTotal
+        } else if (level == 'advance' || level == 'advanced') {
+          quadsTarget = 2; hamstringsTarget = 2; glutesTarget = 2; calvesTarget = 1; minTotal = 6; maxTotal = 8;
+        }
+        if (level == 'intermediate') hamstringsTarget = 2; // 1–2 for intermediate
+        if (level == 'beginner') calvesTarget = 1; // 0–1 for beginner, try 1 first
+
+        // Filter by muscle
+        List<ExerciseInformation> quads = dayExercisesList.where((e) => e.mainMuscle.toLowerCase().contains('quad')).toList();
+        List<ExerciseInformation> hamstrings = dayExercisesList.where((e) => e.mainMuscle.toLowerCase().contains('hamstring')).toList();
+        List<ExerciseInformation> glutes = dayExercisesList.where((e) => e.mainMuscle.toLowerCase().contains('glute')).toList();
+        List<ExerciseInformation> calves = dayExercisesList.where((e) => e.mainMuscle.toLowerCase().contains('calf')).toList();
+        // Remove already used legs exercises for the week
+        quads.removeWhere((e) => usedLegsExercises.contains(e.title));
+        hamstrings.removeWhere((e) => usedLegsExercises.contains(e.title));
+        glutes.removeWhere((e) => usedLegsExercises.contains(e.title));
+        calves.removeWhere((e) => usedLegsExercises.contains(e.title));
+        // Select unique exercises first
+        List<ExerciseInformation> selected = [];
+        selected.addAll(quads.take(quadsTarget));
+        selected.addAll(hamstrings.take(hamstringsTarget));
+        selected.addAll(glutes.take(glutesTarget));
+        selected.addAll(calves.take(calvesTarget));
+        int totalCount = selected.length;
+        // If not enough, fill with remaining unique legs exercises
+        List<ExerciseInformation> remaining = [
+          ...quads.skip(quadsTarget),
+          ...hamstrings.skip(hamstringsTarget),
+          ...glutes.skip(glutesTarget),
+          ...calves.skip(calvesTarget)
+        ];
+        remaining.removeWhere((e) => selected.contains(e));
+        for (var e in remaining) {
+          if (totalCount >= maxTotal) break;
+          selected.add(e);
+          totalCount++;
+        }
+        // If still not enough, allow repeats (from all legs exercises)
+        if (totalCount < minTotal) {
+          List<ExerciseInformation> allLegs = dayExercisesList.where((e) => ['quad','hamstring','glute','calf'].any((m) => e.mainMuscle.toLowerCase().contains(m))).toList();
+          for (var e in allLegs) {
+            if (totalCount >= minTotal) break;
+            if (!selected.contains(e)) selected.add(e);
+            totalCount++;
+          }
+        }
+        // Mark these as used for the week
+        for (var e in selected) {
+          usedLegsExercises.add(e.title);
+        }
+        // Add to dayExercises
+        for (final ex in selected) {
+          final sets = await _generateSetsForExercise(ex, goal, fitnessLevel);
+          dayExercises.add(CustomWorkoutExercise(
+            name: ex.title,
+            sets: sets,
+          ));
+        }
+        weekPlan[day] = dayExercises;
+        continue;
+      }
+      // --- End Custom Legs Day Logic ---
+
+      // --- Custom Upper Day Logic ---
+      bool isUpperDay = false;
+      if (trainingSplit == 'Upper/Lower') {
+        int i = days.indexOf(day);
+        isUpperDay = (i % 2 == 0);
+      }
+      if (isUpperDay) {
+        // Determine user level
+        String level = fitnessLevel.toLowerCase();
+        int chestTarget = 1, backTarget = 1, shouldersTarget = 1, bicepsTarget = 1, tricepsTarget = 1, minTotal = 4, maxTotal = 5;
+        if (level == 'intermediate') {
+          chestTarget = 2; backTarget = 2; shouldersTarget = 1; bicepsTarget = 1; tricepsTarget = 1; minTotal = 6; maxTotal = 7;
+        } else if (level == 'advance' || level == 'advanced') {
+          chestTarget = 2; backTarget = 2; shouldersTarget = 2; bicepsTarget = 2; tricepsTarget = 2; minTotal = 7; maxTotal = 8;
+        }
+        if (level == 'advanced' || level == 'advance') {
+          bicepsTarget = 2; tricepsTarget = 2;
+        }
+
+        // Filter by muscle
+        List<ExerciseInformation> chest = dayExercisesList.where((e) => e.mainMuscle.toLowerCase().contains('chest')).toList();
+        List<ExerciseInformation> back = dayExercisesList.where((e) => e.mainMuscle.toLowerCase().contains('back')).toList();
+        List<ExerciseInformation> shoulders = dayExercisesList.where((e) => e.mainMuscle.toLowerCase().contains('shoulder')).toList();
+        List<ExerciseInformation> biceps = dayExercisesList.where((e) => e.mainMuscle.toLowerCase().contains('bicep')).toList();
+        List<ExerciseInformation> triceps = dayExercisesList.where((e) => e.mainMuscle.toLowerCase().contains('tricep')).toList();
+        // Remove already used upper exercises for the week
+        chest.removeWhere((e) => usedUpperExercises.contains(e.title));
+        back.removeWhere((e) => usedUpperExercises.contains(e.title));
+        shoulders.removeWhere((e) => usedUpperExercises.contains(e.title));
+        biceps.removeWhere((e) => usedUpperExercises.contains(e.title));
+        triceps.removeWhere((e) => usedUpperExercises.contains(e.title));
+        // Select unique exercises first
+        List<ExerciseInformation> selected = [];
+        selected.addAll(chest.take(chestTarget));
+        selected.addAll(back.take(backTarget));
+        selected.addAll(shoulders.take(shouldersTarget));
+        selected.addAll(biceps.take(bicepsTarget));
+        selected.addAll(triceps.take(tricepsTarget));
+        int totalCount = selected.length;
+        // If not enough, fill with remaining unique upper exercises
+        List<ExerciseInformation> remaining = [
+          ...chest.skip(chestTarget),
+          ...back.skip(backTarget),
+          ...shoulders.skip(shouldersTarget),
+          ...biceps.skip(bicepsTarget),
+          ...triceps.skip(tricepsTarget)
+        ];
+        remaining.removeWhere((e) => selected.contains(e));
+        for (var e in remaining) {
+          if (totalCount >= maxTotal) break;
+          selected.add(e);
+          totalCount++;
+        }
+        // If still not enough, allow repeats (from all upper exercises)
+        if (totalCount < minTotal) {
+          List<ExerciseInformation> allUpper = dayExercisesList.where((e) => ['chest','back','shoulder','bicep','tricep'].any((m) => e.mainMuscle.toLowerCase().contains(m))).toList();
+          for (var e in allUpper) {
+            if (totalCount >= minTotal) break;
+            if (!selected.contains(e)) selected.add(e);
+            totalCount++;
+          }
+        }
+        // Mark these as used for the week
+        for (var e in selected) {
+          usedUpperExercises.add(e.title);
+        }
+        // Add to dayExercises
+        for (final ex in selected) {
+          final sets = await _generateSetsForExercise(ex, goal, fitnessLevel);
+          dayExercises.add(CustomWorkoutExercise(
+            name: ex.title,
+            sets: sets,
+          ));
+        }
+        weekPlan[day] = dayExercises;
+        continue;
+      }
+      // --- End Custom Upper Day Logic ---
+
+      // --- Custom Lower Day Logic ---
+      bool isLowerDay = false;
+      if (trainingSplit == 'Upper/Lower') {
+        int i = days.indexOf(day);
+        isLowerDay = (i % 2 == 1);
+      }
+      if (isLowerDay) {
+        // Determine user level
+        String level = fitnessLevel.toLowerCase();
+        int quadsTarget = 1, hamstringsTarget = 1, glutesTarget = 1, calvesTarget = 0, minTotal = 3, maxTotal = 5;
+        if (level == 'intermediate') {
+          quadsTarget = 2; hamstringsTarget = 2; glutesTarget = 1; calvesTarget = 1; minTotal = 5; maxTotal = 6;
+        } else if (level == 'advance' || level == 'advanced') {
+          quadsTarget = 2; hamstringsTarget = 2; glutesTarget = 2; calvesTarget = 1; minTotal = 6; maxTotal = 8;
+        }
+        if (level == 'beginner') calvesTarget = 1; // 0–1 for beginner, try 1 first
+
+        // Filter by muscle
+        List<ExerciseInformation> quads = dayExercisesList.where((e) => e.mainMuscle.toLowerCase().contains('quad')).toList();
+        List<ExerciseInformation> hamstrings = dayExercisesList.where((e) => e.mainMuscle.toLowerCase().contains('hamstring')).toList();
+        List<ExerciseInformation> glutes = dayExercisesList.where((e) => e.mainMuscle.toLowerCase().contains('glute')).toList();
+        List<ExerciseInformation> calves = dayExercisesList.where((e) => e.mainMuscle.toLowerCase().contains('calf')).toList();
+        // Remove already used lower exercises for the week
+        quads.removeWhere((e) => usedLowerExercises.contains(e.title));
+        hamstrings.removeWhere((e) => usedLowerExercises.contains(e.title));
+        glutes.removeWhere((e) => usedLowerExercises.contains(e.title));
+        calves.removeWhere((e) => usedLowerExercises.contains(e.title));
+        // Select unique exercises first
+        List<ExerciseInformation> selected = [];
+        selected.addAll(quads.take(quadsTarget));
+        selected.addAll(hamstrings.take(hamstringsTarget));
+        selected.addAll(glutes.take(glutesTarget));
+        selected.addAll(calves.take(calvesTarget));
+        int totalCount = selected.length;
+        // If not enough, fill with remaining unique lower exercises
+        List<ExerciseInformation> remaining = [
+          ...quads.skip(quadsTarget),
+          ...hamstrings.skip(hamstringsTarget),
+          ...glutes.skip(glutesTarget),
+          ...calves.skip(calvesTarget)
+        ];
+        remaining.removeWhere((e) => selected.contains(e));
+        for (var e in remaining) {
+          if (totalCount >= maxTotal) break;
+          selected.add(e);
+          totalCount++;
+        }
+        // If still not enough, allow repeats (from all lower exercises)
+        if (totalCount < minTotal) {
+          List<ExerciseInformation> allLower = dayExercisesList.where((e) => ['quad','hamstring','glute','calf'].any((m) => e.mainMuscle.toLowerCase().contains(m))).toList();
+          for (var e in allLower) {
+            if (totalCount >= minTotal) break;
+            if (!selected.contains(e)) selected.add(e);
+            totalCount++;
+          }
+        }
+        // Mark these as used for the week
+        for (var e in selected) {
+          usedLowerExercises.add(e.title);
+        }
+        // Add to dayExercises
+        for (final ex in selected) {
+          final sets = await _generateSetsForExercise(ex, goal, fitnessLevel);
+          dayExercises.add(CustomWorkoutExercise(
+            name: ex.title,
+            sets: sets,
+          ));
+        }
+        weekPlan[day] = dayExercises;
+        continue;
+      }
+      // --- End Custom Lower Day Logic ---
+
+      // --- Custom Full Body Day Logic ---
+      bool isFullBodyDay = false;
+      if (trainingSplit == 'Full Body') {
+        isFullBodyDay = true;
+      }
+      if (isFullBodyDay) {
+        // Determine user level
+        String level = fitnessLevel.toLowerCase();
+        int lowerBodyTarget = 1, upperPullTarget = 1, upperPushTarget = 1, accessoryTarget = 0, minTotal = 3, maxTotal = 4;
+        if (level == 'intermediate') {
+          lowerBodyTarget = 2; upperPullTarget = 1; upperPushTarget = 2; accessoryTarget = 1; minTotal = 5; maxTotal = 6;
+        } else if (level == 'advance' || level == 'advanced') {
+          lowerBodyTarget = 2; upperPullTarget = 2; upperPushTarget = 2; accessoryTarget = 1; minTotal = 6; maxTotal = 7;
+        }
+        if (level == 'beginner') accessoryTarget = 1; // 0–1 for beginner, try 1 first
+
+        // Filter by group
+        List<ExerciseInformation> lowerBody = dayExercisesList.where((e) => ['quad','hamstring','glute','calf'].any((m) => e.mainMuscle.toLowerCase().contains(m))).toList();
+        List<ExerciseInformation> upperPull = dayExercisesList.where((e) => ['back','bicep','rear delt'].any((m) => e.mainMuscle.toLowerCase().contains(m))).toList();
+        List<ExerciseInformation> upperPush = dayExercisesList.where((e) => ['chest','shoulder','tricep'].any((m) => e.mainMuscle.toLowerCase().contains(m))).toList();
+        List<ExerciseInformation> accessory = dayExercisesList.where((e) => ['abs','core','forearm','neck','trap'].any((m) => e.mainMuscle.toLowerCase().contains(m)) || (e.mainMuscle.toLowerCase().contains('calf') && !lowerBody.contains(e))).toList();
+        // Remove already used full body exercises for the week
+        lowerBody.removeWhere((e) => usedFullBodyExercises.contains(e.title));
+        upperPull.removeWhere((e) => usedFullBodyExercises.contains(e.title));
+        upperPush.removeWhere((e) => usedFullBodyExercises.contains(e.title));
+        accessory.removeWhere((e) => usedFullBodyExercises.contains(e.title));
+        // Select unique exercises first
+        List<ExerciseInformation> selected = [];
+        selected.addAll(lowerBody.take(lowerBodyTarget));
+        selected.addAll(upperPull.take(upperPullTarget));
+        selected.addAll(upperPush.take(upperPushTarget));
+        selected.addAll(accessory.take(accessoryTarget));
+        int totalCount = selected.length;
+        // If not enough, fill with remaining unique full body exercises
+        List<ExerciseInformation> remaining = [
+          ...lowerBody.skip(lowerBodyTarget),
+          ...upperPull.skip(upperPullTarget),
+          ...upperPush.skip(upperPushTarget),
+          ...accessory.skip(accessoryTarget)
+        ];
+        remaining.removeWhere((e) => selected.contains(e));
+        for (var e in remaining) {
+          if (totalCount >= maxTotal) break;
+          selected.add(e);
+          totalCount++;
+        }
+        // If still not enough, allow repeats (from all full body exercises)
+        if (totalCount < minTotal) {
+          List<ExerciseInformation> allFullBody = dayExercisesList.where((e) => ['quad','hamstring','glute','calf','back','bicep','rear delt','chest','shoulder','tricep','abs','core','forearm','neck','trap'].any((m) => e.mainMuscle.toLowerCase().contains(m))).toList();
+          for (var e in allFullBody) {
+            if (totalCount >= minTotal) break;
+            if (!selected.contains(e)) selected.add(e);
+            totalCount++;
+          }
+        }
+        // Mark these as used for the week
+        for (var e in selected) {
+          usedFullBodyExercises.add(e.title);
+        }
+        // Add to dayExercises
+        for (final ex in selected) {
+          final sets = await _generateSetsForExercise(ex, goal, fitnessLevel);
+          dayExercises.add(CustomWorkoutExercise(
+            name: ex.title,
+            sets: sets,
+          ));
+        }
+        weekPlan[day] = dayExercises;
+        continue;
+      }
+      // --- End Custom Full Body Day Logic ---
+
+      // Default logic for other days
       // Select exercises with limits
       for (final ex in dayExercisesList) {
         String main = ex.mainMuscle.split(RegExp(r'[\/,&]')).first.split('and').first.trim().toLowerCase();
@@ -231,7 +689,6 @@ class RecommendedTrainingService {
           ));
         }
       }
-      
       weekPlan[day] = dayExercises;
     }
 

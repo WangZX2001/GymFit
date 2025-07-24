@@ -397,6 +397,58 @@ class _RecoveryPageState extends State<RecoveryPage> with AutomaticKeepAliveClie
             ],
           ),
 
+          // Next optimal training window
+          Builder(
+            builder: (context) {
+              final now = DateTime.now();
+              final hoursSinceLastTrained = now.difference(muscleGroup.lastTrained).inHours.toDouble();
+              final hoursTo80 = RecoveryCalculator.estimateHoursToRecoveryThreshold(
+                currentRecovery: muscleGroup.recoveryPercentage,
+                fatigueScore: muscleGroup.fatigueScore,
+                muscleGroup: muscleGroup.name,
+                lastTrainedHoursAgo: hoursSinceLastTrained,
+                threshold: 80.0,
+              );
+              if (hoursTo80 == null) {
+                return const SizedBox.shrink();
+              } else if (hoursTo80 <= 0 && muscleGroup.recoveryPercentage >= 80) {
+                return Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: Row(
+                    children: [
+                      Icon(Icons.check_circle, color: Colors.green, size: 16),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Ready for optimal training now',
+                        style: TextStyle(fontSize: 13, color: Colors.green, fontWeight: FontWeight.w500),
+                      ),
+                    ],
+                  ),
+                );
+              } else {
+                final hours = hoursTo80.ceil();
+                final days = hours ~/ 24;
+                final remHours = hours % 24;
+                String timeStr = days > 0
+                    ? (remHours > 0 ? '$days d $remHours h' : '$days d')
+                    : '$remHours h';
+                return Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: Row(
+                    children: [
+                      Icon(Icons.schedule, color: Colors.blue, size: 16),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Next optimal training window: In $timeStr',
+                        style: TextStyle(fontSize: 13, color: Colors.blue, fontWeight: FontWeight.w500),
+                      ),
+                    ],
+                  ),
+                );
+              }
+            },
+          ),
+
           const SizedBox(height: 12),
 
           // Additional info

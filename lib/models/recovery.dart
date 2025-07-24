@@ -319,16 +319,16 @@ class RecoveryCalculator {
           double reduction = currentRecovery * weightedFatigueScoreCurve;
           double reducedRecovery = currentRecovery - reduction;
           
-          // Use minimum recovery threshold from the most intense exercise
-          final minRecovery = exerciseLoads.map((e) => getMinimumRecoveryThreshold(e.exerciseType)).reduce((a, b) => a < b ? a : b);
-          final result = reducedRecovery.clamp(minRecovery, 100.0);
-          return result;
+          // Option A: For subsequent workouts, allow going below minRecovery, but not below 5%
+          final result = reducedRecovery < 5.0 ? 5.0 : reducedRecovery;
+          return result.clamp(0.0, 100.0);
         } else {
           // Same session, just combining exercises - use the recovery for these exercises
           return exercisesOnlyRecovery;
         }
       } else {
         // First workout for this muscle group
+        // Enforce minRecovery only on initial drop
         return initialRecovery;
       }
     } else {
@@ -642,13 +642,36 @@ class RecoveryCalculator {
   }
 
   /// Get muscle groups from exercise names
-  static List<String> getMuscleGroupsFromExercise(String exerciseName) {
+  static List<String> getMuscleGroupsFromExercise(String exerciseName, {String? mainMuscle}) {
+    // If mainMuscle is provided, use it for grouping
+    if (mainMuscle != null && mainMuscle.trim().isNotEmpty) {
+      final normalized = mainMuscle.trim().toLowerCase();
+      // Map common mainMuscle values to recovery muscle groups
+      if (normalized.contains('chest')) return ['Chest'];
+      if (normalized.contains('bicep')) return ['Biceps'];
+      if (normalized.contains('tricep')) return ['Triceps'];
+      if (normalized.contains('shoulder') || normalized.contains('deltoid')) return ['Shoulders'];
+      if (normalized.contains('back') || normalized.contains('lat') || normalized.contains('trap') || normalized.contains('rhomboid')) return ['Back'];
+      if (normalized.contains('quad')) return ['Quadriceps'];
+      if (normalized.contains('hamstring')) return ['Hamstrings'];
+      if (normalized.contains('glute')) return ['Glutes'];
+      if (normalized.contains('calf')) return ['Calves'];
+      if (normalized.contains('forearm')) return ['Forearms'];
+      if (normalized.contains('neck')) return ['Neck'];
+      if (normalized.contains('core') || normalized.contains('abs')) return ['Core'];
+    }
     final lowerName = exerciseName.toLowerCase();
     
     // Compound exercises that affect multiple muscle groups
     if (lowerName.contains('bench')) {
       return ['Chest', 'Triceps']; // Bench press affects chest and triceps
-    } else if (lowerName.contains('row') || lowerName.contains('pulldown') || lowerName.contains('lat')) {
+    }
+    // Shoulders and raises (should come before 'lat' to avoid matching 'lateral')
+    else if (lowerName.contains('shoulder') || lowerName.contains('raise')) {
+      return ['Shoulders'];
+    }
+    // Specific lat/back checks
+    else if (lowerName.contains('row') || lowerName.contains('pulldown') || lowerName.contains('lat pulldown') || lowerName.contains('lat pullover') || lowerName.contains('lat row')) {
       return ['Back', 'Biceps']; // Rows and pulldowns affect back and biceps
     } else if (lowerName.contains('press') && !lowerName.contains('bench')) {
       return ['Shoulders', 'Triceps']; // Overhead press affects shoulders and triceps
@@ -665,8 +688,6 @@ class RecoveryCalculator {
       return ['Biceps'];
     } else if (lowerName.contains('tricep') || lowerName.contains('pushdown') || lowerName.contains('skull')) {
       return ['Triceps'];
-    } else if (lowerName.contains('shoulder') || lowerName.contains('raise')) {
-      return ['Shoulders'];
     } else if (lowerName.contains('trap')) {
       return ['Back'];
     } else if (lowerName.contains('leg') && !lowerName.contains('deadlift') && !lowerName.contains('squat')) {
@@ -783,5 +804,41 @@ class RecoveryCalculator {
     // Adjust baseline based on body weight
     // Heavier individuals can handle more volume
     return defaultBaseline * weightFactor;
+  }
+
+  /// Estimate hours from now until recovery crosses a given threshold (e.g., 80%)
+  static double? estimateHoursToRecoveryThreshold({
+    required double currentRecovery,
+    required double fatigueScore,
+    required String muscleGroup,
+    required double lastTrainedHoursAgo,
+    double threshold = 80.0,
+    double? userWorkoutLoad,
+  }) {
+    // If already above threshold, return 0
+    if (currentRecovery >= threshold) return 0;
+    // Use default workout load for time-based recovery
+    final muscleRate = muscleRecoveryRates[muscleGroup] ?? muscleRecoveryRates['Other']!;
+    final workoutLoad = getWorkoutLoad(muscleGroup, userWorkoutLoad: userWorkoutLoad);
+    final exerciseMultiplier = getExerciseTypeMultiplier('Bench Press'); // Use default compound
+    double k = (muscleRate * exerciseMultiplier) / log(workoutLoad + 1);
+    double fatigueFactor = 1.0;
+    if (fatigueScore > 1.5) fatigueFactor = 0.8;
+    double adjustedK = k * fatigueFactor;
+    // Solve for t in: recovery = current + (100 - current) * (1 - exp(-k * t))
+    // threshold = current + (100 - current) * (1 - exp(-k * t))
+    // (threshold - current) / (100 - current) = 1 - exp(-k * t)
+    // exp(-k * t) = 1 - (threshold - current) / (100 - current)
+    // -k * t = ln(1 - (threshold - current) / (100 - current))
+    // t = -ln(1 - (threshold - current) / (100 - current)) / k
+    final ratio = (threshold - currentRecovery) / (100 - currentRecovery);
+    if (ratio >= 1) return null; // Will never reach threshold
+    if (ratio <= 0) return 0;
+    final expArg = 1 - ratio;
+    if (expArg <= 0) return null;
+    final t = -log(expArg) / adjustedK;
+    // Subtract hours since last trained, since recovery already started
+    final hoursToGo = t - lastTrainedHoursAgo;
+    return hoursToGo > 0 ? hoursToGo : 0;
   }
 } 

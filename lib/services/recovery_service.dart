@@ -157,7 +157,7 @@ class RecoveryService {
         workoutExercisesByMuscleGroup[workout.id] = {};
         
         for (final exercise in workout.exercises) {
-          final exerciseMuscleGroups = RecoveryCalculator.getMuscleGroupsFromExercise(exercise.title);
+          final exerciseMuscleGroups = RecoveryCalculator.getMuscleGroupsFromExercise(exercise.title, mainMuscle: exercise.mainMuscle);
           
           for (final muscleGroup in exerciseMuscleGroups) {
             // Calculate training load for this exercise
@@ -247,9 +247,9 @@ class RecoveryService {
               final List<double> weeklyVolumes = sortedWorkouts
                   .where((w) => w.date.isBefore(sessionStartTime))
                   .where((w) => w.exercises.any((e) => 
-                      RecoveryCalculator.getMuscleGroupsFromExercise(e.title).contains(muscleGroup)))
+                      RecoveryCalculator.getMuscleGroupsFromExercise(e.title, mainMuscle: e.mainMuscle).contains(muscleGroup)))
                   .map((w) => w.exercises
-                      .where((e) => RecoveryCalculator.getMuscleGroupsFromExercise(e.title).contains(muscleGroup))
+                      .where((e) => RecoveryCalculator.getMuscleGroupsFromExercise(e.title, mainMuscle: e.mainMuscle).contains(muscleGroup))
                       .fold(0.0, (total, e) {
                         final completedSets = e.sets.where((set) => set.isCompleted).length;
                         if (completedSets > 0) {
