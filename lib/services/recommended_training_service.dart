@@ -240,7 +240,6 @@ class RecommendedTrainingService {
       if (isPushDay) {
         // Determine user level
         String level = fitnessLevel.toLowerCase();
-        int chestCount = 0, shoulderCount = 0, tricepsCount = 0, totalCount = 0;
         int chestTarget = 2, shoulderTarget = 1, tricepsTarget = 1, minTotal = 4, maxTotal = 5;
         if (level == 'intermediate') {
           chestTarget = 2; shoulderTarget = 1; tricepsTarget = 1; minTotal = 5; maxTotal = 6;
@@ -261,12 +260,9 @@ class RecommendedTrainingService {
         // Select unique exercises first
         List<ExerciseInformation> selected = [];
         selected.addAll(chest.take(chestTarget));
-        chestCount = selected.where((e) => e.mainMuscle.toLowerCase().contains('chest')).length;
         selected.addAll(shoulders.take(shoulderTarget));
-        shoulderCount = selected.where((e) => e.mainMuscle.toLowerCase().contains('shoulder')).length;
         selected.addAll(triceps.take(tricepsTarget));
-        tricepsCount = selected.where((e) => e.mainMuscle.toLowerCase().contains('tricep')).length;
-        totalCount = selected.length;
+        int totalCount = selected.length;
         // If not enough, fill with remaining unique push exercises
         List<ExerciseInformation> remaining = [
           ...chest.skip(chestTarget),

@@ -5,7 +5,7 @@ import 'package:gymfit/services/theme_service.dart';
 import 'package:gymfit/pages/me/recovery_help_page.dart';
 
 class RecommendedTrainingHelpPage extends StatelessWidget {
-  const RecommendedTrainingHelpPage({Key? key}) : super(key: key);
+  const RecommendedTrainingHelpPage({super.key});
 
   Widget _sectionHeader({
     required IconData icon,

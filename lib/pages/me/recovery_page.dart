@@ -403,7 +403,7 @@ class _RecoveryPageState extends State<RecoveryPage> with AutomaticKeepAliveClie
               final now = DateTime.now();
               final hoursSinceLastTrained = now.difference(muscleGroup.lastTrained).inHours.toDouble();
               // Use the most recent exercise type for this muscle group if available
-              final recentExerciseType = recoveryData?.recentExerciseTypes?[muscleGroup.name] ?? 'Bench Press';
+              final recentExerciseType = recoveryData?.recentExerciseTypes[muscleGroup.name] ?? 'Bench Press';
               final hoursTo80 = RecoveryCalculator.estimateHoursToRecoveryThreshold(
                 currentRecovery: muscleGroup.recoveryPercentage,
                 fatigueScore: muscleGroup.fatigueScore,

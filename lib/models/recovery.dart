@@ -343,14 +343,6 @@ class RecoveryCalculator {
         // FIXED ORDER: Step 1 - Apply time-based recovery first
         final muscleRate = muscleRecoveryRates[muscleGroup] ?? muscleRecoveryRates['Other']!;
         
-        // Use weighted average exercise multiplier
-        double weightedExerciseMultiplier = 0.0;
-        for (final exerciseData in exerciseLoads) {
-          final weight = exerciseData.baseLoad / totalBaseLoad;
-          final exerciseMultiplier = getExerciseTypeMultiplier(exerciseData.exerciseType);
-          weightedExerciseMultiplier += weight * exerciseMultiplier;
-        }
-        
         // k = muscleRate / log(totalBaseLoad + 1) (no exercise multiplier)
         double k = muscleRate / log(totalBaseLoad + 1);
         
@@ -380,14 +372,6 @@ class RecoveryCalculator {
       } else {
         // No previous recovery data, use initial recovery with time-based recovery
         final muscleRate = muscleRecoveryRates[muscleGroup] ?? muscleRecoveryRates['Other']!;
-        
-        // Use weighted average exercise multiplier
-        double weightedExerciseMultiplier = 0.0;
-        for (final exerciseData in exerciseLoads) {
-          final weight = exerciseData.baseLoad / totalBaseLoad;
-          final exerciseMultiplier = getExerciseTypeMultiplier(exerciseData.exerciseType);
-          weightedExerciseMultiplier += weight * exerciseMultiplier;
-        }
         
         // k = muscleRate / log(totalBaseLoad + 1) (no exercise multiplier)
         double k = muscleRate / log(totalBaseLoad + 1);

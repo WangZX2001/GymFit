@@ -8,7 +8,6 @@ import 'package:gymfit/pages/workout/quick_start_page_optimized.dart';
 import 'package:gymfit/components/quick_start_overlay.dart';
 import 'package:provider/provider.dart';
 import 'package:gymfit/services/theme_service.dart';
-import 'package:gymfit/components/chatbot.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
@@ -39,9 +38,7 @@ class _RecommendedTrainingPageState extends State<RecommendedTrainingPage> {
 
   // View toggle state
   bool _showCalendarView = false;
-  DateTime _focusedDay = DateTime.now();
-  String? _selectedPlanDay;
-  DateTime? _calendarSelectedDate;
+  DateTime _calendarSelectedDate = DateTime.now();
 
   final List<String> _weekDays = [
     'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'
@@ -214,7 +211,7 @@ class _RecommendedTrainingPageState extends State<RecommendedTrainingPage> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.1),
+                    color: Colors.blue.withAlpha(25),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
@@ -327,7 +324,7 @@ class _RecommendedTrainingPageState extends State<RecommendedTrainingPage> {
     List<DateTime> planDates = dayNameToDate.values.toList();
 
     // Track selected calendar day (default to today if in week, else first plan day)
-    if (_calendarSelectedDate == null) {
+    if (_calendarSelectedDate == DateTime.now()) {
       if (today.isAfter(weekStart.subtract(const Duration(days: 1))) && today.isBefore(weekStart.add(const Duration(days: 7)))) {
         _calendarSelectedDate = today;
       } else {
@@ -341,11 +338,11 @@ class _RecommendedTrainingPageState extends State<RecommendedTrainingPage> {
         TableCalendar<DateTime>(
           firstDay: weekStart,
           lastDay: weekStart.add(const Duration(days: 6)),
-          focusedDay: _calendarSelectedDate!,
+          focusedDay: _calendarSelectedDate,
           calendarFormat: CalendarFormat.week,
           startingDayOfWeek: StartingDayOfWeek.monday,
           availableGestures: AvailableGestures.horizontalSwipe,
-          selectedDayPredicate: (day) => isSameDay(day, _calendarSelectedDate!),
+          selectedDayPredicate: (day) => isSameDay(day, _calendarSelectedDate),
           eventLoader: (day) => planDates.where((d) => isSameDay(d, day)).toList(),
           calendarBuilders: CalendarBuilders(
             markerBuilder: (context, day, events) {
@@ -375,7 +372,6 @@ class _RecommendedTrainingPageState extends State<RecommendedTrainingPage> {
           onDaySelected: (selected, focused) {
             setState(() {
               _calendarSelectedDate = selected;
-              _focusedDay = focused;
             });
           },
           headerVisible: false,
@@ -384,7 +380,7 @@ class _RecommendedTrainingPageState extends State<RecommendedTrainingPage> {
         Builder(
           builder: (_) {
             // Get the weekday name for the selected date
-            String selectedWeekdayName = _weekDays[_calendarSelectedDate!.weekday - 1];
+            String selectedWeekdayName = _weekDays[_calendarSelectedDate.weekday - 1];
             if (days.contains(selectedWeekdayName) && _weekPlan![selectedWeekdayName] != null) {
               return _buildPlanDayExercises(selectedWeekdayName);
             } else {
@@ -694,7 +690,7 @@ class _RecommendedTrainingPageState extends State<RecommendedTrainingPage> {
     final themeService = Provider.of<ThemeService>(context);
     return Chip(
       avatar: CircleAvatar(
-        backgroundColor: color.withOpacity(0.15),
+        backgroundColor: color.withAlpha(25),
         child: FaIcon(icon, color: color, size: 16),
       ),
       label: Text(
@@ -706,7 +702,7 @@ class _RecommendedTrainingPageState extends State<RecommendedTrainingPage> {
           fontSize: 12,
         ),
       ),
-      backgroundColor: color.withOpacity(0.07),
+      backgroundColor: color.withAlpha(17),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
     );
@@ -1052,7 +1048,6 @@ class _RecommendedTrainingPageState extends State<RecommendedTrainingPage> {
   }
 
   Widget _buildQuestionnaire() {
-    final themeService = Provider.of<ThemeService>(context);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
       child: Column(
@@ -1419,7 +1414,7 @@ class _RecommendedTrainingPageState extends State<RecommendedTrainingPage> {
                               color: Colors.transparent,
                               child: InkWell(
                                 borderRadius: BorderRadius.circular(10),
-                                splashColor: themeService.currentTheme.colorScheme.primary.withOpacity(0.08),
+                                splashColor: themeService.currentTheme.colorScheme.primary.withAlpha(20),
                                 onTap: () {
                                   setState(() {
                                     _questionnaireCompleted = false;
