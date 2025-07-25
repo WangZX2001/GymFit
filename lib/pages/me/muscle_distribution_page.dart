@@ -139,8 +139,8 @@ class _MuscleDistributionPageState extends State<MuscleDistributionPage> {
           style: themeService.currentTheme.appBarTheme.titleTextStyle,
         ),
         leading: IconButton(
-          icon: FaIcon(
-            FontAwesomeIcons.arrowLeft, 
+          icon: Icon(
+            Icons.arrow_back,
             color: themeService.currentTheme.appBarTheme.foregroundColor,
           ),
           onPressed: () {

@@ -107,103 +107,95 @@ class _WorkoutNameEditorState extends State<WorkoutNameEditor> {
       );
     }
 
-    return Card(
-      color: themeService.currentTheme.cardTheme.color,
-      margin: const EdgeInsets.only(bottom: 16),
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            const FaIcon(
-              FontAwesomeIcons.tag,
-              color: Colors.purple,
-              size: 20,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Workout Name',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  widget.isEditing
-                      ? TextField(
-                          controller: _workoutNameController,
-                          focusNode: _workoutNameFocusNode,
-                          decoration: InputDecoration(
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: const BorderSide(color: Colors.purple),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: const BorderSide(
-                                color: Colors.purple,
-                                width: 2,
-                              ),
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 8,
-                            ),
-                            hintText: 'Enter workout name',
-                            hintStyle: TextStyle(
-                              color: themeService.isDarkMode ? Colors.grey.shade500 : Colors.grey.shade400,
-                            ),
-                          ),
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
+    // Remove Card and Padding for direct-on-page look
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        const FaIcon(
+          FontAwesomeIcons.tag,
+          color: Colors.purple,
+          size: 20,
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Workout Name',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 4),
+              widget.isEditing
+                  ? TextField(
+                      controller: _workoutNameController,
+                      focusNode: _workoutNameFocusNode,
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(color: Colors.purple),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(
                             color: Colors.purple,
+                            width: 2,
                           ),
-                          maxLength: 50,
-                          onSubmitted: (_) => _handleSubmitted(),
-                          textInputAction: TextInputAction.done,
-                        )
-                      : GestureDetector(
-                          onTap: _handleToggleEditing,
-                          child: SizedBox(
-                            width: double.infinity,
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 8,
-                              ),
-                              child: Text(
-                                widget.currentWorkoutName,
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.purple,
-                                ),
-                              ),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        hintText: 'Enter workout name',
+                        hintStyle: TextStyle(
+                          color: themeService.isDarkMode ? Colors.grey.shade500 : Colors.grey.shade400,
+                        ),
+                      ),
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.purple,
+                      ),
+                      maxLength: 50,
+                      onSubmitted: (_) => _handleSubmitted(),
+                      textInputAction: TextInputAction.done,
+                    )
+                  : GestureDetector(
+                      onTap: _handleToggleEditing,
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          child: Text(
+                            widget.currentWorkoutName,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.purple,
                             ),
                           ),
                         ),
-                ],
-              ),
-            ),
-            IconButton(
-              onPressed: _handleToggleEditing,
-              icon: Icon(
-                widget.isEditing ? Icons.check : Icons.edit,
-                color: Colors.purple,
-                size: 20,
-              ),
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
-            ),
-          ],
+                      ),
+                    ),
+            ],
+          ),
         ),
-      ),
+        IconButton(
+          onPressed: _handleToggleEditing,
+          icon: Icon(
+            widget.isEditing ? Icons.check : Icons.edit,
+            color: Colors.purple,
+            size: 20,
+          ),
+        ),
+      ],
     );
   }
 } 

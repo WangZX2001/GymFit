@@ -3,6 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import 'package:gymfit/services/theme_service.dart';
 
 class WeightTrendGraph extends StatefulWidget {
   const WeightTrendGraph({super.key});
@@ -74,6 +76,12 @@ class WeightTrendGraphState extends State<WeightTrendGraph> {
 
   @override
   Widget build(BuildContext context) {
+    final themeService = Provider.of<ThemeService>(context);
+    final isDark = themeService.isDarkMode;
+    final textColor = themeService.currentTheme.textTheme.bodyMedium?.color ?? Colors.black;
+    final gridColor = isDark ? Colors.grey[700] : Colors.grey[300];
+    final borderColor = isDark ? Colors.grey[600] : Colors.grey[400];
+    
     return isLoading
         ? const Center(child: CircularProgressIndicator())
         : SizedBox(
@@ -93,7 +101,10 @@ class WeightTrendGraphState extends State<WeightTrendGraph> {
                           index >= 0 && index < xLabels.length
                               ? xLabels[index]
                               : '',
-                          style: const TextStyle(fontSize: 10),
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: textColor,
+                          ),
                           textAlign: TextAlign.center,
                         );
                       },
@@ -107,7 +118,10 @@ class WeightTrendGraphState extends State<WeightTrendGraph> {
                       getTitlesWidget:
                           (value, meta) => Text(
                             '${value.toInt()}kg',
-                            style: const TextStyle(fontSize: 10),
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: textColor,
+                            ),
                           ),
                     ),
                   ),
@@ -134,8 +148,31 @@ class WeightTrendGraphState extends State<WeightTrendGraph> {
                           ),
                         ]
                         : [],
-                gridData: FlGridData(show: true),
-                borderData: FlBorderData(show: true),
+                gridData: FlGridData(
+                  show: true,
+                  drawVerticalLine: true,
+                  horizontalInterval: 5,
+                  verticalInterval: 1,
+                  getDrawingHorizontalLine: (value) {
+                    return FlLine(
+                      color: gridColor!,
+                      strokeWidth: 1,
+                    );
+                  },
+                  getDrawingVerticalLine: (value) {
+                    return FlLine(
+                      color: gridColor!,
+                      strokeWidth: 1,
+                    );
+                  },
+                ),
+                borderData: FlBorderData(
+                  show: true,
+                  border: Border.all(
+                    color: borderColor!,
+                    width: 1,
+                  ),
+                ),
                 minX: 0,
                 maxX: 6,
               ),

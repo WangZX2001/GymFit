@@ -119,6 +119,7 @@ class _EquipmentSelectionPageState extends State<EquipmentSelectionPage> {
               style: TextStyle(
                 color: selectedEquipment.isEmpty ? Colors.grey : Colors.red,
                 fontSize: 20,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ),
@@ -139,17 +140,20 @@ class _EquipmentSelectionPageState extends State<EquipmentSelectionPage> {
                 ? const Color(0xFF2A2A2A)
                 : Colors.grey.shade50,
             child: CheckboxListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 2.0),
               title: Text(
                 'All Equipment',
                 style: TextStyle(
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w700,
                   color: themeService.currentTheme.textTheme.titleMedium?.color,
                 ),
               ),
               subtitle: Text(
                 'Include exercises for all equipment types',
                 style: TextStyle(
+                  fontWeight: FontWeight.w500,
                   color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey.shade600,
+                  fontSize: 11,
                 ),
               ),
               value: selectedEquipment.length == equipmentTypes.length,
@@ -178,35 +182,40 @@ class _EquipmentSelectionPageState extends State<EquipmentSelectionPage> {
                   color: themeService.isDarkMode 
                       ? const Color(0xFF2A2A2A)
                       : Colors.grey.shade50,
-                  child: ListTile(
-                    leading: FaIcon(
-                      equipmentIcons[equipment],
-                      color: isSelected ? Colors.blue : (themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey),
-                    ),
-                    title: Text(
-                      equipment,
-                      style: TextStyle(
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                        color: themeService.currentTheme.textTheme.titleMedium?.color,
-                      ),
+                  child: CheckboxListTile(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 2.0),
+                    title: Row(
+                      children: [
+                        FaIcon(
+                          equipmentIcons[equipment],
+                          color: isSelected ? Colors.blue : (themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey),
+                          size: 16,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            equipment,
+                            style: TextStyle(
+                              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                              color: themeService.currentTheme.textTheme.titleMedium?.color,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     subtitle: Text(
                       equipmentDescriptions[equipment] ?? '',
                       style: TextStyle(
+                        fontWeight: FontWeight.w500,
                         color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey[600],
-                        fontSize: 12,
+                        fontSize: 11,
                       ),
                     ),
-                    trailing: Checkbox(
-                      value: isSelected,
-                      onChanged: (bool? value) {
-                        _toggleSelection(equipment);
-                      },
-                      activeColor: Colors.blue,
-                    ),
-                    onTap: () {
+                    value: isSelected,
+                    onChanged: (bool? value) {
                       _toggleSelection(equipment);
                     },
+                    activeColor: Colors.blue,
                   ),
                 );
               },
@@ -217,7 +226,7 @@ class _EquipmentSelectionPageState extends State<EquipmentSelectionPage> {
             color: themeService.isDarkMode 
                 ? Colors.black
                 : Colors.grey.shade50,
-            padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 32.0),
+            padding: const EdgeInsets.fromLTRB(16.0, 8.0, 16.0, 32.0),
             child: Column(
               children: [
                 if (selectedEquipment.isNotEmpty)
@@ -225,32 +234,37 @@ class _EquipmentSelectionPageState extends State<EquipmentSelectionPage> {
                     padding: const EdgeInsets.only(bottom: 12.0),
                     child: Text(
                       '${selectedEquipment.length} equipment type${selectedEquipment.length == 1 ? '' : 's'} selected',
+                      textAlign: TextAlign.center,
                       style: TextStyle(
                         color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey[600],
                         fontSize: 14,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
                 SizedBox(
                   width: double.infinity,
-                  child: ElevatedButton(
+                  child: OutlinedButton(
                     onPressed: () {
                       Navigator.pop(context, selectedEquipment.toList());
                     },
-                    style: ElevatedButton.styleFrom(
+                    style: OutlinedButton.styleFrom(
                       backgroundColor: themeService.isDarkMode ? Colors.white : Colors.black,
                       foregroundColor: themeService.isDarkMode ? Colors.black : Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                      side: BorderSide(
+                        color: themeService.isDarkMode ? Colors.white : Colors.black,
+                        width: 1.5,
                       ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 8),
                     ),
                     child: Text(
                       'Apply Selection',
                       style: TextStyle(
-                        fontSize: 16, 
-                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w900,
                         color: themeService.isDarkMode ? Colors.black : Colors.white,
                       ),
                     ),

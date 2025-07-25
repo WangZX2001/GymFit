@@ -45,24 +45,29 @@ class WorkoutPage extends StatelessWidget {
       _showQuickStartConfirmationDialog(context).then((shouldStartNew) {
         if (shouldStartNew) {
           // Add haptic feedback when starting new workout after confirmation
-          HapticFeedback.mediumImpact();
+          HapticFeedback.heavyImpact();
           // Clear existing workout
           QuickStartOverlay.selectedExercises.clear();
           QuickStartOverlay.resetTimer();
           
           // Clear any existing custom workout name for fresh start
           QuickStartOverlay.customWorkoutName = null;
-          // Open quick start after confirmation
-          // ignore: use_build_context_synchronously
-          QuickStartOverlay.openQuickStart(context);
+          // Open quick start after confirmation with slight delay for more deliberate feel
+          Future.delayed(const Duration(milliseconds: 50), () {
+            if (!context.mounted) return;
+            QuickStartOverlay.openQuickStart(context);
+          });
         }
       });
     } else {
       // Add haptic feedback when starting new workout
-      HapticFeedback.mediumImpact();
-      // No confirmation needed, start directly
+      HapticFeedback.heavyImpact();
+      // No confirmation needed, start directly with slight delay for more deliberate feel
       QuickStartOverlay.customWorkoutName = null;
-      QuickStartOverlay.openQuickStart(context);
+      Future.delayed(const Duration(milliseconds: 50), () {
+        if (!context.mounted) return;
+        QuickStartOverlay.openQuickStart(context);
+      });
     }
   }
 

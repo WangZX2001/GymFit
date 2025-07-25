@@ -27,8 +27,8 @@ class _StatisticsPageState extends State<StatisticsPage> {
           style: themeService.currentTheme.appBarTheme.titleTextStyle,
         ),
         leading: IconButton(
-          icon: FaIcon(
-            FontAwesomeIcons.arrowLeft, 
+          icon: Icon(
+            Icons.arrow_back,
             color: themeService.currentTheme.appBarTheme.foregroundColor,
           ),
           onPressed: () {

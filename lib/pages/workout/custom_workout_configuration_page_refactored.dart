@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
 
-import 'package:gymfit/components/custom_workout_exercise_card.dart';
+import 'package:gymfit/components/generic_exercise_card.dart';
+import 'package:gymfit/components/shared_adapters.dart';
 import 'package:gymfit/components/custom_workout_add_button.dart';
 import 'package:gymfit/models/custom_workout.dart';
 import 'package:gymfit/pages/workout/workout_name_description_page.dart';
 import 'package:gymfit/services/custom_workout_configuration_state_manager.dart';
 import 'package:gymfit/services/theme_service.dart';
+
+
+
+
 
 class CustomWorkoutConfigurationPage extends StatefulWidget {
   final List<String> exerciseNames;
@@ -200,35 +204,55 @@ class _CustomWorkoutConfigurationPageState
     });
   }
 
-  void _handleRemoveExercise(int index) {
-    // Immediately clear focus to prevent errors
-    if (mounted) {
-      try {
-        FocusScope.of(context).unfocus();
-      } catch (e) {
-        // Context might be invalid, use fallback
+  void _handleRemoveExercise(ExerciseData exerciseData) {
+    if (exerciseData is ConfigExerciseAdapter) {
+      // Immediately clear focus to prevent errors
+      if (mounted) {
+        try {
+          FocusScope.of(context).unfocus();
+        } catch (e) {
+          // Context might be invalid, use fallback
+        }
+      }
+
+      final exercise = exerciseData.exercise;
+      final index = _stateManager.exercises.indexOf(exercise);
+      if (index != -1) {
+        _exerciseKeys.remove(exercise.id); // Clean up key
+        _stateManager.removeExercise(index);
       }
     }
-
-    final exerciseToRemove = _stateManager.exercises[index];
-    _exerciseKeys.remove(exerciseToRemove.id); // Clean up key
-    _stateManager.removeExercise(index);
   }
 
-  void _handleRemoveSet(ConfigExercise exercise, ConfigSet set) {
-    _stateManager.removeSetFromExercise(exercise, set);
+  void _handleRemoveSet(ExerciseData exerciseData, dynamic set) {
+    if (exerciseData is ConfigExerciseAdapter && set is ConfigSetAdapter) {
+      final exercise = exerciseData.exercise;
+      final configSet = set.configSet;
+      _stateManager.removeSetFromExercise(exercise, configSet);
+    }
   }
 
-  void _handleAddSet(ConfigExercise exercise) {
-    _stateManager.addSetToExercise(exercise);
+  void _handleAddSet(ExerciseData exerciseData) {
+    if (exerciseData is ConfigExerciseAdapter) {
+      final exercise = exerciseData.exercise;
+      _stateManager.addSetToExercise(exercise);
+    }
   }
 
-  void _handleWeightChanged() {
+  void _handleWeightChanged(ExerciseData exerciseData, dynamic set, double weight) {
     // Weight changed callback - can be used for future enhancements
   }
 
-  void _handleRepsChanged() {
+  void _handleRepsChanged(ExerciseData exerciseData, dynamic set, int reps) {
     // Reps changed callback - can be used for future enhancements
+  }
+
+  void _handleSetCheckedChanged(ExerciseData exerciseData, dynamic set, bool checked) {
+    // No checkboxes in custom workout configuration
+  }
+
+  void _handleAllSetsCheckedChanged(ExerciseData exerciseData, bool checked) {
+    // No checkboxes in custom workout configuration
   }
 
   void _handleReorderStart(int index) {
@@ -361,145 +385,117 @@ class _CustomWorkoutConfigurationPageState
                       ),
                     ],
                   ),
-              body: GestureDetector(
-                onTap: () {
-                  // Dismiss keyboard when tapping outside text fields
-                  _clearFocusAggressively();
-                },
-                behavior: HitTestBehavior.translucent,
-                child: Column(
-                  children: [
-                    Expanded(
-                      child:
-                          stateManager.isInReorderMode
-                              ? ReorderableListView.builder(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16.0,
-                                ),
-                                physics: const AlwaysScrollableScrollPhysics(),
-                                itemCount: stateManager.exercises.length,
-                                onReorder: (int oldIndex, int newIndex) {
-                                  // Provide haptic feedback when reordering
-                                  HapticFeedback.lightImpact();
-                                  
-                                  _stateManager.reorderExercises(
-                                    oldIndex,
-                                    newIndex,
-                                  );
-                                },
-                                onReorderStart: (int index) {
-                                  _handleReorderStart(index);
-                                },
-                                onReorderEnd: (int index) {
-                                  _handleReorderEnd(index);
-                                },
-                                itemBuilder: (context, index) {
-                                  final exercise =
-                                      stateManager.exercises[index];
-                                  return Card(
-                                    key: Key('card_${exercise.id}'),
-                                    color: themeService.currentTheme.cardTheme.color,
-                                    margin: const EdgeInsets.symmetric(
-                                      vertical: 4,
-                                    ),
-                                    child: CustomWorkoutExerciseCard(
-                                      exercise: exercise,
-                                      index: index,
-                                      isCollapsed: true,
-                                      isNewlyAdded: stateManager
-                                          .isExerciseNewlyAdded(exercise),
-                                      preventAutoFocus:
-                                          stateManager.preventAutoFocus,
-                                      onRequestReorderMode:
-                                          _handleRequestReorderMode,
-                                      onAddSet: () => _handleAddSet(exercise),
-                                      onRemoveSet:
-                                          (set) =>
-                                              _handleRemoveSet(exercise, set),
-                                      onWeightChanged: _handleWeightChanged,
-                                      onRepsChanged: _handleRepsChanged,
-                                    ),
-                                  );
-                                },
-                              )
-                              : SingleChildScrollView(
-                                controller: _scrollController,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16.0,
-                                ),
-                                child: Column(
-                                  children: [
-                                    for (int index = 0; index < stateManager.exercises.length; index++) ...[
-                                      Builder(
-                                        builder: (context) {
-                                          final exercise = stateManager.exercises[index];
-                                          final cardKey = _exerciseKeys.putIfAbsent(exercise.id, () => GlobalKey());
-                                          return Dismissible(
-                                            key: Key('exercise_${exercise.id}'),
-                                            direction: DismissDirection.endToStart,
-                                            background: Container(
-                                              alignment: Alignment.centerRight,
-                                              padding: const EdgeInsets.only(right: 20),
-                                              margin: const EdgeInsets.symmetric(
-                                                vertical: 4,
-                                              ),
-                                              decoration: BoxDecoration(
-                                                color: themeService.isDarkMode ? Colors.red.shade700 : Colors.red,
-                                                borderRadius: BorderRadius.circular(12),
-                                              ),
-                                              child: const FaIcon(
-                                                FontAwesomeIcons.trash,
-                                                color: Colors.white,
-                                                size: 24,
-                                              ),
-                                            ),
-                                            onDismissed: (direction) {
-                                              _handleRemoveExercise(index);
-                                            },
-                                            child: Card(
-                                              key: cardKey,
-                                              color: themeService.currentTheme.cardTheme.color,
-                                              margin: const EdgeInsets.symmetric(
-                                                vertical: 4,
-                                              ),
-                                              child: CustomWorkoutExerciseCard(
-                                                exercise: exercise,
-                                                index: index,
-                                                isCollapsed: false,
-                                                isNewlyAdded: stateManager
-                                                    .isExerciseNewlyAdded(exercise),
-                                                preventAutoFocus:
-                                                    stateManager.preventAutoFocus,
-                                                onRequestReorderMode:
-                                                    _handleRequestReorderMode,
-                                                onAddSet: () => _handleAddSet(exercise),
-                                                onRemoveSet:
-                                                    (set) =>
-                                                        _handleRemoveSet(exercise, set),
-                                                onWeightChanged: _handleWeightChanged,
-                                                onRepsChanged: _handleRepsChanged,
-                                              ),
-                                            ),
+                  body: GestureDetector(
+                    onTap: () {
+                      // Dismiss keyboard when tapping outside text fields
+                      _clearFocusAggressively();
+                    },
+                    behavior: HitTestBehavior.translucent,
+                    child: Column(
+                      children: [
+                        Expanded(
+                          child:
+                              stateManager.isInReorderMode
+                                  ? Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 2.0),
+                                      child: ReorderableListView(
+                                        shrinkWrap: true,
+                                        physics: const AlwaysScrollableScrollPhysics(),
+                                        onReorder: (int oldIndex, int newIndex) {
+                                          // Provide haptic feedback when reordering
+                                          HapticFeedback.lightImpact();
+                                          
+                                          _stateManager.reorderExercises(
+                                            oldIndex,
+                                            newIndex,
                                           );
                                         },
+                                        onReorderStart: (int index) {
+                                          _handleReorderStart(index);
+                                        },
+                                        onReorderEnd: (int index) {
+                                          _handleReorderEnd(index);
+                                        },
+                                        children: stateManager.exercises.asMap().entries.map((entry) {
+                                          final index = entry.key;
+                                          final exercise = entry.value;
+                                          return Container(
+                                            key: Key('exercise_${exercise.title}_$index'),
+                                            margin: const EdgeInsets.only(bottom: 6.0),
+                                            child: GenericExerciseCard(
+                                              exercise: ConfigExerciseAdapter(exercise),
+                                              exerciseIndex: index,
+                                              isCollapsed: true,
+                                              isNewlyAdded: stateManager.isExerciseNewlyAdded(exercise),
+                                              preventAutoFocus: stateManager.preventAutoFocus,
+                                              onRemoveExercise: _handleRemoveExercise,
+                                              onRemoveSet: _handleRemoveSet,
+                                              onWeightChanged: _handleWeightChanged,
+                                              onRepsChanged: _handleRepsChanged,
+                                              onSetCheckedChanged: _handleSetCheckedChanged,
+                                              onAllSetsCheckedChanged: _handleAllSetsCheckedChanged,
+                                              onAddSet: () => _handleAddSet(ConfigExerciseAdapter(exercise)),
+                                              onRequestReorderMode: _handleRequestReorderMode,
+                                              rowHeight: 32.0, // Increased height for custom workout configuration
+                                              headerSpacing: 8.0, // Add spacing between header and divider
+                                            ),
+                                          );
+                                        }).toList(),
                                       ),
-                                    ],
-                                    const SizedBox(height: 100), // bottom padding
-                                  ],
-                                ),
-                              ),
+                                    )
+                                  : SingleChildScrollView(
+                                    controller: _scrollController,
+                                    padding: EdgeInsets.zero,
+                                    child: Column(
+                                      children: [
+                                        for (int index = 0; index < stateManager.exercises.length; index++) ...[
+                                          Builder(
+                                            builder: (context) {
+                                              final exercise = stateManager.exercises[index];
+                                              final cardKey = _exerciseKeys.putIfAbsent(exercise.id, () => GlobalKey());
+                                              return Card(
+                                                key: cardKey,
+                                                color: themeService.currentTheme.cardTheme.color,
+                                                margin: const EdgeInsets.symmetric(
+                                                  vertical: 4,
+                                                ),
+                                                child: GenericExerciseCard(
+                                                  exercise: ConfigExerciseAdapter(exercise),
+                                                  exerciseIndex: index,
+                                                  isCollapsed: false,
+                                                  isNewlyAdded: stateManager.isExerciseNewlyAdded(exercise),
+                                                  preventAutoFocus: stateManager.preventAutoFocus,
+                                                  onRemoveExercise: _handleRemoveExercise,
+                                                  onRemoveSet: _handleRemoveSet,
+                                                  onWeightChanged: _handleWeightChanged,
+                                                  onRepsChanged: _handleRepsChanged,
+                                                  onSetCheckedChanged: _handleSetCheckedChanged,
+                                                  onAllSetsCheckedChanged: _handleAllSetsCheckedChanged,
+                                                  onAddSet: () => _handleAddSet(ConfigExerciseAdapter(exercise)),
+                                                  onRequestReorderMode: _handleRequestReorderMode,
+                                                  rowHeight: 32.0, // Increased height for custom workout configuration
+                                                  headerSpacing: 8.0, // Add spacing between header and divider
+                                                ),
+                                              );
+                                            },
+                                          ),
+                                        ],
+                                        const SizedBox(height: 100), // bottom padding
+                                      ],
+                                    ),
+                                  ),
+                        ),
+                        // Add Exercises button with animations
+                        CustomWorkoutAddButton(
+                          isAnyFieldFocused: stateManager.isAnyFieldFocused,
+                          isInReorderMode: stateManager.isInReorderMode,
+                          onExercisesAdded: _handleExercisesAdded,
+                          onExercisesLoaded: _handleExercisesLoaded,
+                          onDoneReorder: _handleDoneReorder,
+                        ),
+                      ],
                     ),
-                    // Add Exercises button with animations
-                    CustomWorkoutAddButton(
-                      isAnyFieldFocused: stateManager.isAnyFieldFocused,
-                      isInReorderMode: stateManager.isInReorderMode,
-                      onExercisesAdded: _handleExercisesAdded,
-                      onExercisesLoaded: _handleExercisesLoaded,
-                      onDoneReorder: _handleDoneReorder,
-                    ),
-                  ],
-                ),
-              ),
+                  ),
                 );
               },
             ),

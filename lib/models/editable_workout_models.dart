@@ -49,6 +49,10 @@ class EditableExerciseSet {
   bool weightSelected = false;
   bool repsSelected = false;
   
+  // Properties for compatibility with ExerciseSet
+  bool isWeightPrefilled = false;
+  bool isRepsPrefilled = false;
+  
   // Helper to format weight: whole number if no decimal part
   static String _formatWeight(double value) {
     if (value % 1 == 0) {

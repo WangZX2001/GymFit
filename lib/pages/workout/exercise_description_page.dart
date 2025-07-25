@@ -14,6 +14,7 @@ import 'package:gymfit/models/exercise_set.dart';
 import 'package:gymfit/models/custom_workout.dart';
 import 'package:gymfit/services/custom_workout_service.dart';
 import 'package:gymfit/pages/workout/custom_workout_configuration_page_refactored.dart';
+import 'package:gymfit/utils/one_rm_calculator.dart';
 
 class ExerciseDescriptionPage extends StatefulWidget {
   final String title;
@@ -43,11 +44,13 @@ class ExerciseDescriptionPage extends StatefulWidget {
   State<ExerciseDescriptionPage> createState() => _ExerciseDescriptionPageState();
 }
 
-class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> with SingleTickerProviderStateMixin {
+class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> with TickerProviderStateMixin {
   YoutubePlayerController? _ytController;
   bool _showTitle = false;
   final ScrollController _customWorkoutScrollController = ScrollController();
   late TabController _tabController;
+  late AnimationController _entranceController;
+  late Animation<double> _entranceAnimation;
 
   @override
   void initState() {
@@ -58,6 +61,16 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> with 
         _showTitle = _tabController.index == 1;
       });
     });
+
+    // Initialize entrance animation
+    _entranceController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+    _entranceAnimation = CurvedAnimation(
+      parent: _entranceController,
+      curve: Curves.easeOutCubic,
+    );
 
     final url = widget.videoUrl;
     String? vidId;
@@ -75,6 +88,13 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> with 
         flags: const YoutubePlayerFlags(autoPlay: false),
       );
     }
+
+    // Start entrance animation after a short delay
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (mounted) {
+        _entranceController.forward();
+      }
+    });
   }
 
   @override
@@ -82,10 +102,298 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> with 
     _ytController?.dispose();
     _customWorkoutScrollController.dispose();
     _tabController.dispose();
+    _entranceController.dispose();
     super.dispose();
   }
 
+  void _addToQuickStart() {
+    // Add haptic feedback when adding exercise to quick start
+    HapticFeedback.heavyImpact();
+    
+    // Create a new QuickStartExercise with this exercise
+    final newExercise = QuickStartExercise(
+      title: widget.title,
+      sets: [ExerciseSet()], // Start with one empty set
+    );
 
+    // Check if there's an existing quick start
+    if (QuickStartOverlay.selectedExercises.isNotEmpty) {
+      // Add to existing quick start
+      QuickStartOverlay.selectedExercises.add(newExercise);
+    } else {
+      // Start a new quick start
+      QuickStartOverlay.selectedExercises = [newExercise];
+      QuickStartOverlay.startTimer();
+    }
+
+    // Navigate to the Quick Start page with smooth sliding animation and slight delay
+    Future.delayed(const Duration(milliseconds: 50), () {
+      if (!mounted) return;
+      Navigator.of(context, rootNavigator: true).push(
+      PageRouteBuilder(
+        pageBuilder: (ctx, animation, secondaryAnimation) => QuickStartPageOptimized(
+          initialSelectedExercises: QuickStartOverlay.selectedExercises,
+          showMinibarOnMinimize: true, // Show integrated minibar when minimizing
+        ),
+        transitionDuration: const Duration(milliseconds: 400),
+        reverseTransitionDuration: const Duration(milliseconds: 350),
+        transitionsBuilder: (ctx, animation, secAnim, child) {
+          // Create a curved animation for smoother motion
+          final curvedAnimation = CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeOutCubic,
+            reverseCurve: Curves.easeInCubic,
+          );
+          
+          // Slide up animation with subtle scale effect
+          final slideTween = Tween<Offset>(
+            begin: const Offset(0, 1), 
+            end: Offset.zero,
+          );
+          
+          // Subtle scale animation for more visual polish
+          final scaleTween = Tween<double>(
+            begin: 0.95,
+            end: 1.0,
+          );
+          
+          // Fade animation for smoother transition
+          final fadeTween = Tween<double>(
+            begin: 0.8,
+            end: 1.0,
+          );
+          
+          return SlideTransition(
+            position: slideTween.animate(curvedAnimation),
+            child: ScaleTransition(
+              scale: scaleTween.animate(curvedAnimation),
+              child: FadeTransition(
+                opacity: fadeTween.animate(curvedAnimation),
+                child: child,
+              ),
+            ),
+          );
+        },
+      ),
+    );
+    });
+  }
+
+  void _showCustomWorkoutSelection(BuildContext context) async {
+    final themeService = Provider.of<ThemeService>(context, listen: false);
+    try {
+      final customWorkouts = await CustomWorkoutService.getSavedCustomWorkouts();
+      if (!mounted) return;
+      showModalBottomSheet(
+        // ignore: use_build_context_synchronously
+        context: context,
+        backgroundColor: Colors.transparent,
+        isScrollControlled: true,
+        builder: (context) {
+          return Container(
+            decoration: BoxDecoration(
+              color: themeService.currentTheme.cardTheme.color,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: themeService.isDarkMode ? Colors.grey.shade600 : Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 40),
+                Row(
+                  children: [
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: FaIcon(
+                        FontAwesomeIcons.xmark, 
+                        color: themeService.currentTheme.textTheme.titleMedium?.color,
+                      ),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                    Expanded(
+                      child: Text(
+                        customWorkouts.isEmpty ? 'Create Custom Workout' : 'Select Custom Workout',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: themeService.currentTheme.textTheme.titleMedium?.color,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    const SizedBox(width: 40), // Balance the X button width
+                  ],
+                ),
+                const SizedBox(height: 8),
+                // Create New option - always shown first
+                ListTile(
+                  leading: const FaIcon(FontAwesomeIcons.plus, color: Colors.green),
+                  title: Text(
+                    'Create New',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: themeService.currentTheme.textTheme.titleMedium?.color,
+                    ),
+                  ),
+                  subtitle: Text(
+                    'Start a new custom workout with this exercise',
+                    style: TextStyle(
+                      color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey[600],
+                    ),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _createNewCustomWorkout();
+                  },
+                ),
+                if (customWorkouts.isNotEmpty) ...[
+                  Divider(
+                    height: 1,
+                    thickness: 1,
+                    color: themeService.isDarkMode ? Colors.grey.shade700 : Colors.grey,
+                  ),
+                  Flexible(
+                    child: ListView.separated(
+                      controller: _customWorkoutScrollController,
+                      shrinkWrap: true,
+                      itemCount: customWorkouts.length,
+                      separatorBuilder: (context, index) => Divider(
+                        height: 1,
+                        thickness: 1,
+                        color: themeService.isDarkMode ? Colors.grey.shade700 : Colors.grey,
+                      ),
+                      itemBuilder: (context, index) {
+                        final workout = customWorkouts[index];
+                        return ListTile(
+                          title: Text(workout.name),
+                          subtitle: Text(workout.description ?? ''),
+                          onTap: () {
+                            Navigator.pop(context);
+                            _addToCustomWorkout(workout);
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 20),
+              ],
+            ),
+          );
+        },
+      );
+    } catch (e) {
+      // Only check mounted immediately before using context
+      if (mounted) {
+        // ignore: use_build_context_synchronously
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error loading custom workouts: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  void _addToCustomWorkout(CustomWorkout workout) async {
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    
+    try {
+      // Create a new exercise to add
+      final newExercise = CustomWorkoutExercise(
+        name: widget.title,
+        sets: [CustomWorkoutSet(weight: 0.0, reps: 0)], // Default set
+      );
+
+      // Add the exercise to the workout
+      final updatedExercises = [...workout.exercises, newExercise];
+
+      // Save the updated workout
+      await CustomWorkoutService.deleteCustomWorkout(workout.id);
+      await CustomWorkoutService.saveCustomWorkout(
+        name: workout.name,
+        exercises: updatedExercises,
+        description: workout.description,
+      );
+
+      if (mounted) {
+        scaffoldMessenger.showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const FaIcon(
+                  FontAwesomeIcons.circleCheck,
+                  color: Colors.white,
+                  size: 20,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Exercise Added',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      Text(
+                        '${widget.title} → ${workout.name}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: const Color(0xFF4CAF50),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            margin: const EdgeInsets.all(16),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        scaffoldMessenger.showSnackBar(
+          SnackBar(
+            content: Text('Error adding exercise to workout: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  void _createNewCustomWorkout() async {
+    // Navigate to custom workout configuration page with this exercise pre-loaded
+    await Navigator.of(context, rootNavigator: true).push(
+      MaterialPageRoute(
+        builder: (context) => CustomWorkoutConfigurationPage(
+          exerciseNames: [widget.title], // Pass current exercise as a list
+        ),
+      ),
+    );
+  }
 
   // Helper to pick color based on experience level
   Color _getExperienceColor(String level) {
@@ -99,13 +407,6 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> with 
       default:
         return Colors.grey;
     }
-  }
-
-  // Calculate 1RM using Brzycki Formula
-  double estimate1RM(double weight, int reps) {
-    if (reps == 1) return weight;
-    if (reps > 10) reps = 10; // Cap for accuracy
-    return weight / (1.0278 - 0.0278 * reps);
   }
 
   // Format 1RM to show appropriate decimal places
@@ -153,7 +454,7 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> with 
           if (exercise.title.toLowerCase() == widget.title.toLowerCase()) {
             for (final set in exercise.sets) {
               if (set.isCompleted && set.weight > 0 && set.reps > 0) {
-                final estimated1RM = estimate1RM(set.weight, set.reps);
+                final estimated1RM = OneRMCalculator.brzycki(set.weight, set.reps);
                 final dateKey = '${workout.date.year}-${workout.date.month.toString().padLeft(2, '0')}-${workout.date.day.toString().padLeft(2, '0')}';
                 
                 // If this date doesn't exist or this 1RM is higher, update it
@@ -262,277 +563,6 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> with 
     );
   }
 
-  void _addToQuickStart() {
-    // Add haptic feedback when adding exercise to quick start
-    HapticFeedback.mediumImpact();
-    
-    // Create a new QuickStartExercise with this exercise
-    final newExercise = QuickStartExercise(
-      title: widget.title,
-      sets: [ExerciseSet()], // Start with one empty set
-    );
-
-    // Check if there's an existing quick start
-    if (QuickStartOverlay.selectedExercises.isNotEmpty) {
-      // Add to existing quick start
-      QuickStartOverlay.selectedExercises.add(newExercise);
-    } else {
-      // Start a new quick start
-      QuickStartOverlay.selectedExercises = [newExercise];
-      QuickStartOverlay.startTimer();
-    }
-
-    // Navigate to the Quick Start page with sliding animation
-    Navigator.of(context, rootNavigator: true).push(
-      PageRouteBuilder(
-        pageBuilder: (ctx, animation, secondaryAnimation) => QuickStartPageOptimized(
-          initialSelectedExercises: QuickStartOverlay.selectedExercises,
-          showMinibarOnMinimize: true, // Show integrated minibar when minimizing
-        ),
-        transitionDuration: const Duration(milliseconds: 200),
-        reverseTransitionDuration: const Duration(milliseconds: 200),
-        transitionsBuilder: (ctx, animation, secAnim, child) {
-          final tween = Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero);
-          return SlideTransition(
-            position: tween.animate(animation),
-            child: child,
-          );
-        },
-      ),
-    );
-  }
-
-  void _showCustomWorkoutSelection(BuildContext context) {
-    final themeService = Provider.of<ThemeService>(context, listen: false);
-    final scaffoldMessenger = ScaffoldMessenger.of(context);
-    
-    CustomWorkoutService.getSavedCustomWorkouts().then((customWorkouts) {
-      if (!mounted) return;
-
-      showModalBottomSheet(
-        // ignore: use_build_context_synchronously
-        context: context,
-        backgroundColor: Colors.transparent,
-        isScrollControlled: true,
-        builder: (context) {
-          return Container(
-            decoration: BoxDecoration(
-              color: themeService.currentTheme.cardTheme.color,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-            ),
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: themeService.isDarkMode ? Colors.grey.shade600 : Colors.grey[300],
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                const SizedBox(height: 40),
-                Row(
-                  children: [
-                    IconButton(
-                      onPressed: () => Navigator.pop(context),
-                      icon: FaIcon(
-                        FontAwesomeIcons.xmark, 
-                        color: themeService.currentTheme.textTheme.titleMedium?.color,
-                      ),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                    ),
-                    Expanded(
-                      child: Text(
-                        customWorkouts.isEmpty ? 'Create Custom Workout' : 'Select Custom Workout',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: themeService.currentTheme.textTheme.titleMedium?.color,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                    const SizedBox(width: 40), // Balance the X button width
-                  ],
-                ),
-                const SizedBox(height: 8),
-                // Create New option - always shown first
-                ListTile(
-                  leading: const FaIcon(FontAwesomeIcons.plus, color: Colors.green),
-                  title: Text(
-                    'Create New',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: themeService.currentTheme.textTheme.titleMedium?.color,
-                    ),
-                  ),
-                  subtitle: Text(
-                    'Start a new custom workout with this exercise',
-                    style: TextStyle(
-                      color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey[600],
-                    ),
-                  ),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _createNewCustomWorkout();
-                  },
-                ),
-                if (customWorkouts.isNotEmpty) ...[
-                  Divider(
-                    height: 1,
-                    thickness: 1,
-                    color: themeService.isDarkMode ? Colors.grey.shade700 : Colors.grey,
-                  ),
-                                     Flexible(
-                     child: ListView.separated(
-                       controller: _customWorkoutScrollController,
-                       shrinkWrap: true,
-                       itemCount: customWorkouts.length,
-                       separatorBuilder: (context, index) => Divider(
-                         height: 1,
-                         thickness: 1,
-                         color: themeService.isDarkMode ? Colors.grey.shade700 : Colors.grey,
-                       ),
-                       itemBuilder: (context, index) {
-                         final workout = customWorkouts[index];
-                         return ListTile(
-                           leading: FaIcon(
-                             FontAwesomeIcons.dumbbell, 
-                             color: themeService.currentTheme.textTheme.titleMedium?.color,
-                           ),
-                           title: Text(
-                             workout.name,
-                             style: TextStyle(
-                               fontWeight: FontWeight.bold,
-                               color: themeService.currentTheme.textTheme.titleMedium?.color,
-                             ),
-                           ),
-                           subtitle: Text(
-                             '${workout.exercises.length} exercises',
-                             style: TextStyle(
-                               color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey[600],
-                             ),
-                           ),
-                           onTap: () {
-                             Navigator.pop(context);
-                             _addToCustomWorkout(workout);
-                           },
-                         );
-                       },
-                     ),
-                   ),
-                ],
-                const SizedBox(height: 20),
-              ],
-            ),
-          );
-        },
-      );
-    }).catchError((e) {
-      if (mounted) {
-        scaffoldMessenger.showSnackBar(
-          SnackBar(
-            content: Text('Error loading custom workouts: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    });
-  }
-
-  void _addToCustomWorkout(CustomWorkout workout) async {
-    final scaffoldMessenger = ScaffoldMessenger.of(context);
-    
-    try {
-      // Create a new exercise to add
-      final newExercise = CustomWorkoutExercise(
-        name: widget.title,
-        sets: [CustomWorkoutSet(weight: 0.0, reps: 0)], // Default set
-      );
-
-      // Add the exercise to the workout
-      final updatedExercises = [...workout.exercises, newExercise];
-
-      // Save the updated workout
-      await CustomWorkoutService.deleteCustomWorkout(workout.id);
-      await CustomWorkoutService.saveCustomWorkout(
-        name: workout.name,
-        exercises: updatedExercises,
-        description: workout.description,
-      );
-
-      if (mounted) {
-        scaffoldMessenger.showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const FaIcon(
-                  FontAwesomeIcons.circleCheck,
-                  color: Colors.white,
-                  size: 20,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'Exercise Added',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                      Text(
-                        '${widget.title} → ${workout.name}',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            backgroundColor: const Color(0xFF4CAF50),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            margin: const EdgeInsets.all(16),
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        scaffoldMessenger.showSnackBar(
-          SnackBar(
-            content: Text('Error adding exercise to workout: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
-
-  void _createNewCustomWorkout() async {
-    // Navigate to custom workout configuration page with this exercise pre-loaded
-    await Navigator.of(context, rootNavigator: true).push(
-      MaterialPageRoute(
-        builder: (context) => CustomWorkoutConfigurationPage(
-          exerciseNames: [widget.title], // Pass current exercise as a list
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final themeService = Provider.of<ThemeService>(context);
@@ -543,8 +573,10 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> with 
           backgroundColor: themeService.currentTheme.appBarTheme.backgroundColor,
           elevation: 0,
           leading: IconButton(
-            icon: FaIcon(FontAwesomeIcons.arrowLeft, color: themeService.currentTheme.appBarTheme.foregroundColor),
+            icon: Icon(Icons.arrow_back, color: themeService.currentTheme.appBarTheme.foregroundColor),
             onPressed: () {
+              // Add haptic feedback for back navigation
+              HapticFeedback.lightImpact();
               Navigator.of(context).pop();
             },
           ),
@@ -593,272 +625,296 @@ class _ExerciseDescriptionPageState extends State<ExerciseDescriptionPage> with 
                 thumbVisibility: true,
                 trackVisibility: true,
                 child: SingleChildScrollView(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Title Card
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-                          decoration: BoxDecoration(
-                            color: themeService.currentTheme.cardTheme.color,
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: themeService.isDarkMode ? Colors.grey.shade600 : Colors.grey.shade300),
-                          ),
-                          child: Text(
-                            widget.title,
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: themeService.currentTheme.textTheme.titleLarge?.color,
-                            ),
-                          ),
+                  child: AnimatedBuilder(
+                    animation: _entranceAnimation,
+                    builder: (context, child) {
+                      return Transform.translate(
+                        offset: Offset(0, 20 * (1 - _entranceAnimation.value)),
+                        child: Opacity(
+                          opacity: _entranceAnimation.value,
+                          child: child,
                         ),
-                        // Main Muscle and Experience Level
-                        Padding(
-                          padding: const EdgeInsets.only(top: 8.0),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'Primary: ${widget.mainMuscle}',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
-                                  color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey,
-                                ),
-                              ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                      );
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Title Card with Hero Animation
+                          Hero(
+                            tag: 'exercise-${widget.title}',
+                            child: Material(
+                              color: Colors.transparent,
+                              child: Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
                                 decoration: BoxDecoration(
-                                  color: _getExperienceColor(widget.experienceLevel),
-                                  borderRadius: BorderRadius.circular(20),
+                                  color: themeService.currentTheme.cardTheme.color,
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(color: themeService.isDarkMode ? Colors.grey.shade600 : Colors.grey.shade300),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: themeService.isDarkMode ? Colors.black.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
                                 ),
                                 child: Text(
-                                  widget.experienceLevel,
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.white,
+                                  widget.title,
+                                  style: themeService.currentTheme.appBarTheme.titleTextStyle,
+                                ),
+                              ),
+                            ),
+                          ),
+                          // Main Muscle and Experience Level
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8.0),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'Primary: ${widget.mainMuscle}',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey,
                                   ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                                  decoration: BoxDecoration(
+                                    color: _getExperienceColor(widget.experienceLevel),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Text(
+                                    widget.experienceLevel,
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          // Secondary Muscle Label
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4.0),
+                            child: Text(
+                              'Secondary: ${widget.secondaryMuscle}',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+
+                          // Description Section
+                          Text(
+                            'Description',
+                            style: TextStyle(
+                              fontSize: 16, 
+                              fontWeight: FontWeight.w700,
+                              color: themeService.currentTheme.textTheme.titleMedium?.color,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            widget.description,
+                            style: TextStyle(
+                              fontSize: 14, 
+                              height: 1.5,
+                              fontWeight: FontWeight.w500,
+                              color: themeService.currentTheme.textTheme.bodyLarge?.color,
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+
+                          // Video Demonstration
+                          Text(
+                            'Video Demonstration',
+                            style: TextStyle(
+                              fontSize: 16, 
+                              fontWeight: FontWeight.w700,
+                              color: themeService.currentTheme.textTheme.titleMedium?.color,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          // Video player or placeholder image
+                          if (_ytController != null)
+                            YoutubePlayerBuilder(
+                              player: YoutubePlayer(
+                                controller: _ytController!,
+                                showVideoProgressIndicator: true,
+                                bottomActions: [
+                                  CurrentPosition(),
+                                  ProgressBar(isExpanded: true),
+                                  RemainingDuration(),
+                                  IconButton(
+                                    icon: const Icon(Icons.replay_10, color: Colors.white),
+                                    onPressed: () => _ytController!.seekTo(_ytController!.value.position - const Duration(seconds: 10)),
+                                  ),
+                                  IconButton(
+                                    icon: Icon(_ytController!.value.isPlaying ? Icons.pause : Icons.play_arrow, color: Colors.white),
+                                    onPressed: () {
+                                      if (_ytController!.value.isPlaying) {
+                                        _ytController!.pause();
+                                      } else {
+                                        _ytController!.play();
+                                      }
+                                    },
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.forward_10, color: Colors.white),
+                                    onPressed: () => _ytController!.seekTo(_ytController!.value.position + const Duration(seconds: 10)),
+                                  ),
+                                  FullScreenButton(),
+                                ],
+                              ),
+                              builder: (context, player) {
+                                return ClipRRect(
+                                  borderRadius: BorderRadius.circular(10),
+                                  child: player,
+                                );
+                              },
+                            )
+                          else
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(10),
+                              child: Image.asset(
+                                'lib/images/exerciseInformation.jpg',
+                                width: double.infinity,
+                                height: 200,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          const SizedBox(height: 16),
+                          // How to do it section
+                          Text(
+                            'How to perform',
+                            style: TextStyle(
+                              fontSize: 16, 
+                              fontWeight: FontWeight.w700,
+                              color: themeService.currentTheme.textTheme.titleMedium?.color,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          // Numbered steps for howTo
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: widget.howTo.split('\n').asMap().entries.map((entry) {
+                              final idx = entry.key + 1;
+                              final text = entry.value.trim();
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 16.0),
+                                child: Text.rich(
+                                  TextSpan(
+                                    style: TextStyle(
+                                      fontSize: 14, 
+                                      height: 1.5,
+                                      fontWeight: FontWeight.w500,
+                                      color: themeService.currentTheme.textTheme.bodyLarge?.color,
+                                    ),
+                                    children: [
+                                      TextSpan(text: '$idx. ', style: const TextStyle(fontWeight: FontWeight.bold)),
+                                      TextSpan(text: text),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                          const SizedBox(height: 24),
+
+                          // Safety and Precautions
+                          Row(
+                            children: [
+                              const FaIcon(FontAwesomeIcons.lightbulb, color: Colors.amber),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Pro Tips',
+                                style: TextStyle(
+                                  fontSize: 16, 
+                                  fontWeight: FontWeight.w700,
+                                  color: themeService.currentTheme.textTheme.titleMedium?.color,
                                 ),
                               ),
                             ],
                           ),
-                        ),
-                        // Secondary Muscle Label
-                        Padding(
-                          padding: const EdgeInsets.only(top: 4.0),
-                          child: Text(
-                            'Secondary: ${widget.secondaryMuscle}',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                              color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-
-                        // Description Section
-                        Text(
-                          'Description',
-                          style: TextStyle(
-                            fontSize: 16, 
-                            fontWeight: FontWeight.bold,
-                            color: themeService.currentTheme.textTheme.titleMedium?.color,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          widget.description,
-                          style: TextStyle(
-                            fontSize: 14, 
-                            height: 1.5,
-                            color: themeService.currentTheme.textTheme.bodyLarge?.color,
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-
-                        // Video Demonstration
-                        Text(
-                          'Video Demonstration',
-                          style: TextStyle(
-                            fontSize: 16, 
-                            fontWeight: FontWeight.bold,
-                            color: themeService.currentTheme.textTheme.titleMedium?.color,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        // Video player or placeholder image
-                        if (_ytController != null)
-                          YoutubePlayerBuilder(
-                            player: YoutubePlayer(
-                              controller: _ytController!,
-                              showVideoProgressIndicator: true,
-                              bottomActions: [
-                                CurrentPosition(),
-                                ProgressBar(isExpanded: true),
-                                RemainingDuration(),
-                                IconButton(
-                                  icon: const Icon(Icons.replay_10, color: Colors.white),
-                                  onPressed: () => _ytController!.seekTo(_ytController!.value.position - const Duration(seconds: 10)),
-                                ),
-                                IconButton(
-                                  icon: Icon(_ytController!.value.isPlaying ? Icons.pause : Icons.play_arrow, color: Colors.white),
-                                  onPressed: () {
-                                    if (_ytController!.value.isPlaying) {
-                                      _ytController!.pause();
-                                    } else {
-                                      _ytController!.play();
-                                    }
-                                  },
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.forward_10, color: Colors.white),
-                                  onPressed: () => _ytController!.seekTo(_ytController!.value.position + const Duration(seconds: 10)),
-                                ),
-                                FullScreenButton(),
-                              ],
-                            ),
-                            builder: (context, player) {
-                              return ClipRRect(
-                                borderRadius: BorderRadius.circular(10),
-                                child: player,
-                              );
-                            },
-                          )
-                        else
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(10),
-                            child: Image.asset(
-                              'lib/images/exerciseInformation.jpg',
-                              width: double.infinity,
-                              height: 200,
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                        const SizedBox(height: 16),
-                        // How to do it section
-                        Text(
-                          'How to perform',
-                          style: TextStyle(
-                            fontSize: 16, 
-                            fontWeight: FontWeight.bold,
-                            color: themeService.currentTheme.textTheme.titleMedium?.color,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        // Numbered steps for howTo
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: widget.howTo.split('\n').asMap().entries.map((entry) {
-                            final idx = entry.key + 1;
-                            final text = entry.value.trim();
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 16.0),
-                              child: Text.rich(
-                                TextSpan(
-                                  style: TextStyle(
-                                    fontSize: 14, 
-                                    height: 1.5,
-                                    color: themeService.currentTheme.textTheme.bodyLarge?.color,
-                                  ),
-                                  children: [
-                                    TextSpan(text: '$idx. ', style: const TextStyle(fontWeight: FontWeight.bold)),
-                                    TextSpan(text: text),
-                                  ],
-                                ),
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                        const SizedBox(height: 24),
-
-                        // Safety and Precautions
-                        Row(
-                          children: [
-                            const FaIcon(FontAwesomeIcons.lightbulb, color: Colors.amber),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Pro Tips',
-                              style: TextStyle(
-                                fontSize: 16, 
-                                fontWeight: FontWeight.bold,
-                                color: themeService.currentTheme.textTheme.titleMedium?.color,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        // Pro Tips list with bolded numbered lines
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: widget.proTips
-                              .expand((tip) => tip.split('\n'))
-                              .map((line) => line.trim())
-                              .where((line) => line.isNotEmpty)
-                              .toList()
-                              .asMap()
-                              .entries
-                              .map((entry) {
-                                final idx = entry.key + 1;
-                                final text = entry.value;
-                                return Padding(
-                                  padding: const EdgeInsets.only(bottom: 16.0),
-                                  child: Text.rich(
-                                    TextSpan(
-                                      style: TextStyle(
-                                        fontSize: 14, 
-                                        height: 1.5,
-                                        color: themeService.currentTheme.textTheme.bodyLarge?.color,
+                          const SizedBox(height: 12),
+                          // Pro Tips list with bolded numbered lines
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: widget.proTips
+                                .expand((tip) => tip.split('\n'))
+                                .map((line) => line.trim())
+                                .where((line) => line.isNotEmpty)
+                                .toList()
+                                .asMap()
+                                .entries
+                                .map((entry) {
+                                  final idx = entry.key + 1;
+                                  final text = entry.value;
+                                  return Padding(
+                                    padding: const EdgeInsets.only(bottom: 16.0),
+                                    child: Text.rich(
+                                      TextSpan(
+                                        style: TextStyle(
+                                          fontSize: 14, 
+                                          height: 1.5,
+                                          fontWeight: FontWeight.w500,
+                                          color: themeService.currentTheme.textTheme.bodyLarge?.color,
+                                        ),
+                                        children: [
+                                          TextSpan(text: '$idx. ', style: const TextStyle(fontWeight: FontWeight.bold)),
+                                          TextSpan(text: text),
+                                        ],
                                       ),
-                                      children: [
-                                        TextSpan(text: '$idx. ', style: const TextStyle(fontWeight: FontWeight.bold)),
-                                        TextSpan(text: text),
-                                      ],
+                                    ),
+                                  );
+                                }).toList(),
+                          ),
+                          const SizedBox(height: 32),
+
+                          // Add Button
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: () => _showAddExerciseMenu(context),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: themeService.isDarkMode ? Colors.white : Colors.black,
+                                foregroundColor: themeService.isDarkMode ? Colors.black : Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(30),
+                                ),
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  FaIcon(
+                                    FontAwesomeIcons.plus, 
+                                    color: themeService.isDarkMode ? Colors.black : Colors.white,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Add This Exercise to Workout Plan',
+                                    style: TextStyle(
+                                      fontSize: 16, 
+                                      color: themeService.isDarkMode ? Colors.black : Colors.white, 
+                                      fontWeight: FontWeight.w700,
                                     ),
                                   ),
-                                );
-                              }).toList(),
-                        ),
-                        const SizedBox(height: 32),
-
-                        // Add Button
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: () => _showAddExerciseMenu(context),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: themeService.isDarkMode ? Colors.white : Colors.black,
-                              foregroundColor: themeService.isDarkMode ? Colors.black : Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(30),
+                                ],
                               ),
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                FaIcon(
-                                  FontAwesomeIcons.plus, 
-                                  color: themeService.isDarkMode ? Colors.black : Colors.white,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Add This Exercise to Workout Plan',
-                                  style: TextStyle(
-                                    fontSize: 16, 
-                                    color: themeService.isDarkMode ? Colors.black : Colors.white, 
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),

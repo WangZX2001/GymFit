@@ -360,43 +360,46 @@ class WorkoutDetailsPage extends StatelessWidget {
 
             // Delete Button at Bottom (only for own workouts)
             if (isOwnWorkout)
-              SizedBox(
-                width: double.infinity,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                    child: ElevatedButton.icon(
-                      onPressed: () => _deleteWorkoutConfirmation(context),
-                      icon: const FaIcon(
-                        FontAwesomeIcons.trash,
-                        size: 16,
-                        color: Colors.red,
-                      ),
-                      label: const Text(
-                        'Delete Workout',
-                        style: TextStyle(
-                          color: Colors.red,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                      child: OutlinedButton.icon(
+                        onPressed: () => _deleteWorkoutConfirmation(context),
+                        style: OutlinedButton.styleFrom(
+                          backgroundColor: themeService.isDarkMode 
+                              ? Colors.red.shade600.withValues(alpha: 0.25)
+                              : Colors.red.withValues(alpha: 0.15),
+                          foregroundColor: themeService.isDarkMode 
+                              ? Colors.red.shade300
+                              : Colors.red.shade700,
+                          side: BorderSide.none,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 8),
                         ),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: themeService.isDarkMode 
-                            ? Colors.red.shade900.withValues(alpha: 0.4)
-                            : Colors.red.shade50.withValues(alpha: 0.4),
-                        foregroundColor: Colors.red,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          side: BorderSide(
+                        icon: FaIcon(
+                          FontAwesomeIcons.trash,
+                          color: themeService.isDarkMode 
+                              ? Colors.red.shade300
+                              : Colors.red.shade700,
+                          size: 14.0 * 0.8,
+                        ),
+                        label: Text(
+                          'Delete Workout',
+                          style: TextStyle(
                             color: themeService.isDarkMode 
-                                ? Colors.red.shade700.withValues(alpha: 0.6)
-                                : Colors.red.shade100.withValues(alpha: 0.6),
-                            width: 1.5,
+                                ? Colors.red.shade300
+                                : Colors.red.shade700,
+                            fontSize: 14.0,
+                            fontWeight: FontWeight.w900,
                           ),
                         ),
-                        elevation: 0,
                       ),
                     ),
                   ),

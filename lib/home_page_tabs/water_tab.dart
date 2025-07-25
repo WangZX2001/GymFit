@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
+import 'package:gymfit/services/theme_service.dart';
 
 class WaterTab extends StatefulWidget {
   const WaterTab({super.key});
@@ -137,10 +139,13 @@ class _WaterTabState extends State<WaterTab> {
 
   @override
   Widget build(BuildContext context) {
+    final themeService = Provider.of<ThemeService>(context);
+    final isDark = themeService.isDarkMode;
+    
     final textStyle = TextStyle(
       fontWeight: FontWeight.bold,
       fontSize: 18,
-      color: Colors.black,
+      color: themeService.currentTheme.textTheme.titleMedium?.color,
     );
 
     final valueStyle = TextStyle(
@@ -173,7 +178,7 @@ class _WaterTabState extends State<WaterTab> {
                     width: 16,
                     height: 150,
                     decoration: BoxDecoration(
-                      color: Colors.grey[300],
+                      color: isDark ? Colors.grey[700] : Colors.grey[300],
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Align(
@@ -195,7 +200,10 @@ class _WaterTabState extends State<WaterTab> {
                   const SizedBox(height: 8),
                   Text(
                     'Goal',
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    style: TextStyle(
+                      fontSize: 12, 
+                      color: themeService.currentTheme.textTheme.bodySmall?.color,
+                    ),
                   ),
                 ],
               ),
@@ -219,7 +227,11 @@ class _WaterTabState extends State<WaterTab> {
                               const SizedBox(width: 4),
                               GestureDetector(
                                 onTap: _editTargetVolume,
-                                child: const Icon(Icons.edit, size: 20),
+                                child: Icon(
+                                  Icons.edit, 
+                                  size: 20,
+                                  color: themeService.currentTheme.iconTheme.color,
+                                ),
                               ),
                             ],
                           ),
@@ -235,7 +247,11 @@ class _WaterTabState extends State<WaterTab> {
                               const SizedBox(width: 4),
                               GestureDetector(
                                 onTap: _editBottleVolume,
-                                child: const Icon(Icons.edit, size: 20),
+                                child: Icon(
+                                  Icons.edit, 
+                                  size: 20,
+                                  color: themeService.currentTheme.iconTheme.color,
+                                ),
                               ),
                             ],
                           ),
@@ -273,15 +289,25 @@ class _WaterTabState extends State<WaterTab> {
 
           // Record Header
           Container(
-            color: Colors.grey[300],
+            color: isDark ? Colors.grey[700] : Colors.grey[300],
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             width: double.infinity,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
-              children: const [
-                Icon(Icons.assignment, size: 20),
-                SizedBox(width: 8),
-                Text('Record', style: TextStyle(fontWeight: FontWeight.bold)),
+              children: [
+                Icon(
+                  Icons.assignment, 
+                  size: 20,
+                  color: themeService.currentTheme.iconTheme.color,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Record', 
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: themeService.currentTheme.textTheme.titleMedium?.color,
+                  ),
+                ),
               ],
             ),
           ),
@@ -295,7 +321,7 @@ class _WaterTabState extends State<WaterTab> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.grey[200],
+                  color: isDark ? Colors.grey[800] : Colors.grey[200],
                   borderRadius: BorderRadius.circular(20),
                 ),
                 padding: const EdgeInsets.symmetric(
@@ -311,7 +337,12 @@ class _WaterTabState extends State<WaterTab> {
                     ),
                     Row(
                       children: [
-                        Text(log['time']),
+                        Text(
+                          log['time'],
+                          style: TextStyle(
+                            color: themeService.currentTheme.textTheme.bodyMedium?.color,
+                          ),
+                        ),
                         const SizedBox(width: 8),
                         GestureDetector(
                           onTap: () {

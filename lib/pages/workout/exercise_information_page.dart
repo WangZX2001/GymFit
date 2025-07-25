@@ -6,6 +6,10 @@ import 'package:gymfit/pages/workout/filter/exercise_filter_page.dart';
 import 'package:provider/provider.dart';
 import 'package:gymfit/services/theme_service.dart';
 
+
+
+
+
 class ExerciseInformationPage extends StatefulWidget {
   final bool isSelectionMode;
   final List<String> initialSelectedExercises;
@@ -220,27 +224,35 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage>
             icon.contains('.jpeg') ||
             icon.contains('.png') ||
             icon.contains('.gif'))) {
-      // Special handling for T Bar Row image to fill container width
-      bool isTBarRow = icon.contains('TBarRow');
       
-      return Image.asset(
-        icon,
-        height: 100,
-        width: isTBarRow ? double.infinity : 100,
-        fit: isTBarRow ? BoxFit.cover : BoxFit.contain,
-        errorBuilder: (context, error, stackTrace) {
-          // Fallback to default icon if image fails to load
-          return Icon(Icons.fitness_center, size: 100, color: themeService.currentTheme.textTheme.titleLarge?.color);
-        },
+      return SizedBox(
+        width: 80,
+        height: 80,
+        child: Image.asset(
+          icon,
+          fit: BoxFit.contain,
+          errorBuilder: (context, error, stackTrace) {
+            // Fallback to default icon if image fails to load
+            return Icon(Icons.fitness_center, size: 60, color: themeService.currentTheme.textTheme.titleLarge?.color);
+          },
+        ),
       );
     }
     // If it's an IconData, use it directly
     else if (icon is IconData) {
-      return Icon(icon, size: 100, color: themeService.currentTheme.textTheme.titleLarge?.color);
+      return SizedBox(
+        width: 80,
+        height: 80,
+        child: Icon(icon, size: 60, color: themeService.currentTheme.textTheme.titleLarge?.color),
+      );
     }
     // Default fallback icon
     else {
-      return Icon(Icons.fitness_center, size: 100, color: themeService.currentTheme.textTheme.titleLarge?.color);
+      return SizedBox(
+        width: 80,
+        height: 80,
+        child: Icon(Icons.fitness_center, size: 60, color: themeService.currentTheme.textTheme.titleLarge?.color),
+      );
     }
   }
 
@@ -281,6 +293,7 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage>
                 hintStyle: TextStyle(
                   color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey[500],
                   fontSize: 16,
+                  fontWeight: FontWeight.w500,
                 ),
                 prefixIcon: Icon(
                   Icons.search,
@@ -308,6 +321,7 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage>
               ),
               style: TextStyle(
                 fontSize: 16,
+                fontWeight: FontWeight.w500,
                 color: themeService.currentTheme.textTheme.bodyLarge?.color,
               ),
             ),
@@ -320,7 +334,8 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage>
                 'Click on any exercise icon to view specific instructions.',
                 style: TextStyle(
                   color: themeService.isDarkMode ? Colors.grey.shade400 : Colors.grey[600], 
-                  fontSize: 12
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -338,77 +353,163 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage>
   }) {
     final themeService = Provider.of<ThemeService>(context, listen: false);
     
-    return Container(
-      margin: const EdgeInsets.all(4),
-      constraints: const BoxConstraints.expand(),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(
-          color: isSelected ? Colors.blue : (themeService.isDarkMode ? Colors.grey.shade600 : Colors.grey[300]!),
-          width: isSelected ? 4 : 2,
-        ),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Column(
-        children: [
-          // Image area with white background
-          Expanded(
-            flex: 4, // Increased flex to make image area larger
-            child: Container(
-              color: Colors.white,
-              child: _buildIconOrImage(icon),
-            ),
-          ),
-          // Text area with theme-appropriate background
-          Container(
-            width: double.infinity,
-            height: 70, // Increased height to prevent text cutoff
-            decoration: BoxDecoration(
-              color: themeService.isDarkMode ? Colors.grey.shade800 : Colors.white,
-              borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(8),
-                bottomRight: Radius.circular(8),
-              ),
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0), // Minimal vertical padding
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Flexible(
-                  child: Text(
-                    title,
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 14, 
-                      fontWeight: FontWeight.w500,
-                      color: themeService.isDarkMode ? Colors.white : Colors.black,
+    return Column(
+      children: [
+        Hero(
+          tag: 'exercise-$title',
+          flightShuttleBuilder: (
+            BuildContext flightContext,
+            Animation<double> animation,
+            HeroFlightDirection flightDirection,
+            BuildContext fromHeroContext,
+            BuildContext toHeroContext,
+          ) {
+            return AnimatedBuilder(
+              animation: animation,
+              builder: (context, child) {
+                return Material(
+                  color: Colors.transparent,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: themeService.currentTheme.cardTheme.color,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: themeService.isDarkMode ? Colors.grey.shade600 : Colors.grey.shade300,
+                      ),
                     ),
-                  ),
-                ),
-                if (mainMuscle != null)
-                  Flexible(
                     child: Padding(
-                      padding: const EdgeInsets.only(top: 0.0), // No top padding
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
                       child: Text(
-                        mainMuscle,
-                        textAlign: TextAlign.center,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                        title,
                         style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w400,
-                          color: themeService.isDarkMode ? Colors.grey.shade300 : Colors.grey,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: themeService.currentTheme.textTheme.titleLarge?.color,
                         ),
                       ),
                     ),
                   ),
-              ],
+                );
+              },
+            );
+          },
+          child: Material(
+            color: Colors.transparent,
+            child: ClipRect(
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+                margin: EdgeInsets.only(
+                  left: isSelected ? 24 : 16,
+                  right: 16,
+                  top: 8,
+                  bottom: 8,
+                ),
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    // Selection bar on the left when selected
+                    if (isSelected)
+                      Positioned(
+                        left: -12,
+                        top: 0,
+                        bottom: 0,
+                        child: Container(
+                          width: 6,
+                          decoration: BoxDecoration(
+                            color: themeService.isDarkMode ? Colors.white : Colors.black,
+                            borderRadius: BorderRadius.circular(3),
+                          ),
+                        ),
+                      ),
+                    // Main content
+                    Row(
+                      children: [
+                        // Image area
+                        SizedBox(
+                          width: 80,
+                          height: 80,
+                          child: _buildIconOrImage(icon),
+                        ),
+                        // Text area
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    title,
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w700,
+                                      color: themeService.isDarkMode ? Colors.white : Colors.black,
+                                    ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                if (mainMuscle != null)
+                                  Flexible(
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(top: 4.0),
+                                      child: Text(
+                                        mainMuscle,
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                          color: themeService.isDarkMode ? Colors.grey.shade300 : Colors.grey[600],
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        // Selection indicator
+                        if (isSelected)
+                          Container(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Container(
+                              width: 24,
+                              height: 24,
+                              decoration: BoxDecoration(
+                                color: themeService.isDarkMode ? Colors.white : Colors.black,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  '${_selectedTitles.toList().indexOf(title) + 1}',
+                                  style: TextStyle(
+                                    color: themeService.isDarkMode ? Colors.black : Colors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
-        ],
-      ),
+        ),
+        // Divider line
+        Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16),
+          height: 1,
+          color: themeService.isDarkMode ? Colors.grey.shade700 : Colors.grey[300],
+        ),
+      ],
     );
   }
 
@@ -526,25 +627,24 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage>
                                 thumbVisibility: true,
                                 thickness: 6.0,
                                 radius: const Radius.circular(10),
-                                child: GridView.count(
+                                child: ListView.builder(
                                   controller: _scrollController,
-                                  crossAxisCount: 2,
-                                  padding: EdgeInsets.all(
-                                    16,
-                                  ).copyWith(bottom: widget.isSelectionMode ? 0 : 16),
-                                  mainAxisSpacing: 6,
-                                  crossAxisSpacing: 6,
-                                  childAspectRatio: 1,
-                                  children:
-                                  sortedItems.map((e) {
+                                  padding: EdgeInsets.only(
+                                    top: 8,
+                                    bottom: widget.isSelectionMode ? 0 : 16,
+                                  ),
+                                  itemCount: sortedItems.length,
+                                  itemBuilder: (context, index) {
+                                    final e = sortedItems[index];
                                     final isSelected =
                                         widget.isSelectionMode &&
                                         _selectedTitles.contains(e.title);
                                     return GestureDetector(
                                       onTap: () {
+                                        // Add haptic feedback for all taps
+                                        HapticFeedback.lightImpact();
+                                        
                                         if (widget.isSelectionMode) {
-                                          // Add haptic feedback when selecting/deselecting exercises
-                                          HapticFeedback.lightImpact();
                                           setState(() {
                                             if (isSelected) {
                                               _selectedTitles.remove(e.title);
@@ -555,54 +655,61 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage>
                                         } else {
                                           Navigator.push(
                                             context,
-                                            MaterialPageRoute(
-                                              builder:
-                                                  (ctx) => ExerciseDescriptionPage(
-                                                    title: e.title,
-                                                    description: e.description,
-                                                    videoUrl: e.videoUrl,
-                                                    mainMuscle: e.mainMuscle,
-                                                    secondaryMuscle: e.secondaryMuscle,
-                                                    experienceLevel: e.experienceLevel,
-                                                    howTo: e.howTo,
-                                                    proTips: e.proTips,
-                                                    onAdd: () {
-                                                      ScaffoldMessenger.of(
-                                                        ctx,
-                                                      ).showSnackBar(
-                                                        SnackBar(
-                                                          content: Text(
-                                                            '\${e.title} added to your plan',
-                                                          ),
-                                                        ),
-                                                      );
-                                                    },
+                                            PageRouteBuilder(
+                                              pageBuilder: (context, animation, secondaryAnimation) => ExerciseDescriptionPage(
+                                                title: e.title,
+                                                description: e.description,
+                                                videoUrl: e.videoUrl,
+                                                mainMuscle: e.mainMuscle,
+                                                secondaryMuscle: e.secondaryMuscle,
+                                                experienceLevel: e.experienceLevel,
+                                                howTo: e.howTo,
+                                                proTips: e.proTips,
+                                                onAdd: () {
+                                                  ScaffoldMessenger.of(
+                                                    context,
+                                                  ).showSnackBar(
+                                                    SnackBar(
+                                                      content: Text(
+                                                        '\${e.title} added to your plan',
+                                                      ),
+                                                    ),
+                                                  );
+                                                },
+                                              ),
+                                              transitionDuration: const Duration(milliseconds: 350),
+                                              reverseTransitionDuration: const Duration(milliseconds: 300),
+                                              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                                return FadeTransition(
+                                                  opacity: CurvedAnimation(
+                                                    parent: animation,
+                                                    curve: Curves.easeInOut,
                                                   ),
+                                                  child: child,
+                                                );
+                                              },
                                             ),
                                           );
                                         }
                                       },
-                                      child: Stack(
-                                        children: [
-                                          _buildExerciseCard(
-                                            e.title,
-                                            e.icon,
-                                            mainMuscle: e.mainMuscle,
-                                            isSelected: isSelected,
-                                          ),
-                                          if (isSelected)
-                                            const Positioned(
-                                              top: 8,
-                                              right: 8,
-                                              child: Icon(
-                                                Icons.check_circle,
-                                                color: Colors.blue,
-                                              ),
-                                            ),
-                                        ],
+                                      onTapDown: (_) {
+                                        // Add subtle scale animation on tap down
+                                        HapticFeedback.selectionClick();
+                                      },
+                                      behavior: HitTestBehavior.opaque,
+                                      child: AnimatedContainer(
+                                        duration: const Duration(milliseconds: 100),
+                                        curve: Curves.easeOut,
+                                        transform: Matrix4.identity(),
+                                        child: _buildExerciseCard(
+                                          e.title,
+                                          e.icon,
+                                          mainMuscle: e.mainMuscle,
+                                          isSelected: isSelected,
+                                        ),
                                       ),
                                     );
-                                  }).toList(),
+                                  },
                                 ),
                               ),
                             ),
@@ -619,36 +726,33 @@ class _ExerciseInformationPageState extends State<ExerciseInformationPage>
                                     ? const SizedBox.shrink()
                                     : Container(
                                         width: double.infinity,
-                                        padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 32.0),
-                                        child: ElevatedButton(
-                                          onPressed:
-                                              () =>
-                                                  Navigator.pop(context, _selectedTitles.toList()),
-                                          style: ElevatedButton.styleFrom(
+                                        padding: const EdgeInsets.fromLTRB(16.0, 0.0, 16.0, 32.0),
+                                        child: OutlinedButton.icon(
+                                          onPressed: () => Navigator.pop(context, _selectedTitles.toList()),
+                                          icon: Icon(
+                                            Icons.check,
+                                            color: themeService.isDarkMode ? Colors.black : Colors.white,
+                                            size: 14 * 0.8,
+                                          ),
+                                          label: Text(
+                                            'Done (${_selectedTitles.length})',
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w900,
+                                              color: themeService.isDarkMode ? Colors.black : Colors.white,
+                                            ),
+                                          ),
+                                          style: OutlinedButton.styleFrom(
                                             backgroundColor: themeService.isDarkMode ? Colors.white : Colors.black,
                                             foregroundColor: themeService.isDarkMode ? Colors.black : Colors.white,
-                                            padding: const EdgeInsets.symmetric(vertical: 16),
+                                            side: BorderSide(
+                                              color: themeService.isDarkMode ? Colors.white : Colors.black,
+                                              width: 1.5,
+                                            ),
                                             shape: RoundedRectangleBorder(
                                               borderRadius: BorderRadius.circular(12),
                                             ),
-                                          ),
-                                          child: Row(
-                                            mainAxisAlignment: MainAxisAlignment.center,
-                                            children: [
-                                              Icon(
-                                                Icons.check,
-                                                color: themeService.isDarkMode ? Colors.black : Colors.white,
-                                              ),
-                                              const SizedBox(width: 8),
-                                              Text(
-                                                'Done (${_selectedTitles.length})',
-                                                style: TextStyle(
-                                                  fontSize: 18,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: themeService.isDarkMode ? Colors.black : Colors.white,
-                                                ),
-                                              ),
-                                            ],
+                                            padding: const EdgeInsets.symmetric(vertical: 8),
                                           ),
                                         ),
                                       ),

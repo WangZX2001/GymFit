@@ -6,8 +6,10 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import 'package:gymfit/models/workout.dart';
 import 'package:gymfit/services/workout_service.dart';
+import 'package:gymfit/services/recovery_service.dart';
 import 'package:gymfit/pages/me/statistics_page.dart';
 import 'package:gymfit/pages/me/friends_page.dart';
+import 'package:gymfit/pages/me/recovery_page.dart';
 import 'package:gymfit/pages/me/settings/settings_page.dart';
 import 'package:gymfit/services/theme_service.dart';
 import 'package:gymfit/services/user_profile_service.dart';
@@ -59,6 +61,8 @@ class _MePageState extends State<MePage> with WidgetsBindingObserver, AutomaticK
     if (state == AppLifecycleState.resumed) {
       _loadWorkouts();
       _loadUserProfile();
+      // Also refresh recovery data when app resumes
+      RecoveryService.refreshRecoveryData();
     }
   }
 
@@ -132,6 +136,8 @@ class _MePageState extends State<MePage> with WidgetsBindingObserver, AutomaticK
       });
       await _loadWorkouts();
       await _loadUserProfile();
+      // Also refresh recovery data when manually refreshing
+      await RecoveryService.refreshRecoveryData();
     }
   }
 
@@ -139,6 +145,8 @@ class _MePageState extends State<MePage> with WidgetsBindingObserver, AutomaticK
   void _onWorkoutUpdate() {
     _loadWorkouts();
     _loadUserProfile();
+    // Automatically refresh recovery data when workouts are updated/deleted
+    RecoveryService.refreshRecoveryData();
   }
 
   // Callback for profile updates
@@ -419,6 +427,31 @@ class _MePageState extends State<MePage> with WidgetsBindingObserver, AutomaticK
                           },
                           isFirst: false,
                         ),
+                        // Divider
+                        Divider(
+                          height: 1,
+                          thickness: 1,
+                          color: themeService.isDarkMode 
+                              ? Colors.grey.shade700
+                              : Colors.grey.shade300,
+                          indent: 16,
+                          endIndent: 16,
+                        ),
+                        // Recovery Button
+                        _buildActionButton(
+                          title: 'Recovery',
+                          icon: FontAwesomeIcons.heartPulse,
+                          color: Colors.red.shade400,
+                          onTap: () {
+                            Navigator.of(context, rootNavigator: true).push(
+                              MaterialPageRoute(
+                                builder: (context) => const RecoveryPage(),
+                              ),
+                            );
+                          },
+                          isFirst: false,
+                          isLast: true,
+                        ),
                       ],
                     ),
                   ),
@@ -479,6 +512,7 @@ class _MePageState extends State<MePage> with WidgetsBindingObserver, AutomaticK
     required Color color,
     required VoidCallback onTap,
     required bool isFirst,
+    bool isLast = false,
   }) {
     final themeService = Provider.of<ThemeService>(context, listen: false);
     
@@ -487,8 +521,8 @@ class _MePageState extends State<MePage> with WidgetsBindingObserver, AutomaticK
       borderRadius: BorderRadius.only(
         topLeft: isFirst ? const Radius.circular(16) : Radius.zero,
         topRight: isFirst ? const Radius.circular(16) : Radius.zero,
-        bottomLeft: !isFirst ? const Radius.circular(16) : Radius.zero,
-        bottomRight: !isFirst ? const Radius.circular(16) : Radius.zero,
+        bottomLeft: isLast ? const Radius.circular(16) : Radius.zero,
+        bottomRight: isLast ? const Radius.circular(16) : Radius.zero,
       ),
       child: Container(
         width: double.infinity,

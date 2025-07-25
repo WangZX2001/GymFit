@@ -22,50 +22,55 @@ class FinishWorkoutButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final themeService = Provider.of<ThemeService>(context);
+    final isDarkMode = themeService.isDarkMode;
     
     return LayoutBuilder(
       builder: (context, constraints) {
-        final screenWidth = MediaQuery.of(context).size.width;
-        final buttonFontSize = screenWidth < 350 ? 16.0 : 18.0;
-        final buttonPadding = screenWidth < 350
-            ? const EdgeInsets.symmetric(vertical: 12)
-            : const EdgeInsets.symmetric(vertical: 16);
+        final buttonFontSize = 14.0;
+        final buttonPadding = const EdgeInsets.symmetric(vertical: 8);
 
-        return SizedBox(
-          width: double.infinity,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-              child: OutlinedButton.icon(
-                onPressed: () => _handleFinishWorkout(context),
-                style: OutlinedButton.styleFrom(
-                  backgroundColor: themeService.isDarkMode 
-                      ? Colors.grey.shade800.withValues(alpha: 0.9)
-                      : Colors.white.withValues(alpha: 0.9),
-                  foregroundColor: themeService.isDarkMode ? Colors.white : Colors.black,
-                  side: BorderSide(
-                    color: themeService.isDarkMode 
-                        ? Colors.grey.shade600.withValues(alpha: 0.8)
-                        : Colors.grey.shade300.withValues(alpha: 0.8),
-                    width: 1.5,
+        // Define colors based on theme
+        final backgroundColor = isDarkMode 
+            ? Colors.green.shade600.withValues(alpha: 0.25)
+            : Colors.green.withValues(alpha: 0.15);
+        final textColor = isDarkMode 
+            ? Colors.green.shade300
+            : Colors.green.shade700;
+        final iconColor = isDarkMode 
+            ? Colors.green.shade300
+            : Colors.green.shade700;
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: SizedBox(
+            width: double.infinity,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                child: OutlinedButton.icon(
+                  onPressed: () => _handleFinishWorkout(context),
+                  style: OutlinedButton.styleFrom(
+                    backgroundColor: backgroundColor,
+                    foregroundColor: textColor,
+                    side: BorderSide.none,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: buttonPadding,
                   ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                  icon: FaIcon(
+                    FontAwesomeIcons.flagCheckered,
+                    color: iconColor,
+                    size: buttonFontSize * 0.8,
                   ),
-                  padding: buttonPadding,
-                ),
-                icon: FaIcon(
-                  FontAwesomeIcons.flagCheckered,
-                  color: themeService.isDarkMode ? Colors.white : Colors.black,
-                  size: buttonFontSize * 0.8,
-                ),
-                label: Text(
-                  'Finish',
-                  style: TextStyle(
-                    color: themeService.isDarkMode ? Colors.white : Colors.black,
-                    fontSize: buttonFontSize,
-                    fontWeight: FontWeight.w900,
+                  label: Text(
+                    'Finish',
+                    style: TextStyle(
+                      color: textColor,
+                      fontSize: buttonFontSize,
+                      fontWeight: FontWeight.w900,
+                    ),
                   ),
                 ),
               ),

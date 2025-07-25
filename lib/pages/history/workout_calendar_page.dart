@@ -361,11 +361,22 @@ class _WorkoutCalendarPageState extends State<WorkoutCalendarPage> {
                     borderRadius: BorderRadius.circular(8),
                     onTap: () {
                       Navigator.of(context, rootNavigator: true).push(
-                        MaterialPageRoute(
-                          builder: (context) => WorkoutDetailsPage(
+                        PageRouteBuilder(
+                          pageBuilder: (context, animation, secondaryAnimation) => WorkoutDetailsPage(
                             workout: workout,
                             isOwnWorkout: true,
                           ),
+                          transitionDuration: const Duration(milliseconds: 350),
+                          reverseTransitionDuration: const Duration(milliseconds: 300),
+                          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                            return FadeTransition(
+                              opacity: CurvedAnimation(
+                                parent: animation,
+                                curve: Curves.easeInOut,
+                              ),
+                              child: child,
+                            );
+                          },
                         ),
                       );
                     },
@@ -577,11 +588,22 @@ class _WorkoutCalendarPageState extends State<WorkoutCalendarPage> {
                         onPressed: () {
                           Navigator.of(context).pop();
                           Navigator.of(context, rootNavigator: true).push(
-                            MaterialPageRoute(
-                              builder: (context) => WorkoutDetailsPage(
+                            PageRouteBuilder(
+                              pageBuilder: (context, animation, secondaryAnimation) => WorkoutDetailsPage(
                                 workout: workout,
                                 isOwnWorkout: true,
                               ),
+                              transitionDuration: const Duration(milliseconds: 350),
+                              reverseTransitionDuration: const Duration(milliseconds: 300),
+                              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                return FadeTransition(
+                                  opacity: CurvedAnimation(
+                                    parent: animation,
+                                    curve: Curves.easeInOut,
+                                  ),
+                                  child: child,
+                                );
+                              },
                             ),
                           );
                         },

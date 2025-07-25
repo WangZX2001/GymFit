@@ -23,7 +23,7 @@ class CustomWorkoutAddButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 32.0),
+      padding: const EdgeInsets.fromLTRB(16.0, 0.0, 16.0, 32.0),
       child: Column(
         children: [
           // Done button with identical animation to AddExerciseButton (hide when keyboard is up)
@@ -38,34 +38,44 @@ class CustomWorkoutAddButton extends StatelessWidget {
                   (isInReorderMode && !isAnyFieldFocused)
                       ? LayoutBuilder(
                         builder: (context, constraints) {
-                          final screenWidth = MediaQuery.of(context).size.width;
-                          final buttonFontSize =
-                              screenWidth < 350 ? 16.0 : 18.0;
-                          final buttonPadding =
-                              screenWidth < 350
-                                  ? const EdgeInsets.symmetric(vertical: 12)
-                                  : const EdgeInsets.symmetric(vertical: 16);
+                          final buttonFontSize = 14.0;
+                          final buttonPadding = const EdgeInsets.symmetric(vertical: 8);
 
-                          return SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed: onDoneReorder,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.blue,
-                                foregroundColor: Colors.white,
-                                elevation: 2,
-                                shape: const StadiumBorder(),
-                                padding: buttonPadding,
-                              ),
-                              child: Text(
-                                'Done',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: buttonFontSize,
-                                  fontWeight: FontWeight.bold,
+                          return Builder(
+                            builder: (context) {
+                              final themeService = Provider.of<ThemeService>(context);
+                              return SizedBox(
+                                width: double.infinity,
+                                child: OutlinedButton.icon(
+                                  onPressed: onDoneReorder,
+                                  icon: FaIcon(
+                                    FontAwesomeIcons.check,
+                                    color: themeService.isDarkMode ? Colors.black : Colors.white,
+                                    size: buttonFontSize * 0.8,
+                                  ),
+                                  label: Text(
+                                    'Done',
+                                    style: TextStyle(
+                                      fontSize: buttonFontSize,
+                                      fontWeight: FontWeight.w900,
+                                      color: themeService.isDarkMode ? Colors.black : Colors.white,
+                                    ),
+                                  ),
+                                  style: OutlinedButton.styleFrom(
+                                    backgroundColor: themeService.isDarkMode ? Colors.white : Colors.black,
+                                    foregroundColor: themeService.isDarkMode ? Colors.black : Colors.white,
+                                    side: BorderSide(
+                                      color: themeService.isDarkMode ? Colors.white : Colors.black,
+                                      width: 1.5,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    padding: buttonPadding,
+                                  ),
                                 ),
-                              ),
-                            ),
+                              );
+                            },
                           );
                         },
                       )
@@ -85,20 +95,15 @@ class CustomWorkoutAddButton extends StatelessWidget {
                       ? const SizedBox.shrink()
                       : LayoutBuilder(
                         builder: (context, constraints) {
-                          final screenWidth = MediaQuery.of(context).size.width;
-                          final buttonFontSize =
-                              screenWidth < 350 ? 16.0 : 18.0;
-                          final buttonPadding =
-                              screenWidth < 350
-                                  ? const EdgeInsets.symmetric(vertical: 12)
-                                  : const EdgeInsets.symmetric(vertical: 16);
+                          final buttonFontSize = 14.0;
+                          final buttonPadding = const EdgeInsets.symmetric(vertical: 8);
 
                           return Builder(
                             builder: (context) {
                               final themeService = Provider.of<ThemeService>(context);
                               return SizedBox(
                                 width: double.infinity,
-                                child: ElevatedButton.icon(
+                                child: OutlinedButton.icon(
                                   onPressed: () async {
                                     onExercisesAdded();
 
@@ -124,18 +129,26 @@ class CustomWorkoutAddButton extends StatelessWidget {
                                   icon: FaIcon(
                                     FontAwesomeIcons.plus,
                                     color: themeService.isDarkMode ? Colors.black : Colors.white,
+                                    size: buttonFontSize * 0.8,
                                   ),
                                   label: Text(
                                     'Add Exercises',
                                     style: TextStyle(
-                                      color: themeService.isDarkMode ? Colors.black : Colors.white,
                                       fontSize: buttonFontSize,
-                                      fontWeight: FontWeight.bold,
+                                      fontWeight: FontWeight.w900,
+                                      color: themeService.isDarkMode ? Colors.black : Colors.white,
                                     ),
                                   ),
-                                  style: ElevatedButton.styleFrom(
+                                  style: OutlinedButton.styleFrom(
                                     backgroundColor: themeService.isDarkMode ? Colors.white : Colors.black,
-                                    shape: const StadiumBorder(),
+                                    foregroundColor: themeService.isDarkMode ? Colors.black : Colors.white,
+                                    side: BorderSide(
+                                      color: themeService.isDarkMode ? Colors.white : Colors.black,
+                                      width: 1.5,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
                                     padding: buttonPadding,
                                   ),
                                 ),

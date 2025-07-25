@@ -2,12 +2,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class WorkoutExercise {
   final String title;
+  final String? mainMuscle; // Nullable, for legacy compatibility
   final int totalSets;
   final int completedSets;
   final List<WorkoutSet> sets;
 
   WorkoutExercise({
     required this.title,
+    this.mainMuscle,
     required this.totalSets,
     required this.completedSets,
     required this.sets,
@@ -16,6 +18,7 @@ class WorkoutExercise {
   Map<String, dynamic> toMap() {
     return {
       'title': title,
+      'main muscle': mainMuscle, // Map to Firestore as 'main muscle'
       'totalSets': totalSets,
       'completedSets': completedSets,
       'sets': sets.map((set) => set.toMap()).toList(),
@@ -25,6 +28,7 @@ class WorkoutExercise {
   factory WorkoutExercise.fromMap(Map<String, dynamic> map) {
     return WorkoutExercise(
       title: map['title'] ?? '',
+      mainMuscle: map['main muscle'], // Read from Firestore as 'main muscle'
       totalSets: map['totalSets'] ?? 0,
       completedSets: map['completedSets'] ?? 0,
       sets:
