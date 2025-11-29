@@ -10,7 +10,7 @@ A comprehensive mobile fitness application that empowers users to take control o
 
 **Team Name:** Rise and Grind  
 **Project Level:** Apollo 11 (Advanced)  
-**Development Period:** May - August 2024
+**Development Period:** May - August 2025
 
 GymFit addresses a critical health challenge: According to WHO 2022 statistics, over 1 billion people worldwide are living with obesity (1 in 8 individuals). Our research with university students revealed:
 
