@@ -32,7 +32,7 @@ Since iOS App Store deployment requires paid Apple Developer membership, we've d
 
 **Live Demo:** [https://wangzx2001.github.io/Gymfit-webapp/](https://wangzx2001.github.io/Gymfit-webapp/)
 
-<img src="qr_code.png" alt="QR Code" width="150">
+<img src="QR code.png" alt="QR Code" width="150">
 
 *Tip: Resize your browser to phone dimensions for optimal experience*
 
