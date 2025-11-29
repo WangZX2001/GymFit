@@ -31,9 +31,9 @@ GymFit provides the solution through expert guidance, customized workout plans, 
 Since iOS App Store deployment requires paid Apple Developer membership, we've deployed a Flutter web application:
 
 **Live Demo:** [https://wangzx2001.github.io/Gymfit-webapp/](https://wangzx2001.github.io/Gymfit-webapp/)
-
+<p align = "center">
 <img src="QR code.png" alt="QR Code" width="150">
-
+</p>
 *Tip: Resize your browser to phone dimensions for optimal experience*
 
 #### For Android Users
